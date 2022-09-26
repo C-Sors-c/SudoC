@@ -53,3 +53,8 @@ dkms.conf
 
 # VS Code files
 /.vscode
+
+# python virtual env
+/.venv
+/.pytest_cache
+__pycache__
