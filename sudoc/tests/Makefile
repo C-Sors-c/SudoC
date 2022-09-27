@@ -7,7 +7,7 @@ LDFLAGS =
 LDLIBS =
 EXEC= test
 
-SRC = ${wildcard ../src/*.c} ${wildcard *.c}
+SRC = ${wildcard ../libs/src/*.c} ${wildcard *.c}
 OBJ = ${SRC:.c=.o}
 
 
