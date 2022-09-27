@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "../include/utils.h"
 
-int printTest(int result, int expected, char name[])
+int print_test(int result, int expected, char name[])
 {
 
     if (result == expected)

@@ -1,3 +1,3 @@
 #pragma once
 
-int printTest(int result, int expected, char name[]);
+int print_test(int result, int expected, char name[]);
