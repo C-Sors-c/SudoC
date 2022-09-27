@@ -16,9 +16,11 @@ OBJ = ${SRC:.c=.o}
 
 .PHONY: test clean
 
-test: ${OBJ}
-	${CC} -o $@ $^ ${CFLAGS}
-	./test
+build: $(OBJ)
+	@$(CC) -o $(EXEC) $^ $(LDFLAGS) $(LDLIBS)
+
+test: build
+	@./$(EXEC)
 
 clean:
 	${RM} ${OBJ} ${EXEC}
