@@ -1,14 +1,14 @@
 #include <stdlib.h>
-#include "test_add.h"
+#include "include/test_add.h"
 
 // by default the test are successful
 int ret = 0;
 
 int main()
 {
-    // ret = test_failure() || ret;
-    ret = test_add() || ret;
-
+    // add here all the tests
+    ret = test_add_positive() || ret;
+    ret = test_add_negative() || ret;
     
     // if at least one test fails
     if (ret)

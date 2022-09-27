@@ -54,7 +54,5 @@ dkms.conf
 # VS Code files
 /.vscode
 
-# python virtual env
-/.venv
-/.pytest_cache
-__pycache__
+# executable files
+sudoc/tests/test
