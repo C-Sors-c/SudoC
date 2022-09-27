@@ -15,14 +15,11 @@ SRC =	${wildcard ./sudoc/libs/src/*.c} \
 
 TEST_SRC =	${wildcard ./sudoc/libs/src/*.c} \
 			${wildcard ./sudoc/core/src/*.c} \
-			${wildcard ./tests/src/*.c} \
+			${wildcard ./tests/src/*.c}      \
 			./tests/test.c
 
 OBJ = ${SRC:.c=.o}
 TEST_OBJ = ${TEST_SRC:.c=.o}
-
-# .c.o:
-# 	@$(CC) -o $@ -c $< $(CFLAGS)
 
 .PHONY: all
 
