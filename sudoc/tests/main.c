@@ -26,5 +26,9 @@ int main()
     double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
 
     printf("Ran %d tests in %f seconds. %d failed.\n", test_count, time_spent, failed);
-    return EXIT_SUCCESS;
+    
+    if (failed)
+        return EXIT_FAILURE;
+    else
+        return EXIT_SUCCESS;
 }
