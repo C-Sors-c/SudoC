@@ -56,3 +56,6 @@ dkms.conf
 
 # executable files
 sudoc/tests/test
+
+# build files
+build
