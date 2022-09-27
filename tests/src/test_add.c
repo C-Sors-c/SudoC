@@ -1,5 +1,5 @@
-#include "../../libs/include/utils.h"
-#include "../../libs/include/add.h"
+#include "../../sudoc/libs/include/utils.h"
+#include "../../sudoc/libs/include/add.h"
 
 #include "../include/test_add.h"
 

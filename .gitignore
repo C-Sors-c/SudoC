@@ -55,4 +55,4 @@ dkms.conf
 /.vscode
 
 # executable files
-sudoc/tests/test
+build
