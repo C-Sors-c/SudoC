@@ -3,6 +3,8 @@
 
 #include "../include/test_add.h"
 
+// TODO: include logic to test more case per function
+
 int test_add_positive()
 {
     return print_test(add(15, 3), 18, "test_add_positive");
