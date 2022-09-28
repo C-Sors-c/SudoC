@@ -26,11 +26,12 @@ typedef struct Tuple Tuple;
 // Parameters:
 //   rows - number of rows
 //   cols - number of columns
+//   datap - a pointer to an array of n_rows pointers to rows (optional)
 //
 // Returns:
 //   a pointer to the matrix
 //
-Matrix *matrix_create(int rows, int cols)
+Matrix *matrix_create(int rows, int cols, double **datap)
 {
     Matrix *m = malloc(sizeof(Matrix));
     if (m == NULL)
@@ -41,15 +42,25 @@ Matrix *matrix_create(int rows, int cols)
 
     m->rows = rows;
     m->cols = cols;
-    double **data = malloc(rows * sizeof(double *));
-    if (data == NULL)
-        err(EXIT_FAILURE, "matrix_create: malloc failed");
 
-    for (int i = 0; i < rows; i++)
+    if (datap != NULL)
+        m->data = datap;
+
+    else
     {
-        data[i] = calloc(cols, sizeof(double));
+        double **data = malloc(rows * sizeof(double *));
+        if (data == NULL)
+            err(EXIT_FAILURE, "matrix_create: malloc failed");
+
+        for (int i = 0; i < rows; i++)
+        {
+            // use of calloc, it initializes the memory to zero
+            data[i] = calloc(cols, sizeof(double));
+        }
+
+        m->data = data;
     }
-    m->data = data;
+
     return m;
 }
 
@@ -72,12 +83,42 @@ Matrix *matrix_add(Matrix *m1, Matrix *m2)
         errx(EXIT_FAILURE, "matrix_add: matrix dimensions do not match");
     }
 
-    Matrix *m = matrix_create(m1->rows, m1->cols);
+    Matrix *m = matrix_create(m1->rows, m1->cols, NULL);
     for (int i = 0; i < m->rows; i++)
     {
         for (int j = 0; j < m->cols; j++)
         {
             m->data[i][j] = m1->data[i][j] + m2->data[i][j];
+        }
+    }
+    return m;
+}
+
+// Function: matrix_substract
+// --------------------
+// Substracts two matrices and returns the result.
+//
+// Parameters:
+//   m1 - pointer to the first matrix
+//   m2 - pointer to the second matrix
+//
+// Returns:
+//   a pointer to the result matrix
+//
+
+Matrix *matrix_substract(Matrix *m1, Matrix *m2)
+{
+    if (m1->rows != m2->rows || m1->cols != m2->cols)
+    {
+        errx(EXIT_FAILURE, "matrix_substract: matrix dimensions do not match");
+    }
+
+    Matrix *m = matrix_create(m1->rows, m1->cols, NULL);
+    for (int i = 0; i < m->rows; i++)
+    {
+        for (int j = 0; j < m->cols; j++)
+        {
+            m->data[i][j] = m1->data[i][j] - m2->data[i][j];
         }
     }
     return m;
@@ -122,7 +163,7 @@ Matrix *matrix_multiply(Matrix *m1, Matrix *m2)
         errx(EXIT_FAILURE, "matrix_multiply: matrix dimensions do not match");
     }
 
-    Matrix *m = matrix_create(m1->rows, m2->cols);
+    Matrix *m = matrix_create(m1->rows, m2->cols, NULL);
     for (int i = 0; i < m->rows; i++)
     {
         for (int j = 0; j < m->cols; j++)
@@ -168,7 +209,7 @@ void matrix_destroy(Matrix *m)
 
 Tuple *matrix_dimensions(Matrix *m)
 {
-    Tuple *t;
+    Tuple *t = malloc(sizeof(Tuple));
     t->x = m->rows;
     t->y = m->cols;
     return t;
@@ -230,4 +271,32 @@ void matrix_set_element(Matrix *m, int row, int col, double value)
         errx(EXIT_FAILURE, "matrix_set: index out of bounds");
     }
     m->data[row][col] = value;
+}
+
+// Function: matrix_transpose
+// --------------------------
+// Returns the transpose of a matrix.
+//
+// Parameters:
+//   m - pointer to the matrix
+//
+// Returns:
+//   a pointer to the transpose of the matrix
+//
+
+Matrix *matrix_transpose(Matrix *m)
+{
+    Matrix *t = matrix_create(m->cols, m->rows, NULL);
+    if (t == NULL)
+    {
+        errx(EXIT_FAILURE, "matrix_transpose: failed to allocate memory for matrix");
+    }
+    for (int i = 0; i < m->rows; i++)
+    {
+        for (int j = 0; j < m->cols; j++)
+        {
+            t->data[j][i] = m->data[i][j];
+        }
+    }
+    return t;
 }
