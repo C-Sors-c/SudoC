@@ -1,5 +1,5 @@
-#include "../../libs/include/solver.h"
-#include "../../libs/include/parser.h"
+#include "libs/include/solver.h"
+#include "libs/include/parser.h"
 
 
 /* Driver Program to test above functions */
