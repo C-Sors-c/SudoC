@@ -209,7 +209,7 @@ void matrix_destroy(Matrix *m)
 
 Tuple *matrix_dimensions(Matrix *m)
 {
-    Tuple *t;
+    Tuple *t = malloc(sizeof(Tuple));
     t->x = m->rows;
     t->y = m->cols;
     return t;
