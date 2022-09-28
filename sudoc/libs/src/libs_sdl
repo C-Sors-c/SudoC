@@ -1,0 +1,9 @@
+#include <err.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+
+
+int*** surface_to_3d(SDL_Surface* surface)
+{
+    Uint32* pixels = surface->pixels
+}
