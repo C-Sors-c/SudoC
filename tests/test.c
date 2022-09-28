@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+
 #include "include/test_add.h"
+#include "include/test_matrix.h"
 
 //lists of all tests to run
 int (*tests[])() = {
