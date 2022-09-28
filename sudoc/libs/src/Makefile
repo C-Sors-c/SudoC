@@ -6,7 +6,7 @@ CFLAGS = -Wall -Wextra
 LDFLAGS =
 LDLIBS =
 
-SRC = solver.c parser.c
+SRC = libs_solver.c parser.c
 OBJ = ${SRC:.c=.o}
 DEP = ${SRC:.c=.d}
 
