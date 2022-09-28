@@ -29,7 +29,7 @@ SOLVER_OBJ = ${SOLVER_SRC:.c=.o}
 
 .PHONY: build all
 
-all: build build-solver build-test clean-src clean-test
+all: build build-solver build-test clean-sudoc clean-test
 
 # BUILD
 build: $(OBJ)
@@ -46,7 +46,7 @@ build-solver: $(SOLVER_OBJ)
 
 
 # RUN
-run: build clean-src
+run: build clean-sudoc
 	@./$(BUILD_DIR)/$(EXEC)
 
 test: build-test clean-test
