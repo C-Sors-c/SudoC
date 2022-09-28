@@ -39,7 +39,7 @@ void parser_reverse(char* filename, int grid[][9])
     snprintf(name, sizeof(name), "%s%s", filename, extension);
 
     FILE *out=fopen(name, "w");
-    if (NULL == ptr) {
+    if (NULL == out) {
         printf("file can't be opened \n");
 
     for (int row = 0; row < N; row++) {
