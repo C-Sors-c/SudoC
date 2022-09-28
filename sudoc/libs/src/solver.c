@@ -1,5 +1,3 @@
-#include <stdio.h>
-#include <stdbool.h>
 #include "../include/solver.h"
 #include "../include/parser.h"
 
@@ -114,9 +112,13 @@ void printGrid(int grid[N][N])
 /* Driver Program to test above functions */
 int main(int argc, char** argv )
 {
+    if (argc != 2)
+        errx(EXIT_FAILURE, "Usage: file\n");
+
     // 0 means unassigned cells
     int grid[N][N];
-    int grid2[N][N] = { { 3, 0, 6, 5, 0, 8, 4, 0, 0 },
+    int grid2[N][N] = {
+        { 3, 0, 6, 5, 0, 8, 4, 0, 0 },
         { 5, 2, 0, 0, 0, 0, 0, 0, 0 },
         { 0, 8, 7, 0, 0, 0, 0, 3, 1 },
         { 0, 0, 3, 0, 1, 0, 0, 8, 0 },

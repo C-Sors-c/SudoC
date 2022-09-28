@@ -1,4 +1,6 @@
 #pragma once
+#include <stdio.h>
+#include <stdbool.h>
 #define N 9
 #define UNASSIGNED 0
 

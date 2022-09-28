@@ -1,9 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
 #include "../include/solver.h"
-
+#include "../include/parser.h"
 
 void parser(char* filename, int res[][9])
 {
@@ -43,6 +39,8 @@ void parser_reverse(char* filename, int grid[][9])
     snprintf(name, sizeof(name), "%s%s", filename, extension);
 
     FILE *out=fopen(name, "w");
+    if (NULL == ptr) {
+        printf("file can't be opened \n");
 
     for (int row = 0; row < N; row++) {
         if (row == 3 || row == 6)
@@ -53,7 +51,6 @@ void parser_reverse(char* filename, int grid[][9])
                 fprintf(out, " ");
         }
         fprintf(out, "\n");
-        printf("\n");
     }
 
 
