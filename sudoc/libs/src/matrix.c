@@ -106,7 +106,7 @@ Matrix *matrix_add(Matrix *m1, Matrix *m2)
 //   a pointer to the result matrix
 //
 
-Matrix *matrix_add(Matrix *m1, Matrix *m2)
+Matrix *matrix_substract(Matrix *m1, Matrix *m2)
 {
     if (m1->rows != m2->rows || m1->cols != m2->cols)
     {
