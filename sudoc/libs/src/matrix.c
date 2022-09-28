@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <err.h>
 
 struct Matrix
@@ -31,7 +32,7 @@ typedef struct Tuple Tuple;
 // Returns:
 //   a pointer to the matrix
 //
-Matrix *matrix_create(int rows, int cols, double **datap)
+Matrix *matrix_create(int rows, int cols, double *datap)
 {
     Matrix *m = malloc(sizeof(Matrix));
     if (m == NULL)
@@ -44,7 +45,19 @@ Matrix *matrix_create(int rows, int cols, double **datap)
     m->cols = cols;
 
     if (datap != NULL)
-        m->data = datap;
+    {
+        double **data = malloc(rows * sizeof(double *));
+        if (data == NULL)
+            err(EXIT_FAILURE, "matrix_create: malloc failed");
+
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j =0; j< cols; j++)
+            {
+                data[i][j] = datap[i * cols + j];
+            }
+        }
+    }
 
     else
     {
@@ -215,22 +228,6 @@ Tuple *matrix_dimensions(Matrix *m)
     return t;
 }
 
-// Function: matrix_length
-// -----------------------
-// Returns the length of a matrix.
-//
-// Parameters:
-//   m - pointer to the matrix
-//
-// Returns:
-//   the length of the matrix
-//
-
-int matrix_length(Matrix *m)
-{
-    return m->rows;
-}
-
 // Function: matrix_get_element
 // --------------------
 // Returns the value at the specified row and column.
@@ -299,4 +296,11 @@ Matrix *matrix_transpose(Matrix *m)
         }
     }
     return t;
+}
+
+bool matrix_element_wise_equal(Matrix *m1, Matrix *m2)
+{
+    return false;
+
+
 }

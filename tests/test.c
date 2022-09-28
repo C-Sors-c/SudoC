@@ -9,10 +9,11 @@
 int (*tests[])() = {
     test_add_positive,
     test_add_negative,
+    test_matrix_add,
 };
 
 int main()
-{   
+{
     // start timer
     clock_t begin = clock();
 
@@ -28,7 +29,7 @@ int main()
     double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
 
     printf("Ran %d tests in %f seconds. %d failed.\n", test_count, time_spent, failed);
-    
+
     if (failed)
         return EXIT_FAILURE;
     else
