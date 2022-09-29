@@ -5,7 +5,7 @@
 #include "include/test_add.h"
 #include "include/test_matrix.h"
 
-//lists of all tests to run
+// lists of all tests to run
 int (*tests[])() = {
     test_add_positive,
     test_add_negative,
@@ -20,7 +20,7 @@ int main()
     // start timer
     clock_t begin = clock();
 
-    //run all tests
+    // run all tests
     int test_count = sizeof(tests) / sizeof(tests[0]);
     int failed = 0;
 
@@ -29,7 +29,7 @@ int main()
 
     // stop timer
     clock_t end = clock();
-    double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+    float time_spent = (float)(end - begin) / CLOCKS_PER_SEC;
 
     printf("Ran %d tests in %f seconds. %d failed.\n", test_count, time_spent, failed);
 
