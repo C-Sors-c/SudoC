@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <err.h>
+#include <stdbool.h>
 
 typedef struct Matrix Matrix;
 typedef struct Tuple Tuple;
@@ -17,3 +18,4 @@ int matrix_length(Matrix *m);
 double matrix_get_element(Matrix *m, int row, int col);
 void matrix_set_element(Matrix *m, int row, int col, double value);
 Matrix *matrix_transpose(Matrix *m);
+bool matrix_element_wise_equal(Matrix *m1, Matrix *m2);

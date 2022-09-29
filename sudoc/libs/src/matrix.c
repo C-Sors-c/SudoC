@@ -45,7 +45,6 @@ typedef struct Tuple Tuple;
 //
 Matrix *matrix_init(int rows, int cols, double *datap)
 {
-    printf("matrix_init: rows=%d, cols=%d\n", rows, cols);
     Matrix *m = malloc(sizeof(Matrix));
 
     if (m == NULL)
@@ -309,6 +308,21 @@ Matrix *matrix_transpose(Matrix *m)
 
 bool matrix_element_wise_equal(Matrix *m1, Matrix *m2)
 {
-    return false;
+    if (m1->rows != m2->rows || m1->cols != m2->cols)
+    {
+        errx(EXIT_FAILURE, "matrix_element_wise_equal: matrix dimensions do not match\n");
+    }
+    
+    for (int i = 0; i < m1->rows; i++)
+    {
+        for (int j = 0; j < m1->cols; j++)
+        {
+            if (m1->data[j][i] != m2->data[i][j])
+            {
+                return false;
+            }
+        }
+    }
 
+    return true;
 }
