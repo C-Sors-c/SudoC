@@ -10,6 +10,9 @@ int (*tests[])() = {
     test_add_positive,
     test_add_negative,
     test_matrix_add,
+    test_matrix_subtract,
+    test_matrix_multiply,
+    test_matrix_multiply_scalar,
 };
 
 int main()
