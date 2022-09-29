@@ -1,13 +1,25 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <err.h>
+#include "matrix.h"
 
 struct Matrix
 {
     int rows;      // number of rows
     int cols;      // number of columns
-    double **data; // a pointer to an array of n_rows pointers to rows
+    double **data; // a pointer to an array of pointers to rows
 };
+
+// How to create a new matrix?
+//
+// 1. Use a unidimensional array to store the data you want to store in the
+//    matrix
+// 2. Use the function matrix_new to create a new matrix
+//    IMPORTANT: set rows and columns correctly considering the data you want to
+//    store
+// 3. Example:
+//    double data[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+//    Matrix *m = matrix_init(3, 3, data);
+//    matrix_print(m);
+//    matrix_destroy(m);
+//    !!!!DONT FORGET TO FREE THE MEMORY!!!
 
 struct Tuple
 {
@@ -26,41 +38,50 @@ typedef struct Tuple Tuple;
 // Parameters:
 //   rows - number of rows
 //   cols - number of columns
-//   datap - a pointer to an array of n_rows pointers to rows (optional)
+//   datap - a pointer to an array of n_rows (optional)
 //
 // Returns:
 //   a pointer to the matrix
 //
-Matrix *matrix_create(int rows, int cols, double **datap)
+Matrix *matrix_init(int rows, int cols, double *datap)
 {
+    printf("matrix_create: rows=%d, cols=%d\n", rows, cols);
     Matrix *m = malloc(sizeof(Matrix));
+
     if (m == NULL)
     {
-        errx(EXIT_FAILURE, "matrix_create: failed to allocate memory for matrix");
+        errx(EXIT_FAILURE, "matrix_create: failed to allocate memory for matrix\n");
         return NULL;
     }
 
     m->rows = rows;
     m->cols = cols;
+    double **data = malloc(rows * sizeof(double *));
+
+    if (data == NULL)
+        err(EXIT_FAILURE, "matrix_create: malloc failed\n");
 
     if (datap != NULL)
-        m->data = datap;
+    {
+        for (int i = 0; i < rows; i++)
+        {
+            data[i] = malloc(cols * sizeof(double *));
 
+            for (int j = 0; j < cols; j++)
+            {
+                data[i][j] = datap[i * cols + j];
+            }
+        }
+    }
     else
     {
-        double **data = malloc(rows * sizeof(double *));
-        if (data == NULL)
-            err(EXIT_FAILURE, "matrix_create: malloc failed");
-
         for (int i = 0; i < rows; i++)
         {
             // use of calloc, it initializes the memory to zero
             data[i] = calloc(cols, sizeof(double));
         }
-
-        m->data = data;
     }
-
+    m->data = data;
     return m;
 }
 
@@ -80,7 +101,7 @@ Matrix *matrix_add(Matrix *m1, Matrix *m2)
 {
     if (m1->rows != m2->rows || m1->cols != m2->cols)
     {
-        errx(EXIT_FAILURE, "matrix_add: matrix dimensions do not match");
+        errx(EXIT_FAILURE, "matrix_add: matrix dimensions do not match\n");
     }
 
     Matrix *m = matrix_create(m1->rows, m1->cols, NULL);
@@ -110,7 +131,7 @@ Matrix *matrix_substract(Matrix *m1, Matrix *m2)
 {
     if (m1->rows != m2->rows || m1->cols != m2->cols)
     {
-        errx(EXIT_FAILURE, "matrix_substract: matrix dimensions do not match");
+        errx(EXIT_FAILURE, "matrix_substract: matrix dimensions do not match\n");
     }
 
     Matrix *m = matrix_create(m1->rows, m1->cols, NULL);
@@ -160,7 +181,7 @@ Matrix *matrix_multiply(Matrix *m1, Matrix *m2)
 {
     if (m1->cols != m2->rows)
     {
-        errx(EXIT_FAILURE, "matrix_multiply: matrix dimensions do not match");
+        errx(EXIT_FAILURE, "matrix_multiply: matrix dimensions do not match\n");
     }
 
     Matrix *m = matrix_create(m1->rows, m2->cols, NULL);
@@ -215,22 +236,6 @@ Tuple *matrix_dimensions(Matrix *m)
     return t;
 }
 
-// Function: matrix_length
-// -----------------------
-// Returns the length of a matrix.
-//
-// Parameters:
-//   m - pointer to the matrix
-//
-// Returns:
-//   the length of the matrix
-//
-
-int matrix_length(Matrix *m)
-{
-    return m->rows;
-}
-
 // Function: matrix_get_element
 // --------------------
 // Returns the value at the specified row and column.
@@ -248,7 +253,7 @@ double matrix_get_element(Matrix *m, int row, int col)
 {
     if (row < 0 || row >= m->rows || col < 0 || col >= m->cols)
     {
-        errx(EXIT_FAILURE, "matrix_get: index out of bounds");
+        errx(EXIT_FAILURE, "matrix_get: index out of bounds\n");
     }
     return m->data[row][col];
 }
@@ -268,7 +273,7 @@ void matrix_set_element(Matrix *m, int row, int col, double value)
 {
     if (row < 0 || row >= m->rows || col < 0 || col >= m->cols)
     {
-        errx(EXIT_FAILURE, "matrix_set: index out of bounds");
+        errx(EXIT_FAILURE, "matrix_set: index out of bounds\n");
     }
     m->data[row][col] = value;
 }
@@ -289,7 +294,8 @@ Matrix *matrix_transpose(Matrix *m)
     Matrix *t = matrix_create(m->cols, m->rows, NULL);
     if (t == NULL)
     {
-        errx(EXIT_FAILURE, "matrix_transpose: failed to allocate memory for matrix");
+        errx(EXIT_FAILURE,
+             "matrix_transpose: failed to allocate memory for matrix\n");
     }
     for (int i = 0; i < m->rows; i++)
     {

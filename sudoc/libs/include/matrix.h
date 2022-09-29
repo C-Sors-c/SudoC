@@ -1,9 +1,12 @@
 #pragma once
+#include <stdio.h>
+#include <stdlib.h>
+#include <err.h>
 
 typedef struct Matrix Matrix;
 typedef struct Tuple Tuple;
 
-Matrix *matrix_create(int rows, int cols, double **datap);
+Matrix *matrix_create(int rows, int cols, double *datap);
 Matrix *matrix_add(Matrix *m1, Matrix *m2);
 Matrix *matrix_substract(Matrix *m1, Matrix *m2);
 void matrix_print(Matrix *m);
