@@ -1,9 +1,5 @@
-#include "../../sudoc/libs/include/utils.h"
-#include "../../sudoc/libs/include/add.h"
-
 #include "../include/test_add.h"
 
-// TODO: include logic to test more case per function
 
 int test_add_positive()
 {
