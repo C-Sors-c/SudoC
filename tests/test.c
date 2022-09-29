@@ -1,16 +1,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+
 #include "include/test_add.h"
+#include "include/test_matrix.h"
 
 //lists of all tests to run
 int (*tests[])() = {
     test_add_positive,
     test_add_negative,
+    test_matrix_add,
+    test_matrix_subtract,
+    test_matrix_multiply,
+    test_matrix_multiply_scalar,
 };
 
 int main()
-{   
+{
     // start timer
     clock_t begin = clock();
 
@@ -26,7 +32,7 @@ int main()
     double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
 
     printf("Ran %d tests in %f seconds. %d failed.\n", test_count, time_spent, failed);
-    
+
     if (failed)
         return EXIT_FAILURE;
     else

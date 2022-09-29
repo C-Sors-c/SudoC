@@ -45,7 +45,6 @@ typedef struct Tuple Tuple;
 //
 Matrix *matrix_init(int rows, int cols, double *datap)
 {
-    printf("matrix_init: rows=%d, cols=%d\n", rows, cols);
     Matrix *m = malloc(sizeof(Matrix));
 
     if (m == NULL)
@@ -145,26 +144,6 @@ Matrix *matrix_subtract(Matrix *m1, Matrix *m2)
     return m;
 }
 
-// Function: matrix_print
-// ----------------------
-// Prints a matrix to the console.
-//
-// Parameters:
-//   m - pointer to the matrix
-//
-
-void matrix_print(Matrix *m)
-{
-    for (int i = 0; i < m->rows; i++)
-    {
-        for (int j = 0; j < m->cols; j++)
-        {
-            printf("%f ", m->data[i][j]);
-        }
-        printf("\n");
-    }
-}
-
 // Function: matrix_multiply
 // -------------------------
 // Multiplies two matrices and returns the result.
@@ -197,6 +176,26 @@ Matrix *matrix_multiply(Matrix *m1, Matrix *m2)
         }
     }
     return m;
+}
+
+// Function: matrix_scalar_multiply
+// --------------------------------
+// Multiplies a matrix by a scalar.
+//
+// Parameters:
+//   m - pointer to the matrix
+//   scalar - the scalar
+//
+
+void matrix_scalar_multiply(Matrix *m, double scalar)
+{
+    for (int i = 0; i < m->rows; i++)
+    {
+        for (int j = 0; j < m->cols; j++)
+        {
+            m->data[i][j] *= scalar;
+        }
+    }
 }
 
 // Function: matrix_destroy
@@ -305,4 +304,54 @@ Matrix *matrix_transpose(Matrix *m)
         }
     }
     return t;
+}
+
+// Function: matrix_elementwise_equal
+// ----------------------
+// Checks if two matrices are elementwise equal.
+//
+// Parameters:
+//   m1 - pointer to the first matrix
+//   m2 - pointer to the second matrix
+//
+
+bool matrix_element_wise_equal(Matrix *m1, Matrix *m2)
+{
+    if (m1->rows != m2->rows || m1->cols != m2->cols)
+    {
+        errx(EXIT_FAILURE, "matrix_element_wise_equal: matrix dimensions do not match\n");
+    }
+    
+    for (int i = 0; i < m1->rows; i++)
+    {
+        for (int j = 0; j < m1->cols; j++)
+        {
+            if (m1->data[i][j] != m2->data[i][j])
+            {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+// Function: matrix_print
+// ----------------------
+// Prints a matrix to the console.
+//
+// Parameters:
+//   m - pointer to the matrix
+//
+
+void matrix_print(Matrix *m)
+{
+    for (int i = 0; i < m->rows; i++)
+    {
+        for (int j = 0; j < m->cols; j++)
+        {
+            printf("%f ", m->data[i][j]);
+        }
+        printf("\n");
+    }
 }
