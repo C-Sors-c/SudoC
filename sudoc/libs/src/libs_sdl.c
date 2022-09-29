@@ -3,27 +3,25 @@
 #include <SDL_image.h>
 #include <stdio.h>
 
-float*** surface_to_3d(SDL_Surface* surface)
+char ***surface_to_3d(SDL_Surface *surface)
 {
-    Uint32* pixels = surface->pixel;
-    int width = surface->w;
-    int height = surface->h;
-    SDL_PixelFormat* format = surface->format;
+    Uint32 *pixels = surface->pixels;
+    int cols = surface->w;
+    int rows = surface->h;
+    SDL_PixelFormat *format = surface->format;
     Uint8 r, g, b;
-    
-    float array_image[height][width][3];
 
-    for (int row = 0; row < width; row++)
+    char array_image[rows][cols][3];
+
+    for (int i = 0; i < rows; i++)
     {
-        for (int col = 0; col < height; col++)
+        for (int j = 0; j < cols; j++)
         {
-            SDL_GetRGB(pixels[row][col], format, &r, &g, &b);
-            array_image[row][col][0] = ((float) r) / 255.0;
-            array_image[row][col][1] = (float) g / 255.0;
-            array_image[row][col][2] = (float) b / 255.0;
-            }
-        
+            SDL_GetRGB(pixels[i * cols + j], format, &r, &g, &b);
+            array_image[i][j][0] = r;
+            array_image[i][j][1] = g;
+            array_image[i][j][2] = b;
+        }
     }
-    
-    
+    return array_image;
 }
