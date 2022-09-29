@@ -2,9 +2,9 @@
 
 struct Matrix
 {
-    int rows;      // number of rows
-    int cols;      // number of columns
-    double **data; // a pointer to an array of pointers to rows
+    int rows;     // number of rows
+    int cols;     // number of columns
+    float **data; // a pointer to an array of pointers to rows
 };
 
 // How to create a new matrix?
@@ -15,7 +15,7 @@ struct Matrix
 //    IMPORTANT: set rows and columns correctly considering the data you want to
 //    store
 // 3. Example:
-//    double data[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+//    float data[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
 //    Matrix *m = matrix_init(3, 3, data);
 //    matrix_print(m);
 //    matrix_destroy(m);
@@ -43,7 +43,7 @@ typedef struct Tuple Tuple;
 // Returns:
 //   a pointer to the matrix
 //
-Matrix *matrix_init(int rows, int cols, double *datap)
+Matrix *matrix_init(int rows, int cols, float *datap)
 {
     Matrix *m = malloc(sizeof(Matrix));
 
@@ -55,7 +55,7 @@ Matrix *matrix_init(int rows, int cols, double *datap)
 
     m->rows = rows;
     m->cols = cols;
-    double **data = malloc(rows * sizeof(double *));
+    float **data = malloc(rows * sizeof(float *));
 
     if (data == NULL)
         err(EXIT_FAILURE, "matrix_init: malloc failed\n");
@@ -64,7 +64,7 @@ Matrix *matrix_init(int rows, int cols, double *datap)
     {
         for (int i = 0; i < rows; i++)
         {
-            data[i] = malloc(cols * sizeof(double *));
+            data[i] = malloc(cols * sizeof(float *));
 
             for (int j = 0; j < cols; j++)
             {
@@ -77,7 +77,7 @@ Matrix *matrix_init(int rows, int cols, double *datap)
         for (int i = 0; i < rows; i++)
         {
             // use of calloc, it initializes the memory to zero
-            data[i] = calloc(cols, sizeof(double));
+            data[i] = calloc(cols, sizeof(float));
         }
     }
     m->data = data;
@@ -187,7 +187,7 @@ Matrix *matrix_multiply(Matrix *m1, Matrix *m2)
 //   scalar - the scalar
 //
 
-void matrix_scalar_multiply(Matrix *m, double scalar)
+void matrix_scalar_multiply(Matrix *m, float scalar)
 {
     for (int i = 0; i < m->rows; i++)
     {
@@ -248,7 +248,7 @@ Tuple *matrix_dimensions(Matrix *m)
 //   the value at the specified row and column
 //
 
-double matrix_get_element(Matrix *m, int row, int col)
+float matrix_get_element(Matrix *m, int row, int col)
 {
     if (row < 0 || row >= m->rows || col < 0 || col >= m->cols)
     {
@@ -268,7 +268,7 @@ double matrix_get_element(Matrix *m, int row, int col)
 //   value - value to set
 //
 
-void matrix_set_element(Matrix *m, int row, int col, double value)
+void matrix_set_element(Matrix *m, int row, int col, float value)
 {
     if (row < 0 || row >= m->rows || col < 0 || col >= m->cols)
     {
@@ -321,7 +321,7 @@ bool matrix_element_wise_equal(Matrix *m1, Matrix *m2)
     {
         errx(EXIT_FAILURE, "matrix_element_wise_equal: matrix dimensions do not match\n");
     }
-    
+
     for (int i = 0; i < m1->rows; i++)
     {
         for (int j = 0; j < m1->cols; j++)
