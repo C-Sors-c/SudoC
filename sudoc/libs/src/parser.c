@@ -35,7 +35,7 @@ void parser(char* filename, int res[][9])
 void parser_reverse(char* filename, int grid[][9])
 {
     char* extension = ".result";
-    char name[strlen(filename)+strlen(extension)+1];
+    char* name =  malloc(strlen(filename)+strlen(extension)+1);
     snprintf(name, sizeof(name), "%s%s", filename, extension);
 
     FILE *out=fopen(name, "w");
