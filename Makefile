@@ -1,31 +1,31 @@
 # Makefile
 
-CC = gcc
-CPPFLAGS =
-CFLAGS = -Wall -Wextra
-LDFLAGS =
-LDLIBS =
-EXEC = sudoc
-EXEC_TEST = test
-EXEC_SOLVER = solver
-BUILD_DIR = build
+CC := gcc
+CPPFLAGS :=
+CFLAGS := -Wall -Wextra
+LDFLAGS :=
+LDLIBS :=
+EXEC := sudoc
+EXEC_TEST := test
+EXEC_SOLVER := solver
+BUILD_DIR := build
 
-SRC =		${wildcard ./sudoc/libs/src/*.c} \
+SRC :=	${wildcard ./sudoc/libs/src/*.c} \
 		${wildcard ./sudoc/core/src/*.c} \
 		./sudoc/main.c
 
-SOLVER_SRC =	${wildcard ./sudoc/libs/src/*.c} \
-		${wildcard ./sudoc/core/src/*.c} \
-		./sudoc/solver.c
+SOLVER_SRC :=	${wildcard ./sudoc/libs/src/*.c} \
+				${wildcard ./sudoc/core/src/*.c} \
+				./sudoc/solver.c
 
-TEST_SRC =	${wildcard ./sudoc/libs/src/*.c} \
-		${wildcard ./sudoc/core/src/*.c} \
-		${wildcard ./tests/src/*.c}      \
-		./tests/test.c
+TEST_SRC :=	${wildcard ./sudoc/libs/src/*.c} \
+			${wildcard ./sudoc/core/src/*.c} \
+			${wildcard ./tests/src/*.c} \
+			./tests/test.c
 
-OBJ = ${SRC:.c=.o}
-TEST_OBJ = ${TEST_SRC:.c=.o}
-SOLVER_OBJ = ${SOLVER_SRC:.c=.o}
+OBJ := ${SRC:.c=.o}
+TEST_OBJ := ${TEST_SRC:.c=.o}
+SOLVER_OBJ := ${SOLVER_SRC:.c=.o}
 
 .PHONY: build all
 
