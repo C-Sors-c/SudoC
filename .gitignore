@@ -53,6 +53,7 @@ dkms.conf
 
 # VS Code files
 /.vscode
+.vscode
 
 # executable files
 sudoc/tests/test

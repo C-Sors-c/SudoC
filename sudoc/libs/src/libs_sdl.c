@@ -1,8 +1,9 @@
-#include <err.h>
-#include <SDL.h>
-#include <SDL_image.h>
-#include <stdio.h>
+#include "../include/libs_sdl.h"
 
+/*
+Take a surface in parameter and return a char array in 3D
+with rows column and rgb for each dimension. RGB in 0-255 format.
+*/
 char ***surface_to_3d(SDL_Surface *surface)
 {
     Uint32 *pixels = surface->pixels;
