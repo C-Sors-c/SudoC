@@ -19,6 +19,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: install dependencies
+      run: |
+        apt-get install libsdl2-dev libsdl2-image-dev
     - name: make test
       run: |
         make test
