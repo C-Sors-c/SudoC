@@ -43,7 +43,7 @@ struct Matrix4d
     int cols;   // number of columns
     int depth;  // depth
     int depth2; // depth
-    Matrix ***data;
+    float ****data;
 };
 
 typedef struct Tuple Tuple;
