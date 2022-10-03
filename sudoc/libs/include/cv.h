@@ -1,9 +1,28 @@
 #pragma once
 
-typedef struct cv_image_rgb cv_image_rgb;
-typedef struct cv_image_gray cv_image_gray;
-typedef struct cv_image_rgb_normalized cv_image_rgb_normalized;
-typedef struct cv_image_gray_normalized cv_image_gray_normalized;
+typedef struct {
+    int width;
+    int height;
+    char*** data;
+} cv_image_rgb;
+
+typedef struct {
+    int width;
+    int height;
+    float*** data;
+} cv_image_rgb_normalized;
+
+typedef struct {
+    int width;
+    int height;
+    char** data;
+} cv_image_gray;
+
+typedef struct {
+    int width;
+    int height;
+    float** data;
+} cv_image_gray_normalized;
 
 void cv_init_image_rgb(cv_image_rgb* image, int width, int height);
 void cv_free_image_rgb(cv_image_rgb* image);

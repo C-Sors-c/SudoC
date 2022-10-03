@@ -1,29 +1,7 @@
+#include "../include/cv.h"
 #include <stdlib.h>
 #include <err.h>
-
-typedef struct {
-    int width;
-    int height;
-    char*** data;
-} cv_image_rgb;
-
-typedef struct {
-    int width;
-    int height;
-    float*** data;
-} cv_image_rgb_normalized;
-
-typedef struct {
-    int width;
-    int height;
-    char** data;
-} cv_image_gray;
-
-typedef struct {
-    int width;
-    int height;
-    float** data;
-} cv_image_gray_normalized;
+#include <math.h>
 
 /// @brief Allocate memory for a cv_image_rgb structure.
 /// @param image Pointer to the cv_image_rgb structure.
@@ -251,6 +229,46 @@ void cv_denormalize_image_gray(cv_image_gray_normalized* gray_normalized, cv_ima
     for (int i = 0; i < gray->height; i++) {
         for (int j = 0; j < gray->width; j++) {
             gray->data[i][j] = gray_normalized->data[i][j] * 255.0;
+        }
+    }
+}
+
+
+void cv_gaussian_blur(cv_image_gray* src, cv_image_gray* dst, int kernel_size, double sigma) {
+    if (src->width != dst->width || src->height != dst->height) {
+        errx(EXIT_FAILURE, "Error: cv_gaussian_blur: image sizes do not match (src: %dx%d, dst: %dx%d)", src->width, src->height, dst->width, dst->height);
+    }
+    
+    if (kernel_size % 2 == 0) {
+        errx(EXIT_FAILURE, "Error: cv_gaussian_blur: kernel_size must be odd");
+    }
+
+    for (int i = 0; i < src->height; i++) {
+        for (int j = 0; j < src->width; j++) {
+            double sum = 0.0;
+            double weight_sum = 0.0;
+            for (int k = -kernel_size / 2; k <= kernel_size / 2; k++) {
+                for (int l = -kernel_size / 2; l <= kernel_size / 2; l++) {
+                    int x = j + l;
+                    int y = i + k;
+                    if (x < 0) {
+                        x = 0;
+                    }
+                    if (x >= src->width) {
+                        x = src->width - 1;
+                    }
+                    if (y < 0) {
+                        y = 0;
+                    }
+                    if (y >= src->height) {
+                        y = src->height - 1;
+                    }
+                    double weight = exp(-(k * k + l * l) / (2 * sigma * sigma));
+                    sum += src->data[y][x] * weight;
+                    weight_sum += weight;
+                }
+            }
+            dst->data[i][j] = sum / weight_sum;
         }
     }
 }
