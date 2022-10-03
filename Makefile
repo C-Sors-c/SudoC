@@ -3,7 +3,7 @@
 CC = gcc
 CPPFLAGS =
 CFLAGS = -Wall -Wextra
-LDFLAGS =
+LDFLAGS = -lm
 LDLIBS =
 EXEC = sudoc
 EXEC_TEST = test
@@ -51,6 +51,10 @@ run: build clean-src
 
 test: build-test clean-test
 	@./$(BUILD_DIR)/$(EXEC_TEST)
+
+# test with valgrind
+tv: build-test clean-test
+	@valgrind --leak-check=full --show-leak-kinds=all ./$(BUILD_DIR)/$(EXEC_TEST)
 
 # CLEAN
 clean-sudoc:
