@@ -1,26 +1,49 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include "../sudoc/libs/include/utils.h"
 #include "include/test_add.h"
 #include "include/test_cv.h"
-#include "../sudoc/libs/include/utils.h"
 
-//lists of all tests to run
+#include "include/test_matrix.h"
+// #include "include/test_sdl.h"
+
+//lists of all dummy tests
 int (*test_dummy[])() = {
     test_add_positive,
     test_add_negative,
 };
 
+//lists of all cv tests
 int (*test_cv[])() = {
     test_cv_init_image_rgb,
 };
 
+// lists of all matrix tests
+int (*tests_matrix[])() = {
+    test_matrix_add,
+    test_matrix_subtract,
+    test_matrix_multiply,
+    test_matrix_multiply_scalar,
+    test_matrix_transpose,
+    test_matrix4_add,
+    test_matrix4_subtract,
+    test_matrix4_multiply,
+    test_matrix4_multiply_scalar,
+    test_matrix4_transpose,
+};
+
+int (*tests_sdl[])() = {
+    // test_sdl_surface_to_array_red,
+    // test_to_green,
+};
+
 int main()
-{   
+{
     // start timer
     clock_t begin = clock();
 
-    //run all tests
+    // run all tests
     int failed = 0;
     int test_count = 0;
 
@@ -40,12 +63,20 @@ int main()
         failed += test_cv[i]();
     printf("\n");
 
+    // matrix tests
+    printf(YELLOW "Running matrix tests...\n" RESET);
+    int test_matrix_count = sizeof(tests_matrix) / sizeof(tests_matrix[0]);
+    test_count += test_matrix_count;
+    for (int i = 0; i < test_matrix_count; i++)
+        failed += tests_matrix[i]();
+    printf("\n");
+
     // stop timer
     clock_t end = clock();
-    double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+    float time_spent = (float)(end - begin) / CLOCKS_PER_SEC;
 
     printf("Ran %d tests in %f seconds. %d failed.\n", test_count, time_spent, failed);
-    
+
     if (failed)
         return EXIT_FAILURE;
     else
