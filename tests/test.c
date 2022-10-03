@@ -34,8 +34,8 @@ int (*tests_matrix[])() = {
 };
 
 int (*tests_sdl[])() = {
-    // test_sdl_surface_to_array_red,
-    // test_to_green,
+    test_sdl_surface_to_array_red,
+    test_to_green,
 };
 
 int main()
