@@ -23,6 +23,9 @@ TEST_SRC :=	${wildcard ./sudoc/libs/src/*.c} \
 			${wildcard ./tests/src/*.c} \
 			./tests/test.c
 
+DATA_SRC := ${wildcard ./tests/data/}
+
+
 OBJ := ${SRC:.c=.o}
 TEST_OBJ := ${TEST_SRC:.c=.o}
 SOLVER_OBJ := ${SOLVER_SRC:.c=.o}
@@ -62,7 +65,10 @@ clean-test:
 clean-solver:
 	${RM} ${SOLVER_OBJ}
 
-clean: clean-sudoc clean-test clean-solver
+clean-data:
+	${RM} -rf ${DATA_SRC}
+
+clean: clean-sudoc clean-test clean-solver clean-data
 	${RM} -r $(BUILD_DIR)
 
 
