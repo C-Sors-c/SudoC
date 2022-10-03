@@ -1,25 +1,49 @@
 #include "../include/matrix.h"
 
+/*
+ How to create a new matrix?
+
+1. Use a unidimensional array to store the data you want to store in the
+   matrix
+2. Use the function matrix_new to create a new matrix
+   IMPORTANT: set rows and columns correctly considering the data you want to
+   store
+3. Example:
+   float data[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+   Matrix *m = matrix_init(3, 3, data);
+   matrix_print(m);
+   matrix_destroy(m);
+   !!!!DONT FORGET TO FREE THE MEMORY!!!
+*/
+
+
 struct Matrix
 {
     int rows;     // number of rows
     int cols;     // number of columns
     float **data; // a pointer to an array of pointers to rows
 };
+typedef struct Matrix Matrix;
 
-// How to create a new matrix?
-//
-// 1. Use a unidimensional array to store the data you want to store in the
-//    matrix
-// 2. Use the function matrix_new to create a new matrix
-//    IMPORTANT: set rows and columns correctly considering the data you want to
-//    store
-// 3. Example:
-//    float data[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
-//    Matrix *m = matrix_init(3, 3, data);
-//    matrix_print(m);
-//    matrix_destroy(m);
-//    !!!!DONT FORGET TO FREE THE MEMORY!!!
+struct Matrix3d
+{
+    int rows;      // number of rows
+    int cols;      // number of columns
+    int depth;     // depth
+    Matrix **data;
+};
+typedef struct Matrix3d Matrix3d;
+
+struct Matrix4d
+{
+    int rows;      // number of rows
+    int cols;      // number of columns
+    int depth;     // depth
+    int depth2;    // depth
+    Matrix ***data;
+};
+typedef struct Matrix4d Matrix4d;
+
 
 struct Tuple
 {
@@ -27,7 +51,6 @@ struct Tuple
     int y; // second item
 };
 
-typedef struct Matrix Matrix;
 typedef struct Tuple Tuple;
 
 // Function: matrix_init

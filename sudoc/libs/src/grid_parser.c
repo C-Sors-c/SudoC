@@ -1,7 +1,7 @@
 #include "../include/solver.h"
-#include "../include/parser.h"
+#include "../include/grid_parser.h"
 
-void parser(char* filename, int res[][9])
+void load_grid(char* filename, int res[][9])
 {
 
     FILE* ptr;
@@ -32,7 +32,7 @@ void parser(char* filename, int res[][9])
     fclose(ptr);
 }
 
-void parser_reverse(char* filename, int grid[][9])
+void save_grid(char* filename, int grid[][9])
 {
     char* extension = ".result";
     char name[strlen(filename)+strlen(extension)+1];
@@ -52,7 +52,4 @@ void parser_reverse(char* filename, int grid[][9])
         }
         fprintf(out, "\n");
     }
-
-
 }
-
