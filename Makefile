@@ -2,7 +2,7 @@
 
 CC := gcc
 CPPFLAGS :=
-CFLAGS := -Wall -Wextra
+CFLAGS := -Wall -Wextra -Wno-unknown-pragmas
 LDFLAGS :=
 LDLIBS :=
 EXEC := sudoc

@@ -13,6 +13,12 @@ int (*tests[])() = {
     test_matrix_subtract,
     test_matrix_multiply,
     test_matrix_multiply_scalar,
+    test_matrix_transpose,
+    test_matrix4_add,
+    test_matrix4_subtract,
+    test_matrix4_multiply,
+    test_matrix4_multiply_scalar,
+    test_matrix4_transpose,
 };
 
 int main()
