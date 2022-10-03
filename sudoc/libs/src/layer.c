@@ -1,5 +1,5 @@
 
-#include "layer.h"
+#include "../include/layer.h"
 
 struct Layer {
     int input_size;

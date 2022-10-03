@@ -16,6 +16,11 @@
    !!!!DONT FORGET TO FREE THE MEMORY!!!
 */
 
+struct Tuple
+{
+    int x; // first item
+    int y; // second item
+};
 
 struct Matrix
 {
@@ -23,35 +28,28 @@ struct Matrix
     int cols;     // number of columns
     float **data; // a pointer to an array of pointers to rows
 };
-typedef struct Matrix Matrix;
 
 struct Matrix3d
 {
-    int rows;      // number of rows
-    int cols;      // number of columns
-    int depth;     // depth
-    Matrix **data;
+    int rows;  // number of rows
+    int cols;  // number of columns
+    int depth; // depth
+    float ***data;
 };
-typedef struct Matrix3d Matrix3d;
 
 struct Matrix4d
 {
-    int rows;      // number of rows
-    int cols;      // number of columns
-    int depth;     // depth
-    int depth2;    // depth
+    int rows;   // number of rows
+    int cols;   // number of columns
+    int depth;  // depth
+    int depth2; // depth
     Matrix ***data;
-};
-typedef struct Matrix4d Matrix4d;
-
-
-struct Tuple
-{
-    int x; // first item
-    int y; // second item
 };
 
 typedef struct Tuple Tuple;
+typedef struct Matrix Matrix;
+typedef struct Matrix3d Matrix3d;
+typedef struct Matrix4d Matrix4d;
 
 // Function: matrix_init
 // -----------------------
@@ -280,7 +278,7 @@ float matrix_get_element(Matrix *m, int row, int col)
     return m->data[row][col];
 }
 
-// Function: matrix_set_element
+// Function: matrix_set
 // --------------------
 // Sets the value at the specified row and column.
 //
@@ -291,7 +289,7 @@ float matrix_get_element(Matrix *m, int row, int col)
 //   value - value to set
 //
 
-void matrix_set_element(Matrix *m, int row, int col, float value)
+void matrix_set(Matrix *m, int row, int col, float value)
 {
     if (row < 0 || row >= m->rows || col < 0 || col >= m->cols)
     {
