@@ -1,5 +1,5 @@
 #include "libs/include/solver.h"
-#include "libs/include/parser.h"
+#include "libs/include/grid_parser.h"
 
 
 /* Driver Program to test above functions */
@@ -10,9 +10,9 @@ int main(int argc, char** argv )
 
     // 0 means unassigned cells
     int grid[N][N];
-    parser(argv[1], grid);
+    load_grid(argv[1], grid);
     SolveSudoku(grid);
-    parser_reverse(argv[1], grid);
+    save_grid(argv[1], grid);
     return 0;
 }
 

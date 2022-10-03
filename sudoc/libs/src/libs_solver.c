@@ -1,5 +1,5 @@
 #include "../include/solver.h"
-#include "../include/parser.h"
+#include "../include/grid_parser.h"
 
 bool SolveSudoku(int grid[N][N])
 {

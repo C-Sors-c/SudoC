@@ -2,7 +2,7 @@
 
 CC := gcc
 CPPFLAGS :=
-CFLAGS := -Wall -Wextra -O3 `pkg-config --cflags sdl2 SDL2_image`
+CFLAGS := -Wall -Wextra -O3 `pkg-config --cflags sdl2 SDL2_image` -Wno-unknown-pragmas
 LDFLAGS :=
 LDLIBS := `pkg-config --libs sdl2 SDL2_image`
 EXEC := sudoc
