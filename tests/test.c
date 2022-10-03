@@ -6,7 +6,7 @@
 #include "include/test_cv.h"
 
 #include "include/test_matrix.h"
-// #include "include/test_sdl.h"
+#include "include/test_sdl.h"
 
 //lists of all dummy tests
 int (*test_dummy[])() = {
