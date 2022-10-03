@@ -2,9 +2,9 @@
 
 CC := gcc
 CPPFLAGS :=
-CFLAGS := -Wall -Wextra
+CFLAGS := -Wall -Wextra -O3 `pkg-config --cflags sdl2 SDL2_image`
 LDFLAGS :=
-LDLIBS :=
+LDLIBS := `pkg-config --libs sdl2 SDL2_image`
 EXEC := sudoc
 EXEC_TEST := test
 EXEC_SOLVER := solver
