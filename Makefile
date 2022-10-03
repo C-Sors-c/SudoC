@@ -2,9 +2,9 @@
 
 CC := gcc
 CPPFLAGS :=
-CFLAGS := -Wall -Wextra -Wno-unknown-pragmas
+CFLAGS := -Wall -Wextra -O3 `pkg-config --cflags sdl2 SDL2_image` -Wno-unknown-pragmas
 LDFLAGS :=
-LDLIBS :=
+LDLIBS := `pkg-config --libs sdl2 SDL2_image`
 EXEC := sudoc
 EXEC_TEST := test
 EXEC_SOLVER := solver
@@ -22,6 +22,9 @@ TEST_SRC :=	${wildcard ./sudoc/libs/src/*.c} \
 			${wildcard ./sudoc/core/src/*.c} \
 			${wildcard ./tests/src/*.c} \
 			./tests/test.c
+
+DATA_SRC := ${wildcard ./tests/data/}
+
 
 OBJ := ${SRC:.c=.o}
 TEST_OBJ := ${TEST_SRC:.c=.o}
@@ -62,7 +65,10 @@ clean-test:
 clean-solver:
 	${RM} ${SOLVER_OBJ}
 
-clean: clean-sudoc clean-test clean-solver
+clean-data:
+	${RM} -rf ${DATA_SRC}
+
+clean: clean-sudoc clean-test clean-solver clean-data
 	${RM} -r $(BUILD_DIR)
 
 

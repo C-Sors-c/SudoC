@@ -4,6 +4,7 @@
 
 #include "include/test_add.h"
 #include "include/test_matrix.h"
+#include "include/test_sdl.h"
 
 // lists of all tests to run
 int (*tests[])() = {
@@ -19,6 +20,8 @@ int (*tests[])() = {
     test_matrix4_multiply,
     test_matrix4_multiply_scalar,
     test_matrix4_transpose,
+    test_sdl_surface_to_array_red,
+    test_to_green,
 };
 
 int main()
