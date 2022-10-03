@@ -8,7 +8,9 @@ LDLIBS := `pkg-config --libs sdl2 SDL2_image`
 EXEC := sudoc
 EXEC_TEST := test
 EXEC_SOLVER := solver
+
 BUILD_DIR := build
+TEST_DATA_DIR := ./tests/data
 
 SRC :=	${wildcard ./sudoc/libs/src/*.c} \
 		${wildcard ./sudoc/core/src/*.c} \
@@ -23,7 +25,6 @@ TEST_SRC :=	${wildcard ./sudoc/libs/src/*.c} \
 			${wildcard ./tests/src/*.c} \
 			./tests/test.c
 
-DATA_SRC := ${wildcard ./tests/data/}
 
 
 OBJ := ${SRC:.c=.o}
@@ -66,7 +67,7 @@ clean-solver:
 	${RM} ${SOLVER_OBJ}
 
 clean-data:
-	${RM} -rf ${DATA_SRC}
+	${RM} -rf ${TEST_DATA_DIR}
 
 clean: clean-sudoc clean-test clean-solver clean-data
 	${RM} -r $(BUILD_DIR)
