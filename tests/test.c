@@ -71,6 +71,14 @@ int main()
         failed += tests_matrix[i]();
     printf("\n");
 
+    // sdl tests
+    printf(YELLOW "Running sdl tests...\n" RESET);
+    int test_sdl_count = sizeof(tests_sdl) / sizeof(tests_sdl[0]);
+    test_count += test_sdl_count;
+    for (int i = 0; i < test_sdl_count; i++)
+        failed += tests_sdl[i]();
+    printf("\n");
+
     // stop timer
     clock_t end = clock();
     float time_spent = (float)(end - begin) / CLOCKS_PER_SEC;
