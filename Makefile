@@ -3,7 +3,7 @@
 CC := gcc
 CPPFLAGS :=
 CFLAGS := -Wall -Wextra -O3 `pkg-config --cflags sdl2 SDL2_image` -Wno-unknown-pragmas
-LDFLAGS :=
+LDFLAGS := -lm
 LDLIBS := `pkg-config --libs sdl2 SDL2_image`
 EXEC := sudoc
 EXEC_TEST := test
@@ -56,6 +56,10 @@ run: build clean-sudoc
 test: build-test clean-test
 	@./$(BUILD_DIR)/$(EXEC_TEST)
 
+# test with valgrind
+tv: build-test clean-test
+	@valgrind --leak-check=full --show-leak-kinds=all ./$(BUILD_DIR)/$(EXEC_TEST)
+
 # CLEAN
 clean-sudoc:
 	${RM} ${OBJ}
@@ -71,5 +75,3 @@ clean-data:
 
 clean: clean-sudoc clean-test clean-solver clean-data
 	${RM} -r $(BUILD_DIR)
-
-
