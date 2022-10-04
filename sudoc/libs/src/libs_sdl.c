@@ -1,6 +1,6 @@
 #include "../include/libs_sdl.h"
 
-/*load an image into a surface with SDL and return it without a window*/
+// load an image into a surface with SDL and return it without a window
 SDL_Surface* load_image(char *path)
 {
     SDL_Surface* tempImage = NULL;
@@ -15,15 +15,15 @@ SDL_Surface* load_image(char *path)
     return Image;
 }
 
-/*save an image with png format from a surface with SDL*/
+// save an image with png format from a surface with SDL
 void save_image(SDL_Surface *surface, char *path)
 {
     IMG_SavePNG(surface, path);
 }
 
 /*
-Take a surface in parameter and return a char array in 3D
-with rows column and rgb for each dimension. RGB in 0-255 format.
+    Take a surface in parameter and return a char array in 3D
+    with rows column and rgb for each dimension. RGB in 0-255 format.
 */
 unsigned char ***sdl_surface_to_array(SDL_Surface *surface)
 {
@@ -48,9 +48,7 @@ unsigned char ***sdl_surface_to_array(SDL_Surface *surface)
     return array;
 }
 
-
-/*transform a 3d unsigned char array to a surface */
-
+// transform a 3d unsigned char array to a surface
 SDL_Surface* array_to_sdl_surface(unsigned char ***array, int w, int h)
 {
     SDL_Surface *surface = SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 0);
