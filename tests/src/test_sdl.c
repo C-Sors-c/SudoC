@@ -39,7 +39,16 @@ void create_and_save_red_image()
     }
     SDL_Surface *surface = array_to_sdl_surface(array, 2, 2);
     save_image(surface, "tests/data/testRed.png");
+
+    // free memory
     SDL_FreeSurface(surface);
+    for (int i = 0; i < 2; i++)
+    {
+        for (int j = 0; j < 2; j++)
+            free(array[i][j]);
+        free(array[i]);
+    }
+    free(array);
 }
 
 
@@ -61,12 +70,21 @@ int test_sdl_surface_to_array_red()
             for (int k = 0; k < 3; k++)
             {
                 if (array[i][j][k] != expected[i][j][k])
-                {
                     diff = false;
-                }
             }
         }
     }
+
+    // free memory
+    SDL_FreeSurface(surface);
+    for (int i = 0; i < 2; i++)
+    {
+        for (int j = 0; j < 2; j++)
+            free(array[i][j]);
+        free(array[i]);
+    }
+    free(array);
+
     return print_test(diff, true, "test_sdl_surface_to_array_red");
 }
 
@@ -100,5 +118,18 @@ int test_to_green()
             }
         }
     }
+
+    // free memory
+    SDL_FreeSurface(surface);
+    SDL_FreeSurface(surfaceGreen);
+    SDL_FreeSurface(surfaceGreen2);
+    for (int i = 0; i < 2; i++)
+    {
+        for (int j = 0; j < 2; j++)
+            free(arrayGreen[i][j]);
+        free(arrayGreen[i]);
+    }
+    free(arrayGreen);
+
     return print_test(diff, true, "test_to_green");
 }
