@@ -8,15 +8,16 @@
 #include "include/test_matrix.h"
 #include "include/test_sdl.h"
 
-//lists of all dummy tests
+// lists of all dummy tests
 int (*test_dummy[])() = {
     test_add_positive,
     test_add_negative,
 };
 
-//lists of all cv tests
+// lists of all cv tests
 int (*test_cv[])() = {
-    test_cv_init_image_rgb,
+    test_cv_rgb_to_gray,
+    test_cv_gaussian_blur,
 };
 
 // lists of all matrix tests

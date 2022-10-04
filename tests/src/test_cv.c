@@ -1,107 +1,65 @@
 #include "../../sudoc/libs/include/utils.h"
 #include "../../sudoc/libs/include/cv.h"
+#include "../../sudoc/libs/include/libs_sdl.h"
 #include "../include/test_cv.h"
-
-int test_cv_init_image_rgb()
-{
-    cv_image_rgb image;
-    cv_init_image_rgb(&image, 10, 10);
-    int res = print_test(image.width, 10, "test_cv_init_image_rgb");
-
-    cv_free_image_rgb(&image);
-    return res;
-}
-
-int test_cv_init_image_gray()
-{
-    cv_image_gray image;
-    cv_init_image_gray(&image, 10, 10);
-    int res = print_test(image.width, 10, "test_cv_init_image_gray");
-
-    cv_free_image_gray(&image);
-    return res;
-}
-
-int test_cv_init_image_rgb_normalized()
-{
-    cv_image_rgb_normalized image;
-    cv_init_image_rgb_normalized(&image, 10, 10);
-    int res = print_test(image.width, 10, "test_cv_init_image_rgb_normalized");
-
-    cv_free_image_rgb_normalized(&image);
-    return res;
-}
-
-int test_cv_init_image_gray_normalized()
-{
-    cv_image_gray_normalized image;
-    cv_init_image_gray_normalized(&image, 10, 10);
-    int res = print_test(image.width, 10, "test_cv_init_image_gray_normalized");
-
-    cv_free_image_gray_normalized(&image);
-    return res;
-}
 
 int test_cv_rgb_to_gray()
 {
-    cv_image_rgb rgb;
-    cv_init_image_rgb(&rgb, 10, 10);
-    cv_image_gray gray;
-    cv_init_image_gray(&gray, 10, 10);
+    // load image
+    SDL_Surface *surface = load_image("tests/samples/lena.png");
+    unsigned char ***image_array = sdl_surface_to_array(surface);
 
-    cv_rgb_to_gray(&rgb, &gray);
+    // init structures
+    cv_image_rgb *img = cv_copy_image_rgb(image_array, surface->w, surface->h);
 
-    int res = print_test(gray.width, 10, "test_cv_rgb_to_gray");
+    // convert to gray
+    cv_grayscale(img);
 
-    cv_free_image_rgb(&rgb);
-    cv_free_image_gray(&gray);
-    return res;
+    // save image
+    SDL_Surface *surface2 = array_to_sdl_surface(img->data, img->width, img->height);
+    save_image(surface2, "tests/samples/lena_gray.png");
+
+    // free memory
+    SDL_FreeSurface(surface);
+    SDL_FreeSurface(surface2);
+    cv_free_image_rgb(img);
+    free(image_array);
+
+    return print_test(1, 1, "test_cv_rgb_to_gray");
 }
 
-int test_cv_gray_to_rgb()
+int test_cv_gaussian_blur()
 {
-    cv_image_gray gray;
-    cv_init_image_gray(&gray, 10, 10);
-    cv_image_rgb rgb;
-    cv_init_image_rgb(&rgb, 10, 10);
+    // load image
+    SDL_Surface *surface = load_image("tests/samples/lena.png");
+    unsigned char ***image_array = sdl_surface_to_array(surface);
 
-    cv_gray_to_rgb(&gray, &rgb);
+    // init structures
+    cv_image_rgb *img = cv_copy_image_rgb(image_array, surface->w, surface->h);
+    cv_image_gray *img_gray = cv_init_image_gray(img->width, img->height);
+    cv_image_gray *img_blur = cv_init_image_gray(img->width, img->height);
 
-    int res = print_test(rgb.width, 10, "test_cv_gray_to_rgb");
+    // convert to gray
+    cv_rgb_to_gray(img, img_gray);
 
-    cv_free_image_gray(&gray);
-    cv_free_image_rgb(&rgb);
-    return res;
-}
+    // blur
+    int k = 9;
+    double sigma = (k - 1) / 6.0;
 
-int test_cv_normalize_image_rgb()
-{
-    cv_image_rgb rgb;
-    cv_init_image_rgb(&rgb, 10, 10);
-    cv_image_rgb_normalized rgb_normalized;
-    cv_init_image_rgb_normalized(&rgb_normalized, 10, 10);
+    cv_gaussian_blur(img_gray, img_blur, k, sigma);
 
-    cv_normalize_image_rgb(&rgb, &rgb_normalized);
+    // convert to rgb
+    cv_gray_to_rgb(img_blur, img);
 
-    int res = print_test(rgb_normalized.width, 10, "test_cv_normalize_image_rgb");
+    // save image
+    SDL_Surface *surface2 = array_to_sdl_surface(img->data, img->width, img->height);
+    save_image(surface2, "tests/samples/lena_gaussian_blur.png");
 
-    cv_free_image_rgb(&rgb);
-    cv_free_image_rgb_normalized(&rgb_normalized);
-    return res;
-}
+    // free memory
+    SDL_FreeSurface(surface);
+    SDL_FreeSurface(surface2);
+    cv_free_image_rgb(img);
+    free(image_array);
 
-int test_cv_normalize_image_gray()
-{
-    cv_image_gray gray;
-    cv_init_image_gray(&gray, 10, 10);
-    cv_image_gray_normalized gray_normalized;
-    cv_init_image_gray_normalized(&gray_normalized, 10, 10);
-
-    cv_normalize_image_gray(&gray, &gray_normalized);
-
-    int res = print_test(gray_normalized.width, 10, "test_cv_normalize_image_gray");
-
-    cv_free_image_gray(&gray);
-    cv_free_image_gray_normalized(&gray_normalized);
-    return res;
+    return print_test(1, 1, "test_cv_gaussian_blur");
 }
