@@ -66,4 +66,3 @@ SDL_Surface* array_to_sdl_surface(unsigned char ***array, int w, int h)
     SDL_UnlockSurface(surface);
     return surface;
 }
-
