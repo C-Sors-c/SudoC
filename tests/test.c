@@ -19,7 +19,6 @@ int (*tests[])() = {
     test_matrix4_subtract,
     test_matrix4_multiply,
     test_matrix4_multiply_scalar,
-    test_matrix4_transpose,
     test_sdl_surface_to_array_red,
     test_to_green,
 };

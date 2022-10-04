@@ -1,14 +1,14 @@
 #include "../include/libs_sdl.h"
 
 /*load an image into a surface with SDL and return it without a window*/
-SDL_Surface* load_image(char *path)
+SDL_Surface *load_image(char *path)
 {
-    SDL_Surface* tempImage = NULL;
-    SDL_Surface* Image = NULL;
+    SDL_Surface *tempImage = NULL;
+    SDL_Surface *Image = NULL;
     tempImage = IMG_Load(path);
     if (tempImage != NULL)
     {
-        //load image with the SDL_PIXELFORMAT_RGBA8888 format and no -Wint-conversion error
+        // load image with the SDL_PIXELFORMAT_RGBA8888 format and no -Wint-conversion error
         Image = SDL_ConvertSurfaceFormat(tempImage, SDL_PIXELFORMAT_RGB888, 0);
         SDL_FreeSurface(tempImage);
     }
@@ -30,9 +30,9 @@ unsigned char ***sdl_surface_to_array(SDL_Surface *surface)
     SDL_LockSurface(surface);
     int w = surface->w;
     int h = surface->h;
-    //save the format of the surface
+    // save the format of the surface
     SDL_PixelFormat *format = surface->format;
-    Uint32* pixels = surface->pixels;
+    Uint32 *pixels = surface->pixels;
     unsigned char ***array = malloc(h * sizeof(unsigned char **));
     for (int i = 0; i < h; i++)
     {
@@ -45,18 +45,18 @@ unsigned char ***sdl_surface_to_array(SDL_Surface *surface)
         }
     }
     SDL_UnlockSurface(surface);
+
     return array;
 }
 
-
 /*transform a 3d unsigned char array to a surface */
 
-SDL_Surface* array_to_sdl_surface(unsigned char ***array, int w, int h)
+SDL_Surface *array_to_sdl_surface(unsigned char ***array, int w, int h)
 {
     SDL_Surface *surface = SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 0);
     SDL_LockSurface(surface);
     SDL_PixelFormat *format = surface->format;
-    Uint32* pixels = surface->pixels;
+    Uint32 *pixels = surface->pixels;
     for (int i = 0; i < h; i++)
     {
         for (int j = 0; j < w; j++)
@@ -68,4 +68,3 @@ SDL_Surface* array_to_sdl_surface(unsigned char ***array, int w, int h)
     SDL_UnlockSurface(surface);
     return surface;
 }
-
