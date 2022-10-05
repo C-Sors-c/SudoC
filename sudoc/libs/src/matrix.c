@@ -20,14 +20,7 @@ How to create a new matrix?
    !!!!DONT FORGET TO FREE THE MEMORY!!!
 */
 
-struct Matrix
-{
-    int dim1; // number of rows
-    int dim2; // number of columns
-    float **data;
-};
 
-typedef struct Matrix Matrix;
 
 // Function: matrix_init
 // -----------------------
@@ -333,15 +326,6 @@ void matrix_print(Matrix *m)
 
 #pragma region matrix4
 
-struct Matrix4
-{
-    int dim1;
-    int dim2;
-    int dim3;
-    int dim4;
-    float ****data;
-};
-typedef struct Matrix4 Matrix4;
 
 // Function: matrix4_init
 // ----------------------
