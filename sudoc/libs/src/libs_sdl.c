@@ -1,4 +1,5 @@
 #include "../include/libs_sdl.h"
+#include "../include/cv.h"
 
 // load an image into a surface with SDL and return it without a window
 SDL_Surface* load_image(char *path)
