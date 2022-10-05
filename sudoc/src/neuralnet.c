@@ -1,5 +1,5 @@
 #include "../include/neuralnet.h"
 
-
-struct NeuralNetwork {
+struct NeuralNetwork
+{
 };

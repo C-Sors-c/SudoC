@@ -49,4 +49,3 @@ float matrix4_get(Matrix4 *m, int row, int col, int dim3, int dim4);
 void matrix4_set(Matrix4 *m, int row, int col, int dim3, int dim4, float value);
 void matrix4_destroy(Matrix4 *m);
 void matrix4_print(Matrix4 *m);
-

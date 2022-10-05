@@ -20,8 +20,6 @@ How to create a new matrix?
    !!!!DONT FORGET TO FREE THE MEMORY!!!
 */
 
-
-
 // Function: matrix_init
 // -----------------------
 // Allocates memory for a matrix of size dim1 x dim2
@@ -325,7 +323,6 @@ void matrix_print(Matrix *m)
 #pragma endregion matrix
 
 #pragma region matrix4
-
 
 // Function: matrix4_init
 // ----------------------

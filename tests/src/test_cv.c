@@ -1,6 +1,5 @@
 #include "../../sudoc/include/utils.h"
 #include "../../sudoc/include/cv.h"
-#include "../../sudoc/include/libs_sdl.h"
 #include "../include/test_cv.h"
 
 int test_cv_rgb_to_gray()
@@ -9,7 +8,7 @@ int test_cv_rgb_to_gray()
     Image *gray = cv_grayscale(img, NULL);
 
     cv_save_image(gray, "tests/out/lena_gray.png");
-    
+
     cv_free_image(img);
     cv_free_image(gray);
     return print_test(1, 1, "test_cv_rgb_to_gray");

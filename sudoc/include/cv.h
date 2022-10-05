@@ -7,7 +7,8 @@
 #include "../include/matrix.h"
 #include "../include/utils.h"
 
-typedef struct {
+typedef struct
+{
     int width;
     int height;
     int channels;
