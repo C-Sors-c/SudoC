@@ -3,8 +3,8 @@
 
 #include <sys/stat.h>
 #include <stdbool.h>
-#include "../../sudoc/libs/include/utils.h"
-#include "../../sudoc/libs/include/libs_sdl.h"
+#include "../../sudoc/include/utils.h"
+#include "../../sudoc/include/libs_sdl.h"
 
 
 SDL_Surface* array_to_sdl_surfaceGreen(int w, int h);

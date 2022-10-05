@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../sudoc/libs/include/utils.h"
-#include "../../sudoc/libs/include/matrix.h"
+#include "../../sudoc/include/utils.h"
+#include "../../sudoc/include/matrix.h"
 
 int test_matrix_add();
 int test_matrix_subtract();

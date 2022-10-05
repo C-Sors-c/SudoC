@@ -1,5 +1,5 @@
-#include "libs/include/solver.h"
-#include "libs/include/grid_parser.h"
+#include "include/solver.h"
+#include "include/grid_parser.h"
 
 
 /* Driver Program to test above functions */

@@ -115,9 +115,6 @@ Image *cv_image_from_surface(SDL_Surface *surface) {
     Uint32 *pixels = surface->pixels;
     Image *image = cv_image_init(w, h, 3);
 
-    if (image != NULL)
-        printf("image is not null\n");
-
     for (int i = 0; i < h; i++) {
         for (int j = 0; j < w; j++) {
             Uint32 pixel = pixels[i * w + j];

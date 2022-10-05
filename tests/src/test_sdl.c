@@ -23,7 +23,7 @@ SDL_Surface* array_to_sdl_surfaceGreen(int w, int h)
 
 void create_and_save_red_image()
 {
-    mkdir("tests/data", 0777);
+    mkdir("tests/out", 0777);
     //create a 2x2 red image using array_to_sdl_surface from libs_sdl
     unsigned char ***array = malloc(2 * sizeof(unsigned char **));
     for (int i = 0; i < 2; i++)
@@ -38,7 +38,7 @@ void create_and_save_red_image()
         }
     }
     SDL_Surface *surface = array_to_sdl_surface(array, 2, 2);
-    save_image(surface, "tests/data/testRed.png");
+    save_image(surface, "tests/out/testRed.png");
 
     // free memory
     SDL_FreeSurface(surface);
@@ -55,7 +55,7 @@ void create_and_save_red_image()
 int test_sdl_surface_to_array_red()
 {
     create_and_save_red_image();
-    SDL_Surface *surface = load_image("tests/data/testRed.png");
+    SDL_Surface *surface = load_image("tests/out/testRed.png");
     unsigned char ***array = sdl_surface_to_array(surface);
 
     unsigned char expected[2][2][3] = {
@@ -93,10 +93,10 @@ int test_to_green()
 {
     //load the red image then transform it to green and save it then reload it and compare it to the expected image
 
-    SDL_Surface *surface = load_image("tests/data/testRed.png");
+    SDL_Surface *surface = load_image("tests/out/testRed.png");
     SDL_Surface *surfaceGreen = array_to_sdl_surfaceGreen(surface->w, surface->h);
-    save_image(surfaceGreen, "tests/data/testGreen.png");
-    SDL_Surface *surfaceGreen2 = load_image("tests/data/testGreen.png");
+    save_image(surfaceGreen, "tests/out/testGreen.png");
+    SDL_Surface *surfaceGreen2 = load_image("tests/out/testGreen.png");
     unsigned char ***arrayGreen = sdl_surface_to_array(surfaceGreen2);
     
     

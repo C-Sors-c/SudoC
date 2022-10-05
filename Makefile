@@ -10,22 +10,15 @@ EXEC_TEST := test
 EXEC_SOLVER := solver
 
 BUILD_DIR := build
-TEST_DATA_DIR := ./tests/data
+TEST_DATA_DIR := ./tests/out
 
-SRC :=	${wildcard ./sudoc/libs/src/*.c} \
-		${wildcard ./sudoc/core/src/*.c} \
-		./sudoc/main.c
+SRC :=	${wildcard ./sudoc/src/*.c} ./sudoc/main.c
 
-SOLVER_SRC :=	${wildcard ./sudoc/libs/src/*.c} \
-				${wildcard ./sudoc/core/src/*.c} \
-				./sudoc/solver.c
+SOLVER_SRC :=	${wildcard ./sudoc/src/*.c} ./sudoc/solver.c
 
-TEST_SRC :=	${wildcard ./sudoc/libs/src/*.c} \
-			${wildcard ./sudoc/core/src/*.c} \
+TEST_SRC :=	${wildcard ./sudoc/src/*.c} \
 			${wildcard ./tests/src/*.c} \
 			./tests/test.c
-
-
 
 OBJ := ${SRC:.c=.o}
 TEST_OBJ := ${TEST_SRC:.c=.o}
@@ -48,16 +41,15 @@ build-solver: $(SOLVER_OBJ)
 	@mkdir -p $(BUILD_DIR)
 	@$(CC) -o $(BUILD_DIR)/$(EXEC_SOLVER) $^ $(LDFLAGS) $(LDLIBS)
 
-
 # RUN
 run: build clean-sudoc
 	@./$(BUILD_DIR)/$(EXEC)
 
-test: build-test clean-test
+test: build-test
 	@./$(BUILD_DIR)/$(EXEC_TEST)
 
 # test with valgrind
-tv: build-test clean-test
+tv: build-test
 	@valgrind --leak-check=full --show-leak-kinds=all ./$(BUILD_DIR)/$(EXEC_TEST)
 
 # CLEAN
