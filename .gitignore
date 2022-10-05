@@ -60,3 +60,4 @@ build
 
 # tests data folder
 tests/data
+tests/out

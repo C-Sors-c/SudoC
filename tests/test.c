@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include "../sudoc/libs/include/utils.h"
+#include "../sudoc/include/utils.h"
 #include "include/test_add.h"
 #include "include/test_cv.h"
 
