@@ -27,7 +27,7 @@ int test_matrix_add()
     Matrix *m1 = matrix_init(2, 2, a);
     Matrix *m2 = matrix_init(2, 2, b);
 
-    Matrix *m3 = matrix_add(m1, m2);
+    Matrix *m3 = matrix_add(m1, m2, NULL);
     Matrix *expected = matrix_init(2, 2, c);
 
     bool diff = matrix_element_wise_equal(m3, expected);
@@ -53,7 +53,7 @@ int test_matrix_subtract()
     Matrix *m1 = matrix_init(2, 2, a);
     Matrix *m2 = matrix_init(2, 2, b);
 
-    Matrix *m3 = matrix_subtract(m1, m2);
+    Matrix *m3 = matrix_subtract(m1, m2, NULL);
     Matrix *expected = matrix_init(2, 2, c);
 
     bool diff = matrix_element_wise_equal(m3, expected);
@@ -79,7 +79,7 @@ int test_matrix_multiply()
     Matrix *m1 = matrix_init(2, 2, a);
     Matrix *m2 = matrix_init(2, 2, b);
 
-    Matrix *m3 = matrix_multiply(m1, m2);
+    Matrix *m3 = matrix_multiply(m1, m2, NULL);
     Matrix *expected = matrix_init(2, 2, c);
 
     bool diff = matrix_element_wise_equal(m3, expected);
@@ -151,7 +151,7 @@ int test_matrix4_add()
     Matrix4 *m1 = matrix4_init(1, 1, 2, 2, a);
     Matrix4 *m2 = matrix4_init(1, 1, 2, 2, b);
 
-    Matrix4 *m3 = matrix4_add(m1, m2);
+    Matrix4 *m3 = matrix4_add(m1, m2, NULL);
     Matrix4 *expected = matrix4_init(1, 1, 2, 2, c);
 
     bool diff = matrix4_element_wise_equal(m3, expected);
@@ -177,7 +177,7 @@ int test_matrix4_subtract()
     Matrix4 *m1 = matrix4_init(1, 1, 2, 2, a);
     Matrix4 *m2 = matrix4_init(1, 1, 2, 2, b);
 
-    Matrix4 *m3 = matrix4_subtract(m1, m2);
+    Matrix4 *m3 = matrix4_subtract(m1, m2, NULL);
     Matrix4 *expected = matrix4_init(1, 1, 2, 2, c);
 
     bool diff = matrix4_element_wise_equal(m3, expected);
@@ -188,31 +188,6 @@ int test_matrix4_subtract()
     matrix4_destroy(expected);
 
     return print_test(diff, true, "test_matrix4_subtract");
-}
-
-int test_matrix4_multiply()
-{
-    float c[] = {
-        8.0,
-        5.0,
-        20.0,
-        13.0,
-    };
-
-    Matrix4 *m1 = matrix4_init(1, 1, 2, 2, a);
-    Matrix4 *m2 = matrix4_init(1, 1, 2, 2, b);
-
-    Matrix4 *m3 = matrix4_multiply(m1, m2);
-    Matrix4 *expected = matrix4_init(1, 1, 2, 2, c);
-
-    bool diff = matrix4_element_wise_equal(m3, expected);
-
-    matrix4_destroy(m1);
-    matrix4_destroy(m2);
-    matrix4_destroy(m3);
-    matrix4_destroy(expected);
-
-    return print_test(diff, true, "test_matrix4_multiply");
 }
 
 int test_matrix4_multiply_scalar()
@@ -259,3 +234,5 @@ int test_matrix4_transpose()
 
     return print_test(diff, true, "test_matrix4_transpose");
 }
+
+// TODO: more tests on the new matrix functions
