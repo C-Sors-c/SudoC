@@ -6,6 +6,13 @@
 #include <math.h>
 
 // 2D matrix utils
+struct Matrix
+{
+    int dim1; // number of rows
+    int dim2; // number of columns
+    float **data;
+};
+
 typedef struct Matrix Matrix;
 Matrix *matrix_init(int dim1, int dim2, float *datap);
 
@@ -21,6 +28,14 @@ void matrix_destroy(Matrix *m);
 void matrix_print(Matrix *m);
 
 // 4D matrix utils
+struct Matrix4
+{
+    int dim1;
+    int dim2;
+    int dim3;
+    int dim4;
+    float ****data;
+};
 typedef struct Matrix4 Matrix4;
 Matrix4 *matrix4_init(int dim1, int dim2, int dim3, int dim4, float *datap);
 
