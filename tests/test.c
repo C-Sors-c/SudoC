@@ -27,10 +27,15 @@ int (*tests_matrix[])() = {
     test_matrix_multiply,
     test_matrix_multiply_scalar,
     test_matrix_transpose,
+    test_matrix_map_function,
     test_matrix4_add,
     test_matrix4_subtract,
     test_matrix4_multiply_scalar,
     test_matrix4_transpose,
+    test_matrix4_map_function,
+    test_matrix4_convolve,
+    test_matrix4_add_bias,
+    test_matrix4_sum_bias,
 };
 
 int (*tests_sdl[])() = {

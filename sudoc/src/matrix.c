@@ -528,38 +528,73 @@ Matrix4 *matrix4_add(Matrix4 *m1, Matrix4 *m2, Matrix4 *dst)
     return dst;
 }
 
-// Function: matrix4_matrix_add
+// Function: matrix4_add_bias
 // ---------------------------------
 // Adds a 2d matrix to a 4-dimensional matrix element-wise.
 //
 // Parameters:
 //   m1 - pointer to the 4-dimensional matrix
 //   m2 - pointer to the 2-dimensional matrix
+//   dst - pointer to the destination matrix
 //
 // Returns:
 //   pointer to the resulting matrix
 //
 
-Matrix4 *matrix4_matrix_add(Matrix4 *m1, Matrix *m2, Matrix4 *dst)
+Matrix4 *matrix4_add_bias(Matrix4 *m1, Matrix *bias, Matrix4 *dst)
 {
     if (dst == NULL)
     {
         dst = matrix4_init(m1->dim1, m1->dim2, m1->dim3, m1->dim4, NULL);
     }
 
-    if (m1->dim1 != dst->dim1 || m1->dim2 != dst->dim2 || m1->dim3 != dst->dim3 || m1->dim4 != dst->dim4)
+    if (m1->dim1 != dst->dim1 || m1->dim2 != dst->dim2 || m1->dim3 != dst->dim3 || m1->dim4 != dst->dim4 || m1->dim2 != bias->dim1)
     {
-        errx(EXIT_FAILURE, "matrix4_matrix_add: matrix dimensions do not match\n");
+        errx(EXIT_FAILURE, "matrix4_sum_bias: matrix dimensions do not match\n");
     }
 
     for (int i = 0; i < m1->dim1; i++)
         for (int j = 0; j < m1->dim2; j++)
             for (int k = 0; k < m1->dim3; k++)
                 for (int l = 0; l < m1->dim4; l++)
-                    dst->data[i][j][k][l] = m1->data[i][j][k][l] + m2->data[i][j];
+                    dst->data[i][j][k][l] = m1->data[i][j][k][l] + bias->data[j][0];
 
     return dst;
 }
+
+// Function: matrix4_sum_bias
+// ---------------------------------
+// Calculates the bias gradient from 4d delta matrix.
+//
+// Parameters:
+//   m1 - pointer to the 4-dimensional matrix
+//   dst - pointer to the destination matrix
+//
+// Returns:
+//   pointer to the resulting matrix
+//
+
+Matrix *matrix4_sum_bias(Matrix4 *m, Matrix *dst)
+{
+    if (dst == NULL)
+    {
+        dst = matrix_init(m->dim2, 1, NULL);
+    }
+
+    if (m->dim2 != dst->dim1)
+    {
+        errx(EXIT_FAILURE, "matrix4_sum_bias: matrix dimensions do not match\n");
+    }
+
+    for (int i = 0; i < m->dim1; i++)
+        for (int j = 0; j < m->dim2; j++)
+            for (int k = 0; k < m->dim3; k++)
+                for (int l = 0; l < m->dim4; l++)
+                    dst->data[j][0] += m->data[i][j][k][l];
+
+    return dst;
+}
+
 
 // Function: matrix4_subtract
 // ---------------------------------
@@ -613,13 +648,13 @@ Matrix4 *matrix4_transpose(Matrix4 *m)
         errx(EXIT_FAILURE,
              "matrix4_transpose: failed to allocate memory for matrix\n");
     }
-    
+
     for (int i = 0; i < m->dim1; i++)
         for (int j = 0; j < m->dim2; j++)
             for (int k = 0; k < m->dim3; k++)
                 for (int l = 0; l < m->dim4; l++)
                     t->data[i][j][l][k] = m->data[i][j][k][l];
-    
+
     return t;
 }
 
@@ -628,7 +663,7 @@ Matrix4 *matrix4_transpose(Matrix4 *m)
 // Convolves a 4D matrix with a 4D kernel.
 //
 // Parameters:
-//   k - pointer to the kernel of shape: (out_channels, in_channels, kernel_height, kernel_width)
+//   weights - pointer to the weights of shape: (out_channels, in_channels, kernel_height, kernel_width)
 //   input - pointer to the matrix of shape: (batch_size, in_channels, height, width)
 //   dst - pointer to the destination matrix
 //   stride - stride of the convolution
@@ -692,6 +727,26 @@ Matrix4 *matrix4_convolve(Matrix4 *weights, Matrix4 *input, Matrix4 *dst, int st
     return dst;
 }
 
+// Function: matrix4_convolve_transpose
+// ------------------------------------
+// Convolves a 4D matrix with a 180 degrees transposed 4D kernel.
+//
+// Parameters:
+//   weights - pointer to the weights of shape: (out_channels, in_channels, kernel_height, kernel_width)
+//   input - pointer to the matrix of shape: (batch_size, in_channels, height, width)
+//   dst - pointer to the destination matrix
+//   stride - stride of the convolution
+//   padding - padding of the convolution
+// Returns:
+//   pointer to the resulting matrix
+
+Matrix4 *matrix4_convolve_transpose(Matrix4 *weights, Matrix4 *input, Matrix4 *dst, int stride, int padding)
+{
+    // Transpose by 180 degrees the weights
+    Matrix4 *weights_t = matrix4_transpose(matrix4_transpose(weights));
+    return matrix4_convolve(weights_t, input, dst, stride, padding);
+}
+
 // Function: matrix4_scalar_multiply
 // ---------------------------------
 // Multiplies a matrix by a scalar.
@@ -717,7 +772,7 @@ void matrix4_scalar_multiply(Matrix4 *m, float s)
 //   m - pointer to the matrix
 //   f - the function
 //
-void matrix4_map_function(Matrix4 *m, float (f)(float))
+void matrix4_map_function(Matrix4 *m, float(f)(float))
 {
     for (int i = 0; i < m->dim1; i++)
         for (int j = 0; j < m->dim2; j++)

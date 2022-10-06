@@ -3,23 +3,6 @@
 
 #pragma region fully_connected_layer
 
-// fully connected layer
-struct FCLayer
-{
-    int input_size;
-    int output_size;
-    float (*activation_func)(float);
-    float (*d_activation_func)(float);
-    Matrix *weights;
-    Matrix *biases;
-    Matrix *activations;
-    Matrix *deltas;
-    Matrix *weights_gradient;
-    Matrix *biases_gradient;
-};
-
-typedef struct FCLayer FCLayer;
-
 // initialize a weight matrix
 Matrix *fc_weight_init(int dim1, int dim2)
 {
@@ -41,12 +24,15 @@ Matrix *fc_bias_init(int dim1, int dim2)
 }
 
 // create a new fully connected layer
-FCLayer *fc_layer_init(int input_size, int output_size, int batch_size, float (*activation_func)(float), bool load_weights)
+FCLayer *fc_layer_init(
+    int input_size, int output_size, int batch_size,
+    float (*activation_func)(float), float (*d_activation_func)(float), bool load_weights)
 {
     FCLayer *layer = malloc(sizeof(FCLayer));
     layer->input_size = input_size;
     layer->output_size = output_size;
     layer->activation_func = activation_func;
+    layer->d_activation_func = d_activation_func;
 
     // initialize weights and biases
     if (load_weights)
@@ -80,15 +66,15 @@ void fc_layer_forward(FCLayer *layer, Matrix *input)
 }
 
 // backward pass
-void fc_layer_backward(FCLayer *layer, Matrix *previous_layer_deltas, Matrix *previous_layer_activations)
+void fc_layer_backward(FCLayer *layer, Matrix *previous_activations, Matrix *previous_deltas)
 {
     // calculate deltas
-    matrix_multiply(matrix_transpose(layer->weights), previous_layer_deltas, layer->deltas);
+    matrix_multiply(matrix_transpose(layer->weights), previous_deltas, layer->deltas);
     matrix_map_function(layer->deltas, layer->d_activation_func);
 
     // calculate gradients
-    matrix_multiply(previous_layer_deltas, matrix_transpose(previous_layer_activations), layer->weights_gradient);
-    matrix_copy(previous_layer_deltas, layer->biases_gradient);
+    matrix_multiply(previous_deltas, matrix_transpose(previous_activations), layer->weights_gradient);
+    matrix_copy(previous_deltas, layer->biases_gradient);
 
     // update weights and biases
     matrix_scalar_multiply(layer->weights_gradient, -1);
@@ -118,30 +104,6 @@ void fc_layer_destroy(FCLayer *layer)
 
 #pragma region convolutional_layer
 
-// convolutional layer
-struct ConvLayer
-{
-    int input_height;
-    int input_width;
-    int input_depth;
-
-    int output_height;
-    int output_width;
-    int n_filters;
-
-    int kernel_size;
-    int stride;
-    int padding;
-    float (*activation_func)(float);
-    Matrix4 *weights;
-    Matrix *biases;
-    Matrix4 *activations;
-    Matrix4 *deltas;
-    Matrix4 *weights_gradient;
-    Matrix *biases_gradient;
-};
-typedef struct ConvLayer ConvLayer;
-
 // initialize a weight matrix
 Matrix4 *conv_weight_init(int dim1, int dim2, int dim3, int dim4)
 {
@@ -165,7 +127,10 @@ Matrix *conv_bias_init(int dim1, int dim2)
 }
 
 // create a new convolutional layer
-ConvLayer *conv_layer_init(int input_height, int input_width, int input_depth, int n_filters, int kernel_size, int stride, int padding, int batch_size, float (*activation_func)(float), bool load_weights)
+ConvLayer *conv_layer_init(
+    int input_height, int input_width, int input_depth,
+    int n_filters, int kernel_size, int stride, int padding,
+    int batch_size, float (*activation_func)(float), float (*d_activation_func)(float), bool load_weights)
 {
     ConvLayer *layer = malloc(sizeof(ConvLayer));
     layer->input_height = input_height;
@@ -179,7 +144,9 @@ ConvLayer *conv_layer_init(int input_height, int input_width, int input_depth, i
     layer->kernel_size = kernel_size;
     layer->stride = stride;
     layer->padding = padding;
+
     layer->activation_func = activation_func;
+    layer->d_activation_func = d_activation_func;
 
     // initialize weights and biases
     if (load_weights)
@@ -203,15 +170,36 @@ ConvLayer *conv_layer_init(int input_height, int input_width, int input_depth, i
     return layer;
 }
 
-// forward pass for an input of shape: (batch_size, height, width, depth)
+// forward pass for an input of shape: (batch_size, depth, height, width)
 void conv_layer_forward(ConvLayer *layer, Matrix4 *input)
 {
     // calculate activations
     matrix4_convolve(layer->weights, input, layer->activations, layer->stride, layer->padding);
-    matrix4_matrix_add(layer->activations, layer->biases, layer->activations);
+    matrix4_add_bias(layer->activations, layer->biases, layer->activations);
     matrix4_map_function(layer->activations, layer->activation_func);
 }
 
-// TODO: backprop
+// backward pass
+void conv_layer_backward(ConvLayer *layer, Matrix4 *previous_activations, Matrix4 *previous_deltas)
+{
+    // calculate deltas
+    matrix4_convolve_transpose(layer->weights, previous_deltas, layer->deltas, layer->stride, layer->padding);
+    matrix4_map_function(layer->deltas, layer->d_activation_func);
+
+    // calculate gradients
+    matrix4_convolve(previous_deltas, previous_activations, layer->weights_gradient, layer->stride, layer->padding);
+    matrix4_sum_bias(previous_deltas, layer->biases_gradient);
+
+    // update weights and biases
+    matrix4_scalar_multiply(layer->weights_gradient, -1);
+    matrix_scalar_multiply(layer->biases_gradient, -1);
+
+    matrix4_add(layer->weights, layer->weights_gradient, layer->weights);
+    matrix_add(layer->biases, layer->biases_gradient, layer->biases);
+
+    // reset gradients
+    matrix4_zero(layer->weights_gradient);
+    matrix_zero(layer->biases_gradient);
+}
 
 #pragma endregion convolutional_layer
