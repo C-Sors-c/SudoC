@@ -203,3 +203,70 @@ void conv_layer_backward(ConvLayer *layer, Matrix4 *previous_activations, Matrix
 }
 
 #pragma endregion convolutional_layer
+
+#pragma region activations
+
+float sigmoid(float x)
+{
+    return 1 / (1 + exp(-x));
+}
+
+float d_sigmoid(float x)
+{
+    return sigmoid(x) * (1 - sigmoid(x));
+}
+
+float relu(float x)
+{
+    return x > 0 ? x : 0;
+}
+
+float d_relu(float x)
+{
+    return x > 0 ? 1 : 0;
+}
+
+float tanh(float x)
+{
+    return (exp(x) - exp(-x)) / (exp(x) + exp(-x));
+}
+
+float d_tanh(float x)
+{
+    return 1 - tanh(x) * tanh(x);
+}
+
+float leaky_relu(float x)
+{
+    return x > 0 ? x : 0.1 * x;
+}
+
+float d_leaky_relu(float x)
+{
+    return x > 0 ? 1 : 0.01;
+}
+
+Matrix *softmax(Matrix *m1)
+{
+    Matrix *m2 = matrix_init(m1->dim1, m1->dim2, NULL);
+    float sum = 0;
+    for (int i = 0; i < m1->dim1; i++)
+        for (int j = 0; j < m1->dim2; j++)
+            sum += exp(m1->data[i][j]);
+    for (int i = 0; i < m1->dim1; i++)
+        for (int j = 0; j < m1->dim2; j++)
+            m2->data[i][j] = exp(m1->data[i][j]) / sum;
+    return m2;
+}
+
+Matrix *d_softmax(Matrix *m1)
+{
+    Matrix *m2 = matrix_init(m1->dim1, m1->dim2, NULL);
+    for (int i = 0; i < m1->dim1; i++)
+        for (int j = 0; j < m1->dim2; j++)
+            m2->data[i][j] = m1->data[i][j] * (1 - m1->data[i][j]);
+    return m2;
+}
+
+
+#pragma endregion activations

@@ -658,6 +658,30 @@ Matrix4 *matrix4_transpose(Matrix4 *m)
     return t;
 }
 
+// Function: matrix4_pixel_convolution
+// ------------------------------------------
+// Applies a convolution filter to a 4D matrix.
+//
+// Parameters:
+//   weights - pointer to the weights of shape: (out_channels, in_channels, kernel_height, kernel_width)
+//   input - pointer to the matrix
+//   dst - pointer to the destination matrix
+//   int y - height of the point where the convolution happens
+//   int x - widtht of the point where the convolution happens
+//
+// Returns:
+//   dst - pointer to the dst matrix
+
+Matrix4 *matrix4_pixel_convolution(Matrix4 *weights, Matrix4 *input, Matrix4 *dst, int y, int x)
+{
+
+    
+
+
+    return dst;
+}
+
+
 // Function: matrix4_convolve
 // --------------------------
 // Convolves a 4D matrix with a 4D kernel.
@@ -707,25 +731,13 @@ Matrix4 *matrix4_convolve(Matrix4 *weights, Matrix4 *input, Matrix4 *dst, int st
         {
             for (int oh = 0; oh < out_height; oh++)
             {
-                for (int ow = 0; ow < out_width; ow++)
-                {
-                    for (int ic = 0; ic < in_channels; ic++)
-                    {
-                        for (int kh = 0; kh < kernel_height; kh++)
-                        {
-                            for (int kw = 0; kw < kernel_width; kw++)
-                            {
-                                dst->data[b][oc][oh][ow] += weights->data[oc][ic][kh][kw] * input->data[b][ic][oh * stride + kh][ow * stride + kw];
-                            }
-                        }
-                    }
-                }
             }
         }
     }
 
     return dst;
 }
+
 
 // Function: matrix4_convolve_transpose
 // ------------------------------------

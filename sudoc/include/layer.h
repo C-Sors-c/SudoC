@@ -63,3 +63,15 @@ ConvLayer *conv_layer_init(
     int input_height, int input_width, int input_depth,
     int n_filters, int kernel_size, int stride, int padding, int batch_size,
     float (*activation_func)(float), float (*d_activation_func)(float), bool load_weights);
+
+// activations
+float sigmoid(float x);
+float d_sigmoid(float x);
+float relu(float x);
+float d_relu(float x);
+float tanh(float x);
+float d_tanh(float x);
+float leaky_relu(float x);
+float d_leaky_relu(float x);
+Matrix *softmax(Matrix *m1);
+Matrix *d_softmax(Matrix *m1);
