@@ -18,6 +18,7 @@ int (*test_dummy[])() = {
 int (*test_cv[])() = {
     test_cv_rgb_to_gray,
     test_cv_gaussian_blur,
+    test_cv_rotate
 };
 
 // lists of all matrix tests

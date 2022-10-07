@@ -31,3 +31,4 @@ Image *cv_grayscale(Image *src, Image *dst);
 void cv_apply_kernel(Image *src, Matrix *kernel);
 Matrix *cv_compute_gaussian_kernel(int size, float sigma);
 Image *cv_gaussian_blur(Image *src, Image *dst, int kernel_size, double sigma);
+Image *cv_rotate(Image *src, Image *dst, float angle);
