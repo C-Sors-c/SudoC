@@ -79,8 +79,8 @@ Matrix * fc_layer_backward(FCLayer *layer, Matrix *previous_activations, Matrix 
     matrix_copy(previous_deltas, layer->biases_gradient);
 
     // update weights and biases
-    matrix_scalar_multiply(layer->weights_gradient, -1);
-    matrix_scalar_multiply(layer->biases_gradient, -1);
+    matrix_scalar_multiply(layer->weights_gradient, -learning_rate);
+    matrix_scalar_multiply(layer->biases_gradient, -learning_rate);
 
     matrix_add(layer->weights, layer->weights_gradient, layer->weights);
     matrix_add(layer->biases, layer->biases_gradient, layer->biases);
@@ -197,8 +197,8 @@ Matrix4 * conv_layer_backward(ConvLayer *layer, Matrix4 *previous_activations, M
     matrix4_sum_bias(previous_deltas, layer->biases_gradient);
 
     // update weights and biases
-    matrix4_scalar_multiply(layer->weights_gradient, -1);
-    matrix_scalar_multiply(layer->biases_gradient, -1);
+    matrix4_scalar_multiply(layer->weights_gradient, -learning_rate);
+    matrix_scalar_multiply(layer->biases_gradient, -learning_rate);
 
     matrix4_add(layer->weights, layer->weights_gradient, layer->weights);
     matrix_add(layer->biases, layer->biases_gradient, layer->biases);
@@ -211,6 +211,16 @@ Matrix4 * conv_layer_backward(ConvLayer *layer, Matrix4 *previous_activations, M
 }
 
 // destroy a convolutional layer
+void conv_layer_destroy(ConvLayer *layer)
+{
+    matrix4_destroy(layer->weights);
+    matrix_destroy(layer->biases);
+    matrix4_destroy(layer->activations);
+    matrix4_destroy(layer->deltas);
+    matrix4_destroy(layer->weights_gradient);
+    matrix_destroy(layer->biases_gradient);
+    free(layer);
+}
 
 #pragma endregion convolutional_layer
 
@@ -290,6 +300,13 @@ Matrix *activation_layer_backward(ActivationLayer *layer, Matrix *previous_delta
 {
     matrix_copy(previous_deltas, layer->deltas);
     return layer->d_activation_func(layer->deltas);
+}
+
+void activation_layer_destroy(ActivationLayer *layer)
+{
+    matrix_destroy(layer->activations);
+    matrix_destroy(layer->deltas);
+    free(layer);
 }
 
 #pragma endregion activations

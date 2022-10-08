@@ -30,7 +30,8 @@ Matrix *neural_network_forward(NeuralNetwork *neural_network, Matrix4 *input)
     Matrix4 *x = conv_layer_forward(neural_network->conv_layers[0], input);
     x = conv_layer_forward(neural_network->conv_layers[1], x);
 
-    Matrix *y = matrix4_flatten(x);
+    // I think there will be mem leak here, need to move to a proper layer
+    Matrix *y = matrix4_flatten(x, NULL);
     y = fc_layer_forward(neural_network->fc_layers[0], y);
     y = fc_layer_forward(neural_network->fc_layers[1], y);
     y = activation_layer_forward(neural_network->output_layer, y);
@@ -49,8 +50,8 @@ void neural_network_backward(NeuralNetwork *neural_network, Matrix *predictions,
     deltas4 = conv_layer_backward(neural_network->conv_layers[1], neural_network->conv_layers[1]->activations, deltas4, learning_rate);
     deltas4 = conv_layer_backward(neural_network->conv_layers[0], neural_network->conv_layers[0]->activations, deltas4, learning_rate);
 
-    free_matrix(deltas);
-    free_matrix4(deltas4);
+    matrix_destroy(deltas);
+    matrix4_destroy(deltas4);
 }
 
 float neural_network_train_batch(NeuralNetwork *neural_network, Matrix4 *input, Matrix *labels, float learning_rate)
@@ -58,7 +59,7 @@ float neural_network_train_batch(NeuralNetwork *neural_network, Matrix4 *input, 
     Matrix *predictions = neural_network_forward(neural_network, input);
     float loss = cross_entropy_loss(predictions, labels);
     neural_network_backward(neural_network, predictions, labels, learning_rate);
-    free_matrix(predictions);
+    matrix_destroy(predictions);
     return loss;
 }
 

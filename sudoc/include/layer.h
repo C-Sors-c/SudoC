@@ -93,6 +93,7 @@ ActivationLayer *activation_layer_init(
     Matrix * (*activation_func)(Matrix *), Matrix * (*d_activation_func)(Matrix *));
 Matrix *activation_layer_forward(ActivationLayer *layer, Matrix *input);
 Matrix *activation_layer_backward(ActivationLayer *layer, Matrix *previous_deltas);
+void activation_layer_destroy(ActivationLayer *layer);
 
 struct FlattenLayer
 {
