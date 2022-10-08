@@ -6,7 +6,8 @@
 #include <stdio.h>
 
 struct NeuralNetwork {
-    ConvLayer *conv_Layers;
-    FCLayer *fc_layers;
+    ConvLayer **conv_layers;
+    FCLayer **fc_layers;
+    ActivationLayer *output_layer;
 };
-typedef NeuralNetwork NeuralNetwork;
+typedef struct NeuralNetwork NeuralNetwork;

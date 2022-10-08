@@ -51,6 +51,8 @@ Matrix4 *matrix4_transpose(Matrix4 *m);
 Matrix4 *matrix4_convolve(Matrix4 *weights, Matrix4 *input, Matrix4 *dst, int stride, int padding);
 Matrix4 *matrix4_convolve_transpose(Matrix4 *weights, Matrix4 *input, Matrix4 *dst, int stride, int padding);
 Matrix4 *matrix4_add_bias(Matrix4 *m1, Matrix *bias, Matrix4 *dst);
+Matrix *matrix4_flatten(Matrix4 *m, Matrix *dst);
+Matrix4 *matrix4_unflatten(Matrix *m, Matrix4 *dst);
 Matrix *matrix4_sum_bias(Matrix4 *m1, Matrix *dst);
 void matrix4_scalar_multiply(Matrix4 *m, float s);
 void matrix4_map_function(Matrix4 *m, float (*func)(float));

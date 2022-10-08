@@ -57,16 +57,18 @@ FCLayer *fc_layer_init(
 }
 
 // forward pass for an input of shape: (batch_size, input_size)
-void fc_layer_forward(FCLayer *layer, Matrix *input)
+Matrix * fc_layer_forward(FCLayer *layer, Matrix *input)
 {
     // calculate activations
     matrix_multiply(layer->weights, input, layer->activations);
     matrix_add(layer->activations, layer->biases, layer->activations);
     matrix_map_function(layer->activations, layer->activation_func);
+
+    return layer->activations;
 }
 
 // backward pass
-void fc_layer_backward(FCLayer *layer, Matrix *previous_activations, Matrix *previous_deltas)
+Matrix * fc_layer_backward(FCLayer *layer, Matrix *previous_activations, Matrix *previous_deltas, float learning_rate)
 {
     // calculate deltas
     matrix_multiply(matrix_transpose(layer->weights), previous_deltas, layer->deltas);
@@ -86,6 +88,8 @@ void fc_layer_backward(FCLayer *layer, Matrix *previous_activations, Matrix *pre
     // reset gradients
     matrix_zero(layer->weights_gradient);
     matrix_zero(layer->biases_gradient);
+
+    return layer->deltas;
 }
 
 // destroy a fully connected layer
@@ -171,16 +175,18 @@ ConvLayer *conv_layer_init(
 }
 
 // forward pass for an input of shape: (batch_size, depth, height, width)
-void conv_layer_forward(ConvLayer *layer, Matrix4 *input)
+Matrix4 * conv_layer_forward(ConvLayer *layer, Matrix4 *input)
 {
     // calculate activations
     matrix4_convolve(layer->weights, input, layer->activations, layer->stride, layer->padding);
     matrix4_add_bias(layer->activations, layer->biases, layer->activations);
     matrix4_map_function(layer->activations, layer->activation_func);
+
+    return layer->activations;
 }
 
 // backward pass
-void conv_layer_backward(ConvLayer *layer, Matrix4 *previous_activations, Matrix4 *previous_deltas)
+Matrix4 * conv_layer_backward(ConvLayer *layer, Matrix4 *previous_activations, Matrix4 *previous_deltas, float learning_rate)
 {
     // calculate deltas
     matrix4_convolve_transpose(layer->weights, previous_deltas, layer->deltas, layer->stride, layer->padding);
@@ -200,7 +206,11 @@ void conv_layer_backward(ConvLayer *layer, Matrix4 *previous_activations, Matrix
     // reset gradients
     matrix4_zero(layer->weights_gradient);
     matrix_zero(layer->biases_gradient);
+
+    return layer->deltas;
 }
+
+// destroy a convolutional layer
 
 #pragma endregion convolutional_layer
 
@@ -226,16 +236,6 @@ float d_relu(float x)
     return x > 0 ? 1 : 0;
 }
 
-float tanh(float x)
-{
-    return (exp(x) - exp(-x)) / (exp(x) + exp(-x));
-}
-
-float d_tanh(float x)
-{
-    return 1 - tanh(x) * tanh(x);
-}
-
 float leaky_relu(float x)
 {
     return x > 0 ? x : 0.1 * x;
@@ -243,7 +243,7 @@ float leaky_relu(float x)
 
 float d_leaky_relu(float x)
 {
-    return x > 0 ? 1 : 0.01;
+    return x > 0 ? 1 : 0.1;
 }
 
 Matrix *softmax(Matrix *m1)
@@ -268,5 +268,84 @@ Matrix *d_softmax(Matrix *m1)
     return m2;
 }
 
+ActivationLayer *activation_layer_init(int input_size, int batch_size, Matrix * (*activation_func)(Matrix *), Matrix * (*d_activation_func)(Matrix *))
+{
+    ActivationLayer *layer = malloc(sizeof(ActivationLayer));
+    layer->input_size = input_size;
+    layer->batch_size = batch_size;
+    layer->activation_func = activation_func;
+    layer->d_activation_func = d_activation_func;
+    layer->activations = matrix_init(batch_size, input_size, NULL);
+    layer->deltas = matrix_init(batch_size, input_size, NULL);
+    return layer;
+}
+
+Matrix *activation_layer_forward(ActivationLayer *layer, Matrix *input)
+{
+    matrix_copy(input, layer->activations);
+    return layer->activation_func(layer->activations);
+}
+
+Matrix *activation_layer_backward(ActivationLayer *layer, Matrix *previous_deltas)
+{
+    matrix_copy(previous_deltas, layer->deltas);
+    return layer->d_activation_func(layer->deltas);
+}
 
 #pragma endregion activations
+
+#pragma region flatten
+
+FlattenLayer *flatten_layer_init(int input_height, int input_width, int input_depth, int batch_size)
+{
+    FlattenLayer *layer = malloc(sizeof(FlattenLayer));
+    layer->input_height = input_height;
+    layer->input_width = input_width;
+    layer->output_size = input_height * input_width * input_depth;
+    layer->input_depth = input_depth;
+    layer->batch_size = batch_size;
+    layer->activations = matrix_init(batch_size, layer->output_size, NULL);
+    layer->deltas = matrix4_init(batch_size, input_depth, input_height, input_width, NULL);
+    return layer;
+}
+
+Matrix *flatten_layer_forward(FlattenLayer *layer, Matrix4 *input)
+{
+    return matrix4_flatten(input, layer->activations);
+}
+
+Matrix4 *flatten_layer_backward(FlattenLayer *layer, Matrix *previous_deltas)
+{
+    return matrix4_unflatten(previous_deltas, layer->deltas);
+}
+
+void flatten_layer_destroy(FlattenLayer *layer)
+{
+    matrix_destroy(layer->activations);
+    matrix4_destroy(layer->deltas);
+    free(layer);
+}
+
+#pragma endregion flatten
+
+#pragma region loss
+
+float cross_entropy_loss(Matrix *predictions, Matrix *labels)
+{
+    float loss = 0;
+    for (int i = 0; i < predictions->dim1; i++)
+        for (int j = 0; j < predictions->dim2; j++)
+            loss += labels->data[i][j] * log(predictions->data[i][j]);
+    return -loss;
+}
+
+Matrix *d_cross_entropy_loss(Matrix *predictions, Matrix *labels)
+{
+    Matrix *deltas = matrix_init(predictions->dim1, predictions->dim2, NULL);
+    for (int i = 0; i < predictions->dim1; i++)
+        for (int j = 0; j < predictions->dim2; j++)
+            deltas->data[i][j] = -labels->data[i][j] / predictions->data[i][j];
+    return deltas;
+}
+
+#pragma endregion loss

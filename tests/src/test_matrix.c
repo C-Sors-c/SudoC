@@ -293,24 +293,43 @@ int test_matrix4_map_function()
 
 int test_matrix4_convolve()
 {
+    float input[] = {
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0,
+        7.0,
+        8.0,
+        9.0,
+    };
+
     float kernel[] = {
         1.0,
-        2.0,
-        2.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
         1.0,
     };
 
-    // result should be 15.0 because: 1*1 + 2*2 + 2*3 + 1*5 = 15.0
     float c[] = {
-        15.0,
+        1.0,
+        5.0,
+        11.0,
+        28.0,
     };
 
-    Matrix4 *m1 = matrix4_init(1, 1, 2, 2, a);
-    Matrix4 *m2 = matrix4_init(1, 1, 2, 2, kernel);
+    Matrix4 *m1 = matrix4_init(1, 1, 2, 2, kernel);
+    Matrix4 *m2 = matrix4_init(1, 1, 3, 3, input);
 
     // stride is set to 1 and padding to 0
-    Matrix4 *m3 = matrix4_convolve(m1, m2, NULL, 1, 0);
-    Matrix4 *expected = matrix4_init(1, 1, 1, 1, c);
+    Matrix4 *m3 = matrix4_convolve(m1, m2, NULL, 2, 1);
+    Matrix4 *expected = matrix4_init(1, 1, 2, 2, c);
 
     bool diff = matrix4_element_wise_equal(m3, expected);
 
