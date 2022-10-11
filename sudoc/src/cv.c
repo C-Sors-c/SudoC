@@ -398,6 +398,37 @@ void cv_apply_kernel(Image *src, Matrix *kernel)
     }
 }
 
+void cv_apply_kernel_sobel(Image *src, Matrix *kernel)
+{
+    if (src->channels != 1 && src->channels != 3)
+    {
+        errx(1, "invalid number of channels");
+    }
+
+    for (int i = 0; i < src->height; i++)
+    {
+        for (int j = 0; j < src->width; j++)
+        {
+            float sum = 0.0;
+            for (int k = 0; k < 3; k++)
+            {
+                for (int l = 0; l < 3; l++)
+                {
+                    int x = j + l;
+                    int y = i + k;
+
+                    // 0 padding
+                    if (x < 0 || x >= src->width || y < 0 || y >= src->height)
+                        continue;
+
+                    sum += src->data[y][x][0] * kernel->data[k][l];
+                }
+            }
+            src->data[i][j][0] = sum;
+        }
+    }
+}
+
 Matrix *cv_compute_gaussian_kernel(int size, float sigma)
 {
     Matrix *kernel = matrix_init(size, size, NULL);
@@ -449,6 +480,305 @@ Image *cv_gaussian_blur(Image *src, Image *dst, int kernel_size, double sigma)
     Matrix *kernel = cv_compute_gaussian_kernel(kernel_size, sigma);
     cv_apply_kernel(dst, kernel);
     matrix_destroy(kernel);
+    return dst;
+}
+
+Image *cv_sharp(Image *src, Image *dst, int kernel_size)
+{
+    if (src == NULL)
+    {
+        errx(EXIT_FAILURE, "Error: cv_sharp: src is NULL");
+    }
+
+    if (dst == NULL)
+    {
+        dst = cv_image_copy(src);
+    }
+
+    if (src->width != dst->width || src->height != dst->height)
+    {
+        errx(EXIT_FAILURE,
+             "Error: cv_sharp: image sizes do not match (src: %dx%d, dst: %dx%d)",
+             src->width, src->height, dst->width, dst->height);
+    }
+
+    if (kernel_size % 2 == 0)
+    {
+        errx(EXIT_FAILURE, "Error: cv_sharp: kernel_size must be odd");
+    }
+
+    Matrix *kernel = matrix_init(kernel_size, kernel_size, NULL);
+    kernel->data[kernel_size / 2][kernel_size / 2] = 2.0;
+    cv_apply_kernel(dst, kernel);
+    matrix_destroy(kernel);
+    return dst;
+}
+
+Image *cv_sobel(Image *src, Image *dst, int kernel_size)
+{
+    if (src == NULL)
+    {
+        errx(EXIT_FAILURE, "Error: cv_sobel: src is NULL");
+    }
+
+    if (dst == NULL)
+    {
+        dst = cv_image_copy(src);
+    }
+
+    if (src->width != dst->width || src->height != dst->height)
+    {
+        errx(EXIT_FAILURE,
+             "Error: cv_sobel: image sizes do not match (src: %dx%d, dst: %dx%d)",
+             src->width, src->height, dst->width, dst->height);
+    }
+
+    if (kernel_size % 2 == 0)
+    {
+        errx(EXIT_FAILURE, "Error: cv_sobel: kernel_size must be odd");
+    }
+
+    // sharpen the given image
+    cv_sharp(src, dst, 3);
+    // Sobel kernels
+
+    Matrix *kernel_x = matrix_init(kernel_size, kernel_size, NULL);
+    Matrix *kernel_y = matrix_init(kernel_size, kernel_size, NULL);
+
+    for (int i = 0; i < kernel_size; i++)
+    {
+        for (int j = 0; j < kernel_size; j++)
+        {
+            kernel_x->data[i][j] = 0;
+            kernel_y->data[i][j] = 0;
+        }
+    }
+
+    kernel_x->data[0][0] = -1;
+    kernel_x->data[kernel_size / 2][0] = -2;
+    kernel_x->data[kernel_size - 1][0] = -1;
+    kernel_x->data[0][kernel_size - 1] = 1;
+    kernel_x->data[kernel_size / 2][kernel_size - 1] = 2;
+    kernel_x->data[kernel_size - 1][kernel_size - 1] = 1;
+
+    kernel_y->data[0][0] = -1;
+    kernel_y->data[0][kernel_size / 2] = -2;
+    kernel_y->data[0][kernel_size - 1] = -1;
+    kernel_y->data[kernel_size - 1][0] = 1;
+    kernel_y->data[kernel_size - 1][kernel_size / 2] = 2;
+    kernel_y->data[kernel_size - 1][kernel_size - 1] = 1;
+    // End Sobel kernels
+
+    Image *dst_x = cv_image_copy(dst);
+    Image *dst_y = cv_image_copy(dst);
+
+    cv_apply_kernel_sobel(dst_x, kernel_x);
+    cv_apply_kernel_sobel(dst_y, kernel_y);
+
+    for (int i = 0; i < dst->height; i++)
+    {
+        for (int j = 0; j < dst->width; j++)
+        {
+            dst->data[i][j][0] = sqrt(dst_x->data[i][j][0] * dst_x->data[i][j][0] +
+                                      dst_y->data[i][j][0] * dst_y->data[i][j][0]);
+        }
+    }
+
+    cv_free_image(dst_x);
+    cv_free_image(dst_y);
+    matrix_destroy(kernel_x);
+    matrix_destroy(kernel_y);
+
+    return dst;
+}
+
+Image *cv_canny(Image *src, Image *dst)
+{
+    if (src == NULL)
+    {
+        errx(EXIT_FAILURE, "Error: cv_canny: src is NULL");
+    }
+
+    if (dst == NULL)
+    {
+        dst = cv_image_copy(src);
+    }
+
+    if (src->width != dst->width || src->height != dst->height)
+    {
+        errx(EXIT_FAILURE,
+             "Error: cv_canny: image sizes do not match (src: %dx%d, dst: %dx%d)",
+             src->width, src->height, dst->width, dst->height);
+    }
+
+    Image *dst_sobel = cv_image_copy(dst);
+
+    // start sobel treatment
+    Matrix *kernel_x = matrix_init(3, 3, NULL);
+    Matrix *kernel_y = matrix_init(3, 3, NULL);
+
+    for (int i = 0; i < 3; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            kernel_x->data[i][j] = 0;
+            kernel_y->data[i][j] = 0;
+        }
+    }
+
+    kernel_x->data[0][0] = -1;
+    kernel_x->data[3 / 2][0] = -2;
+    kernel_x->data[3 - 1][0] = -1;
+    kernel_x->data[0][3 - 1] = 1;
+    kernel_x->data[3 / 2][3 - 1] = 2;
+    kernel_x->data[3 - 1][3 - 1] = 1;
+
+    kernel_y->data[0][0] = -1;
+    kernel_y->data[0][3 / 2] = -2;
+    kernel_y->data[0][3 - 1] = -1;
+    kernel_y->data[3 - 1][0] = 1;
+    kernel_y->data[3 - 1][3 / 2] = 2;
+    kernel_y->data[3 - 1][3 - 1] = 1;
+    // End Sobel kernels
+
+    Image *dst_x = cv_image_copy(dst_sobel);
+    Image *dst_y = cv_image_copy(dst_sobel);
+
+    cv_apply_kernel_sobel(dst_x, kernel_x);
+    cv_apply_kernel_sobel(dst_y, kernel_y);
+
+    for (int i = 0; i < dst_sobel->height; i++)
+    {
+        for (int j = 0; j < dst_sobel->width; j++)
+        {
+            dst_sobel->data[i][j][0] = sqrt(dst_x->data[i][j][0] * dst_x->data[i][j][0] +
+                                            dst_y->data[i][j][0] * dst_y->data[i][j][0]);
+        }
+    }
+    // end sobel treatment
+
+    // start non-maximum suppression
+    Image *dst_nms = cv_image_copy(dst_sobel);
+
+    for (int i = 1; i < dst_sobel->height - 1; i++)
+    {
+        for (int j = 1; j < dst_sobel->width - 1; j++)
+        {
+            if (dst_sobel->data[i][j][0] == 0)
+            {
+                dst_nms->data[i][j][0] = 0;
+            }
+            else
+            {
+                float tangente = dst_y->data[i][j][0] / dst_x->data[i][j][0];
+                if (tangente > 0)
+                {
+                    if (tangente > 1)
+                    {
+                        if (dst_sobel->data[i][j][0] < dst_sobel->data[i - 1][j + 1][0] ||
+                            dst_sobel->data[i][j][0] < dst_sobel->data[i + 1][j - 1][0])
+                        {
+                            dst_nms->data[i][j][0] = 0;
+                        }
+                    }
+                    else
+                    {
+                        if (dst_sobel->data[i][j][0] < dst_sobel->data[i - 1][j][0] ||
+                            dst_sobel->data[i][j][0] < dst_sobel->data[i + 1][j][0])
+                        {
+                            dst_nms->data[i][j][0] = 0;
+                        }
+                    }
+                }
+                else
+                {
+                    if (tangente < -1)
+                    {
+                        if (dst_sobel->data[i][j][0] < dst_sobel->data[i - 1][j - 1][0] ||
+                            dst_sobel->data[i][j][0] < dst_sobel->data[i + 1][j + 1][0])
+                        {
+                            dst_nms->data[i][j][0] = 0;
+                        }
+                    }
+                    else
+                    {
+                        if (dst_sobel->data[i][j][0] < dst_sobel->data[i][j - 1][0] ||
+                            dst_sobel->data[i][j][0] < dst_sobel->data[i][j + 1][0])
+                        {
+                            dst_nms->data[i][j][0] = 0;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // end non-maximum suppression
+
+    // start double threshold
+    Image *dst_dt = cv_image_copy(dst_nms);
+
+    for (int i = 0; i < dst_dt->height; i++)
+    {
+        for (int j = 0; j < dst_dt->width; j++)
+        {
+            if (dst_dt->data[i][j][0] > 255 * 0.6) // if color is almost white
+            {
+                dst_dt->data[i][j][0] = 255;
+            }
+            else if (dst_dt->data[i][j][0] < 255 * 0.4) // if color is almost black
+            {
+                dst_dt->data[i][j][0] = 0;
+            }
+
+            else
+            {
+                dst_dt->data[i][j][0] = 127;
+            }
+        }
+    }
+    // end double threshold
+
+    // start hysteresis
+
+    Image *dst_hyst = cv_image_copy(dst_dt);
+
+    for (int i = 0; i < dst_hyst->height; i++)
+    {
+        for (int j = 0; j < dst_hyst->width; j++)
+        {
+            if (dst_hyst->data[i][j][0] == 127)
+            {
+                if (i > 0 && j > 0 && i < dst_hyst->height - 1 && j < dst_hyst->width - 1)
+                {
+                    if (dst_hyst->data[i - 1][j - 1][0] == 255 ||
+                        dst_hyst->data[i - 1][j][0] == 255 ||
+                        dst_hyst->data[i - 1][j + 1][0] == 255 ||
+                        dst_hyst->data[i][j - 1][0] == 255 ||
+                        dst_hyst->data[i][j + 1][0] == 255 ||
+                        dst_hyst->data[i + 1][j - 1][0] == 255 ||
+                        dst_hyst->data[i + 1][j][0] == 255 ||
+                        dst_hyst->data[i + 1][j + 1][0] == 255)
+                    {
+                        dst_hyst->data[i][j][0] = 255;
+                    }
+                    else
+                    {
+                        dst_hyst->data[i][j][0] = 0;
+                    }
+                }
+            }
+        }
+    }
+    // end hysteresis
+
+    cv_free_image(dst_sobel);
+    cv_free_image(dst_x);
+    cv_free_image(dst_y);
+    cv_free_image(dst_nms);
+    cv_free_image(dst_dt);
+
+    dst = cv_image_copy(dst_hyst);
+    cv_free_image(dst_hyst);
     return dst;
 }
 
