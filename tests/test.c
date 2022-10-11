@@ -18,6 +18,9 @@ int (*test_dummy[])() = {
 int (*test_cv[])() = {
     test_cv_rgb_to_gray,
     test_cv_gaussian_blur,
+    test_cv_sharp,
+    test_cv_sobel,
+    test_cv_canny,
 };
 
 // lists of all matrix tests
