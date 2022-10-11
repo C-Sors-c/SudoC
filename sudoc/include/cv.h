@@ -7,7 +7,8 @@
 #include "../include/matrix.h"
 #include "../include/utils.h"
 
-typedef struct {
+typedef struct
+{
     int width;
     int height;
     int channels;
@@ -31,3 +32,6 @@ Image *cv_grayscale(Image *src, Image *dst);
 void cv_apply_kernel(Image *src, Matrix *kernel);
 Matrix *cv_compute_gaussian_kernel(int size, float sigma);
 Image *cv_gaussian_blur(Image *src, Image *dst, int kernel_size, double sigma);
+Image *cv_sharp(Image *src, Image *dst, int kernel_size);
+Image *cv_sobel(Image *src, Image *dst, int kernel_size);
+Image *cv_canny(Image *src, Image *dst);
