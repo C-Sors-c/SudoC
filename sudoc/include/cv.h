@@ -35,3 +35,4 @@ Image *cv_gaussian_blur(Image *src, Image *dst, int kernel_size, double sigma);
 Image *cv_sharp(Image *src, Image *dst, int kernel_size);
 Image *cv_sobel(Image *src, Image *dst, int kernel_size);
 Image *cv_canny(Image *src, Image *dst);
+Image *cv_rotate(Image *src, Image *dst, float angle);

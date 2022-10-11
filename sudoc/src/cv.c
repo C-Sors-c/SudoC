@@ -781,3 +781,52 @@ Image *cv_canny(Image *src, Image *dst)
     cv_free_image(dst_hyst);
     return dst;
 }
+
+Image *cv_rotate(Image *src, Image *dst, float angle)
+{
+    if (src == NULL)
+    {
+        errx(EXIT_FAILURE, "Error: cv_rotate: src is NULL");
+    }
+
+    if (dst == NULL)
+    {
+        dst = cv_image_copy(src);
+    }
+
+    float radians = angle * M_PI / 180.0;
+    int hwidth = src->width / 2;
+    int hheight = src->height / 2;
+    double sinma = sin(-radians);
+    double cosma = cos(-radians);
+
+    for (int x = 0; x < src->width; x++)
+    {
+        for (int y = 0; y < src->height; y++)
+        {
+
+            int xt = x - hwidth;
+            int yt = y - hheight;
+
+
+            int xs = (int)round((cosma * xt - sinma * yt) + hwidth);
+            int ys = (int)round((sinma * xt + cosma * yt) + hheight);
+
+            if (xs >= 0 && xs < src->width && ys >= 0 && ys < src->height)
+            {
+                for (int c = 0; c < src->channels; c++)
+                {
+                    dst->data[y][x][c] = src->data[ys][xs][c];
+                }
+            }
+            else
+            {
+                for (int c = 0; c < src->channels; c++)
+                {
+                    dst->data[y][x][c] = 0;
+                }
+            }
+        }
+    }
+    return dst;
+}

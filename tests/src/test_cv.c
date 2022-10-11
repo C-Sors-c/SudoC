@@ -78,3 +78,14 @@ int test_cv_canny()
 
     return print_test(1, 1, "test_cv_canny");
 }
+
+int test_cv_rotate()
+{
+    Image *img = cv_image_from_path("tests/samples/lena.png");
+    Image *rotated = cv_rotate(img, NULL, -39);
+
+    cv_save_image(rotated, "tests/out/lena_rotated.png");
+    cv_free_image(img);
+    cv_free_image(rotated);
+    return print_test(1, 1, "test_cv_gaussian_blur");
+}
