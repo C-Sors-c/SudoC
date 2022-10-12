@@ -36,7 +36,7 @@ int (*tests_matrix[])() = {
     test_matrix4_map_function,
     test_matrix4_convolve,
     test_matrix4_add_bias,
-    test_matrix4_sum_bias,
+    test_matrix4_sum_rows,
 };
 
 int (*tests_sdl[])() = {

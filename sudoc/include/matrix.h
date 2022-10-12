@@ -15,14 +15,16 @@ struct Matrix
 
 typedef struct Matrix Matrix;
 Matrix *matrix_init(int dim1, int dim2, float *datap);
-void matrix_copy(Matrix *m, Matrix *dst);
+Matrix *matrix_copy(Matrix *m, Matrix *dst);
 void matrix_zero(Matrix *m);
 
 Matrix *matrix_add(Matrix *m1, Matrix *m2, Matrix *dst);
 Matrix *matrix_add_bias(Matrix *m1, Matrix *m2, Matrix *dst);
+Matrix *matrix_sum_rows(Matrix *m1, Matrix *dst);
 Matrix *matrix_subtract(Matrix *m1, Matrix *m2, Matrix *dst);
 Matrix *matrix_multiply(Matrix *m1, Matrix *m2, Matrix *dst);
 Matrix *matrix_transpose(Matrix *m);
+Matrix *matrix_elementwise_multiply(Matrix *m1, Matrix *m2, Matrix *dst);
 void matrix_multiply_scalar(Matrix *m, float s);
 void matrix_map_function(Matrix *m, float (*func)(float));
 bool matrix_element_wise_equal(Matrix *m1, Matrix *m2);
@@ -54,7 +56,7 @@ Matrix4 *matrix4_convolve_transpose(Matrix4 *weights, Matrix4 *input, Matrix4 *d
 Matrix4 *matrix4_add_bias(Matrix4 *m1, Matrix *bias, Matrix4 *dst);
 Matrix *matrix4_flatten(Matrix4 *m, Matrix *dst);
 Matrix4 *matrix4_unflatten(Matrix *m, Matrix4 *dst);
-Matrix *matrix4_sum_bias(Matrix4 *m1, Matrix *dst);
+Matrix *matrix4_sum_rows(Matrix4 *m1, Matrix *dst);
 void matrix4_scalar_multiply(Matrix4 *m, float s);
 void matrix4_map_function(Matrix4 *m, float (*func)(float));
 bool matrix4_element_wise_equal(Matrix4 *m1, Matrix4 *m2);

@@ -370,7 +370,7 @@ int test_matrix4_add_bias()
     return print_test(diff, true, "test_matrix4_add_bias");
 }
 
-int test_matrix4_sum_bias()
+int test_matrix4_sum_rows()
 {
 
     float c[] = {
@@ -378,7 +378,7 @@ int test_matrix4_sum_bias()
     };
 
     Matrix4 *m1 = matrix4_init(1, 1, 2, 2, a);
-    Matrix *m2 = matrix4_sum_bias(m1, NULL);
+    Matrix *m2 = matrix4_sum_rows(m1, NULL);
     Matrix *expected = matrix_init(1, 1, c);
 
     bool diff = matrix_element_wise_equal(m2, expected);
@@ -387,7 +387,7 @@ int test_matrix4_sum_bias()
     matrix_destroy(m2);
     matrix_destroy(expected);
 
-    return print_test(diff, true, "test_matrix4_sum_bias");
+    return print_test(diff, true, "test_matrix4_sum_rows");
 }
 
 // TODO: more tests on the new matrix functions

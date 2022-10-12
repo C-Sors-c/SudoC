@@ -80,11 +80,21 @@ Matrix *matrix_init(int dim1, int dim2, float *datap)
 //   dst - a pointer to the destination matrix
 //
 
-void matrix_copy(Matrix *m, Matrix *dst)
+Matrix *matrix_copy(Matrix *m, Matrix *dst)
 {
+    if (dst == NULL)
+        dst = matrix_init(m->dim1, m->dim2, NULL);
+
+    if (m->dim1 != dst->dim1 || m->dim2 != dst->dim2)
+    {
+        errx(EXIT_FAILURE, "Error: matrix_copy: dimensions mismatch");
+    }
+
     for (int i = 0; i < m->dim1; i++)
         for (int j = 0; j < m->dim2; j++)
             dst->data[i][j] = m->data[i][j];
+
+    return dst;
 }
 
 // Function: matrix_zero
@@ -137,7 +147,6 @@ Matrix *matrix_add(Matrix *m1, Matrix *m2, Matrix *dst)
     return dst;
 }
 
-
 // Function: matrix_add_bias
 // --------------------
 // Adds a bias matrix to a matrix and returns the result.
@@ -157,21 +166,58 @@ Matrix *matrix_add_bias(Matrix *m1, Matrix *m2, Matrix *dst)
         dst = matrix_init(m1->dim1, m1->dim2, NULL);
     }
 
-    if (m1->dim1 != m2->dim1 || m1->dim1 != dst->dim1 || m1->dim2 != dst->dim2)
+    if (m1->dim2 != m2->dim2 || m1->dim1 != dst->dim1 || m1->dim2 != dst->dim2)
     {
         printf("m1->dim1: %d m1->dim2: %d m2->dim1: %d m2->dim2: %d dst->dim1: %d dst->dim2: %d\n", m1->dim1, m1->dim2, m2->dim1, m2->dim2, dst->dim1, dst->dim2);
         errx(EXIT_FAILURE, "matrix_add_bias: matrix dimensions do not match\n");
     }
 
-    for (int i = 0; i < dst->dim1; i++)
+    for (int j = 0; j < dst->dim2; j++)
     {
-        for (int j = 0; j < dst->dim2; j++)
+        for (int i = 0; i < dst->dim1; i++)
         {
-            dst->data[i][j] = m1->data[i][j] + m2->data[i][0];
+            dst->data[i][j] = m1->data[i][j] + m2->data[0][j];
         }
     }
     return dst;
 }
+
+// Function: matrix_sum_rows
+// --------------------
+// Sums the rows of a matrix and returns the result.
+//
+// Parameters:
+//   m1 - pointer to the matrix
+//   dst - pointer to the destination matrix
+//
+// Returns:
+//   a pointer to the result matrix
+//
+
+Matrix *matrix_sum_rows(Matrix *m1, Matrix *dst)
+{
+    if (dst == NULL)
+    {
+        dst = matrix_init(1, m1->dim2, NULL);
+    }
+
+    if (m1->dim2 != dst->dim2)
+    {
+        printf("m1->dim1: %d m1->dim2: %d dst->dim1: %d dst->dim2: %d\n", m1->dim1, m1->dim2, dst->dim1, dst->dim2);
+        errx(EXIT_FAILURE, "matrix_sum_rows: matrix dimensions do not match\n");
+    }
+
+    for (int j = 0; j < dst->dim2; j++)
+    {
+        dst->data[0][j] = 0;
+        for (int i = 0; i < dst->dim1; i++)
+        {
+            dst->data[0][j] += m1->data[i][j];
+        }
+    }
+    return dst;
+}
+
 
 // Function: matrix_subtract
 // --------------------
@@ -228,8 +274,12 @@ Matrix *matrix_multiply(Matrix *m1, Matrix *m2, Matrix *dst)
 
     if (m1->dim2 != m2->dim1 || dst->dim1 != m1->dim1 || dst->dim2 != m2->dim2)
     {
+        printf("m1->dim2 != m2->dim1: %d != %d \n", m1->dim2, m2->dim1);
+        printf("dst->dim1 != m1->dim1: %d != %d \n", dst->dim1, m1->dim1);
+        printf("dst->dim2 != m2->dim2: %d != %d \n", dst->dim2, m2->dim2);
+
         printf("m1->dim1: %d m1->dim2: %d m2->dim1: %d m2->dim2: %d dst->dim1: %d dst->dim2: %d\n", m1->dim1, m1->dim2, m2->dim1, m2->dim2, dst->dim1, dst->dim2);
-        errx(EXIT_FAILURE, "matrix_multiply: matrix dimensions do not match\n");
+        errx(EXIT_FAILURE, "matrix_multiply: matrix dimensions do not match, expected output to be (%i, %i)\n", m1->dim1, m2->dim2);
     }
 
     for (int i = 0; i < dst->dim1; i++)
@@ -366,6 +416,42 @@ Matrix *matrix_transpose(Matrix *m)
     }
     return t;
 }
+
+// Function: matrix_elementwise_multiply
+// -------------------------------------
+// Multiplies two matrices elementwise.
+//
+// Parameters:
+//   m1 - pointer to the first matrix
+//   m2 - pointer to the second matrix
+//   dst - pointer to the destination matrix
+//
+// Returns:
+//   a pointer to the result matrix
+//
+
+Matrix *matrix_elementwise_multiply(Matrix *m1, Matrix *m2, Matrix *dst)
+{
+    if (dst == NULL)
+    {
+        dst = matrix_init(m1->dim1, m1->dim2, NULL);
+    }
+
+    if (m1->dim1 != m2->dim1 || m1->dim2 != m2->dim2 || dst->dim1 != m1->dim1 || dst->dim2 != m1->dim2)
+    {
+        errx(EXIT_FAILURE, "matrix_elementwise_multiply: matrix dimensions do not match\n");
+    }
+
+    for (int i = 0; i < dst->dim1; i++)
+    {
+        for (int j = 0; j < dst->dim2; j++)
+        {
+            dst->data[i][j] = m1->data[i][j] * m2->data[i][j];
+        }
+    }
+    return dst;
+}
+
 
 // Function: matrix_elementwise_equal
 // ----------------------
@@ -653,7 +739,7 @@ Matrix4 *matrix4_unflatten(Matrix *m, Matrix4 *dst)
     return dst;
 }
 
-// Function: matrix4_sum_bias
+// Function: matrix4_sum_rows
 // ---------------------------------
 // Calculates the bias gradient from 4d delta matrix.
 //
@@ -665,7 +751,7 @@ Matrix4 *matrix4_unflatten(Matrix *m, Matrix4 *dst)
 //   pointer to the resulting matrix
 //
 
-Matrix *matrix4_sum_bias(Matrix4 *m, Matrix *dst)
+Matrix *matrix4_sum_rows(Matrix4 *m, Matrix *dst)
 {
     if (dst == NULL)
     {
@@ -674,14 +760,14 @@ Matrix *matrix4_sum_bias(Matrix4 *m, Matrix *dst)
 
     if (m->dim2 != dst->dim1)
     {
-        errx(EXIT_FAILURE, "matrix4_sum_bias: matrix dimensions do not match\n");
+        errx(EXIT_FAILURE, "matrix4_sum_rows: matrix dimensions do not match\n");
     }
 
     for (int i = 0; i < m->dim1; i++)
         for (int j = 0; j < m->dim2; j++)
             for (int k = 0; k < m->dim3; k++)
                 for (int l = 0; l < m->dim4; l++)
-                    dst->data[j][0] += m->data[i][j][k][l];
+                    dst->data[0][j] += m->data[i][j][k][l];
 
     return dst;
 }

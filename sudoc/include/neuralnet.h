@@ -26,6 +26,6 @@ typedef struct NNXor NNXor;
 
 NNXor *nnxor_init(int batchsize, bool load_weights);
 Matrix *nnxor_forward(NNXor *network, Matrix *input);
-void nnxor_backward(NNXor *network, Matrix *predictions, Matrix *labels, float learning_rate);
+void nnxor_backward(NNXor *network, Matrix *input, Matrix *predictions, Matrix *labels, float learning_rate);
 float nnxor_train_batch(NNXor *network, Matrix *input, Matrix *expected, float learning_rate);
 void nnxor_destroy(NNXor *network);

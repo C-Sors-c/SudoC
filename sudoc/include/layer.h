@@ -27,7 +27,7 @@ FCLayer *fc_layer_init(
     int input_size, int output_size, int batch_size,
     float (*activation_func)(float), float (*d_activation_func)(float), bool load_weights);
 Matrix *fc_layer_forward(FCLayer *layer, Matrix *input);
-Matrix * fc_layer_backward(FCLayer *layer, Matrix *previous_activations, Matrix *previous_deltas, float learning_rate);
+Matrix *fc_layer_backward(FCLayer *layer, Matrix *prev_Z, Matrix *prev_deltas, float learning_rate);
 void fc_layer_print(FCLayer *layer);
 void fc_layer_destroy(FCLayer *layer);
 
@@ -66,6 +66,7 @@ ConvLayer *conv_layer_init(
     float (*activation_func)(float), float (*d_activation_func)(float), bool load_weights);
 Matrix4 *conv_layer_forward(ConvLayer *layer, Matrix4 *input);
 Matrix4 *conv_layer_backward(ConvLayer *layer, Matrix4 *previous_activations, Matrix4 *previous_deltas, float learning_rate);
+void conv_layer_print(ConvLayer *layer);
 void conv_layer_destroy(ConvLayer *layer);
 
 // activations
@@ -114,4 +115,3 @@ Matrix4 *flatten_layer_backward(FlattenLayer *layer, Matrix *previous_deltas);
 void flatten_layer_destroy(FlattenLayer *layer);
 
 float cross_entropy_loss(Matrix *predictions, Matrix *labels);
-Matrix *d_cross_entropy_loss(Matrix *predictions, Matrix *labels);
