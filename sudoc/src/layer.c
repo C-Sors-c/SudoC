@@ -47,7 +47,7 @@ FCLayer *fc_layer_init(
 
     // initialize activations and deltas
     layer->activations = matrix_init(output_size, batch_size, NULL);
-    layer->deltas = matrix_init(output_size, batch_size, NULL);
+    layer->deltas = matrix_init(input_size, batch_size, NULL);
 
     // initialize gradients
     layer->weights_gradient = matrix_init(output_size, input_size, NULL);
@@ -56,31 +56,42 @@ FCLayer *fc_layer_init(
     return layer;
 }
 
-// forward pass for an input of shape: (batch_size, input_size)
-Matrix * fc_layer_forward(FCLayer *layer, Matrix *input)
+// forward pass for an input of shape: (input_size, batch_size)
+Matrix *fc_layer_forward(FCLayer *layer, Matrix *input)
 {
     // calculate activations
     matrix_multiply(layer->weights, input, layer->activations);
-    matrix_add(layer->activations, layer->biases, layer->activations);
+    matrix_add_bias(layer->activations, layer->biases, layer->activations);
     matrix_map_function(layer->activations, layer->activation_func);
 
     return layer->activations;
 }
 
-// backward pass
-Matrix * fc_layer_backward(FCLayer *layer, Matrix *previous_activations, Matrix *previous_deltas, float learning_rate)
+// backward pass for an input of shape: (input_size, batch_size)
+//
+// Arguments:
+//   - previous_activations: activations of the previous layer
+//   - previous_deltas: deltas of the previous layer
+//   - learning_rate: learning rate
+// returns the deltas for the layer
+Matrix *fc_layer_backward(FCLayer *layer, Matrix *previous_activations, Matrix *previous_deltas, float learning_rate)
 {
     // calculate deltas
     matrix_multiply(matrix_transpose(layer->weights), previous_deltas, layer->deltas);
     matrix_map_function(layer->deltas, layer->d_activation_func);
 
+    printf("been here 2\n");
+    matrix_print(layer->deltas);
+
     // calculate gradients
-    matrix_multiply(previous_deltas, matrix_transpose(previous_activations), layer->weights_gradient);
-    matrix_copy(previous_deltas, layer->biases_gradient);
+    matrix_multiply(matrix_transpose(layer->deltas), previous_activations, layer->weights_gradient);
+    matrix_copy(layer->deltas, layer->biases_gradient);
+
+    printf("been here 3\n");
 
     // update weights and biases
-    matrix_scalar_multiply(layer->weights_gradient, -learning_rate);
-    matrix_scalar_multiply(layer->biases_gradient, -learning_rate);
+    matrix_multiply_scalar(layer->weights_gradient, -learning_rate);
+    matrix_multiply_scalar(layer->biases_gradient, -learning_rate);
 
     matrix_add(layer->weights, layer->weights_gradient, layer->weights);
     matrix_add(layer->biases, layer->biases_gradient, layer->biases);
@@ -90,6 +101,15 @@ Matrix * fc_layer_backward(FCLayer *layer, Matrix *previous_activations, Matrix 
     matrix_zero(layer->biases_gradient);
 
     return layer->deltas;
+}
+
+void fc_layer_print(FCLayer *layer)
+{
+    printf("input_size: %d, output_size: %d\n", layer->input_size, layer->output_size);
+    printf("weights: dim1: %d, dim2: %d\n", layer->weights->dim1, layer->weights->dim2);
+    printf("biases: dim1: %d, dim2: %d\n", layer->biases->dim1, layer->biases->dim2);
+    printf("activations: dim1: %d, dim2: %d\n", layer->activations->dim1, layer->activations->dim2);
+    printf("deltas: dim1: %d, dim2: %d\n", layer->deltas->dim1, layer->deltas->dim2);
 }
 
 // destroy a fully connected layer
@@ -175,7 +195,7 @@ ConvLayer *conv_layer_init(
 }
 
 // forward pass for an input of shape: (batch_size, depth, height, width)
-Matrix4 * conv_layer_forward(ConvLayer *layer, Matrix4 *input)
+Matrix4 *conv_layer_forward(ConvLayer *layer, Matrix4 *input)
 {
     // calculate activations
     matrix4_convolve(layer->weights, input, layer->activations, layer->stride, layer->padding);
@@ -186,7 +206,7 @@ Matrix4 * conv_layer_forward(ConvLayer *layer, Matrix4 *input)
 }
 
 // backward pass
-Matrix4 * conv_layer_backward(ConvLayer *layer, Matrix4 *previous_activations, Matrix4 *previous_deltas, float learning_rate)
+Matrix4 *conv_layer_backward(ConvLayer *layer, Matrix4 *previous_activations, Matrix4 *previous_deltas, float learning_rate)
 {
     // calculate deltas
     matrix4_convolve_transpose(layer->weights, previous_deltas, layer->deltas, layer->stride, layer->padding);
@@ -198,7 +218,7 @@ Matrix4 * conv_layer_backward(ConvLayer *layer, Matrix4 *previous_activations, M
 
     // update weights and biases
     matrix4_scalar_multiply(layer->weights_gradient, -learning_rate);
-    matrix_scalar_multiply(layer->biases_gradient, -learning_rate);
+    matrix_multiply_scalar(layer->biases_gradient, -learning_rate);
 
     matrix4_add(layer->weights, layer->weights_gradient, layer->weights);
     matrix_add(layer->biases, layer->biases_gradient, layer->biases);
@@ -243,7 +263,7 @@ float relu(float x)
 
 float d_relu(float x)
 {
-    return x > 0 ? 1 : 0;
+    return x > 0 ? x : 0;
 }
 
 float leaky_relu(float x)
@@ -253,19 +273,22 @@ float leaky_relu(float x)
 
 float d_leaky_relu(float x)
 {
-    return x > 0 ? 1 : 0.1;
+    return x > 0 ? x : 0.1 * x;
 }
 
 Matrix *softmax(Matrix *m1)
 {
+    // m1 shape: (input_size, batchsize)
     Matrix *m2 = matrix_init(m1->dim1, m1->dim2, NULL);
-    float sum = 0;
-    for (int i = 0; i < m1->dim1; i++)
-        for (int j = 0; j < m1->dim2; j++)
+
+    for (int j = 0; j < m2->dim2; j++)
+    {
+        float sum = 0;
+        for (int i = 0; i < m1->dim1; i++)
             sum += exp(m1->data[i][j]);
-    for (int i = 0; i < m1->dim1; i++)
-        for (int j = 0; j < m1->dim2; j++)
+        for (int i = 0; i < m1->dim1; i++)
             m2->data[i][j] = exp(m1->data[i][j]) / sum;
+    }
     return m2;
 }
 
@@ -278,15 +301,15 @@ Matrix *d_softmax(Matrix *m1)
     return m2;
 }
 
-ActivationLayer *activation_layer_init(int input_size, int batch_size, Matrix * (*activation_func)(Matrix *), Matrix * (*d_activation_func)(Matrix *))
+ActivationLayer *activation_layer_init(int input_size, int batch_size, Matrix *(*activation_func)(Matrix *), Matrix *(*d_activation_func)(Matrix *))
 {
     ActivationLayer *layer = malloc(sizeof(ActivationLayer));
     layer->input_size = input_size;
     layer->batch_size = batch_size;
     layer->activation_func = activation_func;
     layer->d_activation_func = d_activation_func;
-    layer->activations = matrix_init(batch_size, input_size, NULL);
-    layer->deltas = matrix_init(batch_size, input_size, NULL);
+    layer->activations = matrix_init(input_size, batch_size, NULL);
+    layer->deltas = matrix_init(input_size, batch_size, NULL);
     return layer;
 }
 

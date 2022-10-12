@@ -112,7 +112,7 @@ int test_matrix_multiply_scalar()
 
     Matrix *m1 = matrix_init(2, 2, a);
 
-    matrix_scalar_multiply(m1, 2.0);
+    matrix_multiply_scalar(m1, 2.0);
     Matrix *expected = matrix_init(2, 2, c);
 
     bool diff = matrix_element_wise_equal(m1, expected);

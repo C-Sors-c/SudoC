@@ -19,10 +19,11 @@ void matrix_copy(Matrix *m, Matrix *dst);
 void matrix_zero(Matrix *m);
 
 Matrix *matrix_add(Matrix *m1, Matrix *m2, Matrix *dst);
+Matrix *matrix_add_bias(Matrix *m1, Matrix *m2, Matrix *dst);
 Matrix *matrix_subtract(Matrix *m1, Matrix *m2, Matrix *dst);
 Matrix *matrix_multiply(Matrix *m1, Matrix *m2, Matrix *dst);
 Matrix *matrix_transpose(Matrix *m);
-void matrix_scalar_multiply(Matrix *m, float s);
+void matrix_multiply_scalar(Matrix *m, float s);
 void matrix_map_function(Matrix *m, float (*func)(float));
 bool matrix_element_wise_equal(Matrix *m1, Matrix *m2);
 float matrix_get(Matrix *m, int row, int col);

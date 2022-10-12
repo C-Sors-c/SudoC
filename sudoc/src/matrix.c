@@ -123,6 +123,7 @@ Matrix *matrix_add(Matrix *m1, Matrix *m2, Matrix *dst)
 
     if (m1->dim1 != m2->dim1 || m1->dim2 != m2->dim2)
     {
+        printf("m1->dim1: %d m1->dim2: %d m2->dim1: %d m2->dim2: %d dst->dim1: %d dst->dim2: %d\n", m1->dim1, m1->dim2, m2->dim1, m2->dim2, dst->dim1, dst->dim2);
         errx(EXIT_FAILURE, "matrix_add: matrix dimensions do not match\n");
     }
 
@@ -131,6 +132,42 @@ Matrix *matrix_add(Matrix *m1, Matrix *m2, Matrix *dst)
         for (int j = 0; j < dst->dim2; j++)
         {
             dst->data[i][j] = m1->data[i][j] + m2->data[i][j];
+        }
+    }
+    return dst;
+}
+
+
+// Function: matrix_add_bias
+// --------------------
+// Adds a bias matrix to a matrix and returns the result.
+//
+// Parameters:
+//   m1 - pointer to the matrix
+//   m2 - pointer to the bias matrix
+//
+// Returns:
+//   a pointer to the result matrix
+//
+
+Matrix *matrix_add_bias(Matrix *m1, Matrix *m2, Matrix *dst)
+{
+    if (dst == NULL)
+    {
+        dst = matrix_init(m1->dim1, m1->dim2, NULL);
+    }
+
+    if (m1->dim1 != m2->dim1 || m1->dim1 != dst->dim1 || m1->dim2 != dst->dim2)
+    {
+        printf("m1->dim1: %d m1->dim2: %d m2->dim1: %d m2->dim2: %d dst->dim1: %d dst->dim2: %d\n", m1->dim1, m1->dim2, m2->dim1, m2->dim2, dst->dim1, dst->dim2);
+        errx(EXIT_FAILURE, "matrix_add_bias: matrix dimensions do not match\n");
+    }
+
+    for (int i = 0; i < dst->dim1; i++)
+    {
+        for (int j = 0; j < dst->dim2; j++)
+        {
+            dst->data[i][j] = m1->data[i][j] + m2->data[i][0];
         }
     }
     return dst;
@@ -191,6 +228,7 @@ Matrix *matrix_multiply(Matrix *m1, Matrix *m2, Matrix *dst)
 
     if (m1->dim2 != m2->dim1 || dst->dim1 != m1->dim1 || dst->dim2 != m2->dim2)
     {
+        printf("m1->dim1: %d m1->dim2: %d m2->dim1: %d m2->dim2: %d dst->dim1: %d dst->dim2: %d\n", m1->dim1, m1->dim2, m2->dim1, m2->dim2, dst->dim1, dst->dim2);
         errx(EXIT_FAILURE, "matrix_multiply: matrix dimensions do not match\n");
     }
 
@@ -208,7 +246,7 @@ Matrix *matrix_multiply(Matrix *m1, Matrix *m2, Matrix *dst)
     return dst;
 }
 
-// Function: matrix_scalar_multiply
+// Function: matrix_multiply_scalar
 // --------------------------------
 // Multiplies a matrix by a scalar.
 //
@@ -217,7 +255,7 @@ Matrix *matrix_multiply(Matrix *m1, Matrix *m2, Matrix *dst)
 //   scalar - the scalar
 //
 
-void matrix_scalar_multiply(Matrix *m, float s)
+void matrix_multiply_scalar(Matrix *m, float s)
 {
     for (int i = 0; i < m->dim1; i++)
         for (int j = 0; j < m->dim2; j++)
@@ -295,7 +333,7 @@ void matrix_set(Matrix *m, int row, int col, float value)
 {
     if (row < 0 || row >= m->dim1 || col < 0 || col >= m->dim2)
     {
-        errx(EXIT_FAILURE, "matrix_set: index out of bounds\n");
+        errx(EXIT_FAILURE, "matrix_set: index out of bounds, %i, %i, dim1:%i, dim2:%i\n", row, col, m->dim1, m->dim2);
     }
     m->data[row][col] = value;
 }
@@ -369,13 +407,15 @@ bool matrix_element_wise_equal(Matrix *m1, Matrix *m2)
 
 void matrix_print(Matrix *m)
 {
+    printf("dim1:%i, dim2:%i\n", m->dim1, m->dim2);
     for (int i = 0; i < m->dim1; i++)
     {
+        printf("[");
         for (int j = 0; j < m->dim2; j++)
         {
             printf("%f ", m->data[i][j]);
         }
-        printf("\n");
+        printf("]\n");
     }
 }
 
@@ -612,7 +652,6 @@ Matrix4 *matrix4_unflatten(Matrix *m, Matrix4 *dst)
 
     return dst;
 }
-
 
 // Function: matrix4_sum_bias
 // ---------------------------------
@@ -947,11 +986,11 @@ void matrix4_print(Matrix4 *m)
             for (int k = 0; k < m->dim3; k++)
             {
                 printf("        [");
-                for (int l = 0; l < m->dim4-1; l++)
+                for (int l = 0; l < m->dim4 - 1; l++)
                 {
                     printf("%f ", m->data[i][j][k][l]);
                 }
-                printf("%f]\n", m->data[i][j][k][m->dim4-1]);
+                printf("%f]\n", m->data[i][j][k][m->dim4 - 1]);
             }
             printf("        ]\n");
         }

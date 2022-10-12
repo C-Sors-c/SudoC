@@ -4,15 +4,28 @@
 #include "weight_parser.h"
 #include "layer.h"
 
-struct NeuralNetwork {
+struct CNN {
     ConvLayer **conv_layers;
     FCLayer **fc_layers;
     ActivationLayer *output_layer;
 };
-typedef struct NeuralNetwork NeuralNetwork;
+typedef struct CNN CNN;
 
-NeuralNetwork *neural_network_init(int batch_size, bool load_weights);
-Matrix * neural_network_forward(NeuralNetwork *network, Matrix4 *input);
-void neural_network_backward(NeuralNetwork *network, Matrix *predictions, Matrix *labels, float learning_rate);
-float neural_network_train_batch(NeuralNetwork *network, Matrix4 *input, Matrix *expected, float learning_rate);
-void neural_network_destroy(NeuralNetwork *network);
+CNN *cnn_init(int batch_size, bool load_weights);
+Matrix *cnn_forward(CNN *network, Matrix4 *input);
+void cnn_backward(CNN *network, Matrix *predictions, Matrix *labels, float learning_rate);
+float cnn_train_batch(CNN *network, Matrix4 *input, Matrix *expected, float learning_rate);
+void cnn_destroy(CNN *network);
+
+
+struct NNXor {
+    FCLayer **fc_layers;
+    ActivationLayer *output_layer;
+};
+typedef struct NNXor NNXor;
+
+NNXor *nnxor_init(int batchsize, bool load_weights);
+Matrix *nnxor_forward(NNXor *network, Matrix *input);
+void nnxor_backward(NNXor *network, Matrix *predictions, Matrix *labels, float learning_rate);
+float nnxor_train_batch(NNXor *network, Matrix *input, Matrix *expected, float learning_rate);
+void nnxor_destroy(NNXor *network);

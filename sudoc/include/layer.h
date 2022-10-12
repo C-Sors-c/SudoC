@@ -28,6 +28,7 @@ FCLayer *fc_layer_init(
     float (*activation_func)(float), float (*d_activation_func)(float), bool load_weights);
 Matrix *fc_layer_forward(FCLayer *layer, Matrix *input);
 Matrix * fc_layer_backward(FCLayer *layer, Matrix *previous_activations, Matrix *previous_deltas, float learning_rate);
+void fc_layer_print(FCLayer *layer);
 void fc_layer_destroy(FCLayer *layer);
 
 // Convolution layer

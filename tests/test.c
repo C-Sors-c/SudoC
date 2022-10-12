@@ -7,6 +7,7 @@
 
 #include "include/test_matrix.h"
 #include "include/test_sdl.h"
+#include "include/test_nn.h"
 
 // lists of all dummy tests
 int (*test_dummy[])() = {
@@ -41,6 +42,10 @@ int (*tests_matrix[])() = {
 int (*tests_sdl[])() = {
     test_sdl_surface_to_array_red,
     test_to_green,
+};
+
+int (*tests_nn[])() = {
+    test_nnxor,
 };
 
 int main()
@@ -82,6 +87,14 @@ int main()
     test_count += test_sdl_count;
     for (int i = 0; i < test_sdl_count; i++)
         failed += tests_sdl[i]();
+    printf("\n");
+
+    // nn tests
+    printf(YELLOW "Running nn tests...\n" RESET);
+    int test_nn_count = sizeof(tests_nn) / sizeof(tests_nn[0]);
+    test_count += test_nn_count;
+    for (int i = 0; i < test_nn_count; i++)
+        failed += tests_nn[i]();
     printf("\n");
 
     // stop timer

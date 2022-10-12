@@ -1,8 +1,10 @@
 #include "../include/neuralnet.h"
 
-NeuralNetwork *init_neural_network(int batchsize, bool load_weights)
+#pragma region cnn
+
+CNN *init_neural_network(int batchsize, bool load_weights)
 {
-    NeuralNetwork *neural_network = malloc(sizeof(NeuralNetwork));
+    CNN *neural_network = malloc(sizeof(CNN));
 
     // initialize convolutional layers
     neural_network->conv_layers = malloc(sizeof(ConvLayer) * 2);
@@ -25,7 +27,7 @@ NeuralNetwork *init_neural_network(int batchsize, bool load_weights)
 }
 
 // forward pass
-Matrix *neural_network_forward(NeuralNetwork *neural_network, Matrix4 *input)
+Matrix *cnn_forward(CNN *neural_network, Matrix4 *input)
 {
     Matrix4 *x = conv_layer_forward(neural_network->conv_layers[0], input);
     x = conv_layer_forward(neural_network->conv_layers[1], x);
@@ -40,7 +42,7 @@ Matrix *neural_network_forward(NeuralNetwork *neural_network, Matrix4 *input)
 }
 
 // backward pass
-void neural_network_backward(NeuralNetwork *neural_network, Matrix *predictions, Matrix *labels, float learning_rate)
+void cnn_backward(CNN *neural_network, Matrix *predictions, Matrix *labels, float learning_rate)
 {
     Matrix *deltas = d_cross_entropy_loss(predictions, labels);
     deltas = activation_layer_backward(neural_network->output_layer, deltas);
@@ -54,16 +56,16 @@ void neural_network_backward(NeuralNetwork *neural_network, Matrix *predictions,
     matrix4_destroy(deltas4);
 }
 
-float neural_network_train_batch(NeuralNetwork *neural_network, Matrix4 *input, Matrix *labels, float learning_rate)
+float cnn_train_batch(CNN *neural_network, Matrix4 *input, Matrix *labels, float learning_rate)
 {
-    Matrix *predictions = neural_network_forward(neural_network, input);
+    Matrix *predictions = cnn_forward(neural_network, input);
     float loss = cross_entropy_loss(predictions, labels);
-    neural_network_backward(neural_network, predictions, labels, learning_rate);
+    cnn_backward(neural_network, predictions, labels, learning_rate);
     matrix_destroy(predictions);
     return loss;
 }
 
-void neural_network_destroy(NeuralNetwork *neural_network)
+void cnn_destroy(CNN *neural_network)
 {
     conv_layer_destroy(neural_network->conv_layers[0]);
     conv_layer_destroy(neural_network->conv_layers[1]);
@@ -75,3 +77,61 @@ void neural_network_destroy(NeuralNetwork *neural_network)
     free(neural_network->fc_layers);
     free(neural_network);
 }
+
+#pragma endregion cnn
+
+#pragma region nnxor
+
+NNXor *nnxor_init(int batchsize, bool load_weights)
+{
+    NNXor *neural_network = malloc(sizeof(NNXor));
+
+    neural_network->fc_layers = malloc(2 * sizeof(FCLayer));
+    neural_network->fc_layers[0] = fc_layer_init(2, 32, batchsize, leaky_relu, d_leaky_relu, load_weights);
+    neural_network->fc_layers[1] = fc_layer_init(32, 2, batchsize, leaky_relu, d_leaky_relu, load_weights);
+
+    neural_network->output_layer = activation_layer_init(2, batchsize, softmax, d_softmax);
+
+    return neural_network;
+}
+
+Matrix *nnxor_forward(NNXor *neural_network, Matrix *input)
+{
+    Matrix *y = fc_layer_forward(neural_network->fc_layers[0], input);
+    y = fc_layer_forward(neural_network->fc_layers[1], y);
+    y = activation_layer_forward(neural_network->output_layer, y);
+    return y;
+}
+
+void nnxor_backward(NNXor *neural_network, Matrix *predictions, Matrix *labels, float learning_rate)
+{   
+    Matrix *deltas = d_cross_entropy_loss(predictions, labels);
+    deltas = activation_layer_backward(neural_network->output_layer, deltas);
+    fc_layer_print(neural_network->fc_layers[1]);
+    deltas = fc_layer_backward(neural_network->fc_layers[1], neural_network->output_layer->activations, deltas, learning_rate);
+    fc_layer_print(neural_network->fc_layers[0]);
+    deltas = fc_layer_backward(neural_network->fc_layers[0], neural_network->fc_layers[1]->activations, deltas, learning_rate);
+}
+
+float nnxor_train_batch(NNXor *neural_network, Matrix *input, Matrix *labels, float learning_rate)
+{
+    Matrix *predictions = nnxor_forward(neural_network, input);
+    matrix_print(predictions);
+    float loss = cross_entropy_loss(predictions, labels);
+    printf("loss: %f\n", loss);
+    nnxor_backward(neural_network, predictions, labels, learning_rate);
+    matrix_destroy(predictions);
+    return loss;
+}
+
+void nnxor_destroy(NNXor *neural_network)
+{
+    fc_layer_destroy(neural_network->fc_layers[0]);
+    fc_layer_destroy(neural_network->fc_layers[1]);
+    activation_layer_destroy(neural_network->output_layer);
+
+    free(neural_network->fc_layers);
+    free(neural_network);
+}
+
+#pragma endregion nnxor
