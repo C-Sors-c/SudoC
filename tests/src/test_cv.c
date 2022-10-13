@@ -1,6 +1,5 @@
 #include "../../sudoc/include/utils.h"
 #include "../../sudoc/include/cv.h"
-#include "../../sudoc/include/libs_sdl.h"
 #include "../include/test_cv.h"
 
 int test_cv_rgb_to_gray()

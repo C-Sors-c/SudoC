@@ -452,6 +452,37 @@ Image *cv_gaussian_blur(Image *src, Image *dst, int kernel_size, double sigma)
     return dst;
 }
 
+void cv_apply_kernel_sobel(Image *src, Matrix *kernel)
+{
+    if (src->channels != 1 && src->channels != 3)
+    {
+        errx(1, "invalid number of channels");
+    }
+
+    for (int i = 0; i < src->height; i++)
+    {
+        for (int j = 0; j < src->width; j++)
+        {
+            float sum = 0.0;
+            for (int k = 0; k < 3; k++)
+            {
+                for (int l = 0; l < 3; l++)
+                {
+                    int x = j + l;
+                    int y = i + k;
+
+                    // 0 padding
+                    if (x < 0 || x >= src->width || y < 0 || y >= src->height)
+                        continue;
+
+                    sum += src->data[y][x][0] * kernel->data[k][l];
+                }
+            }
+            src->data[i][j][0] = sum;
+        }
+    }
+}
+
 Image *cv_sharp(Image *src, Image *dst, int kernel_size)
 {
     if (src == NULL)
@@ -488,11 +519,6 @@ Image *cv_sobel(Image *src, Image *dst, int kernel_size)
     if (src == NULL)
     {
         errx(EXIT_FAILURE, "Error: cv_sobel: src is NULL");
-    }
-
-    if (src->channels != 1)
-    {
-        errx(EXIT_FAILURE, "Error: cv_sobel: src must have 1 channel");
     }
 
     if (dst == NULL)
@@ -546,8 +572,8 @@ Image *cv_sobel(Image *src, Image *dst, int kernel_size)
     Image *dst_x = cv_image_copy(dst);
     Image *dst_y = cv_image_copy(dst);
 
-    cv_apply_kernel(dst_x, kernel_x);
-    cv_apply_kernel(dst_y, kernel_y);
+    cv_apply_kernel_sobel(dst_x, kernel_x);
+    cv_apply_kernel_sobel(dst_y, kernel_y);
 
     for (int i = 0; i < dst->height; i++)
     {
@@ -571,11 +597,6 @@ Image *cv_canny(Image *src, Image *dst)
     if (src == NULL)
     {
         errx(EXIT_FAILURE, "Error: cv_canny: src is NULL");
-    }
-
-    if (src->channels != 1)
-    {
-        errx(EXIT_FAILURE, "Error: cv_canny: src must be grayscale");
     }
 
     if (dst == NULL)
@@ -623,8 +644,8 @@ Image *cv_canny(Image *src, Image *dst)
     Image *dst_x = cv_image_copy(dst_sobel);
     Image *dst_y = cv_image_copy(dst_sobel);
 
-    cv_apply_kernel(dst_x, kernel_x);
-    cv_apply_kernel(dst_y, kernel_y);
+    cv_apply_kernel_sobel(dst_x, kernel_x);
+    cv_apply_kernel_sobel(dst_y, kernel_y);
 
     for (int i = 0; i < dst_sobel->height; i++)
     {
@@ -708,6 +729,7 @@ Image *cv_canny(Image *src, Image *dst)
             {
                 dst_dt->data[i][j][0] = 0;
             }
+
             else
             {
                 dst_dt->data[i][j][0] = 127;
