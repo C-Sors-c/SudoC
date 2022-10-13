@@ -398,37 +398,6 @@ void cv_apply_kernel(Image *src, Matrix *kernel)
     }
 }
 
-void cv_apply_kernel_sobel(Image *src, Matrix *kernel)
-{
-    if (src->channels != 1 && src->channels != 3)
-    {
-        errx(1, "invalid number of channels");
-    }
-
-    for (int i = 0; i < src->height; i++)
-    {
-        for (int j = 0; j < src->width; j++)
-        {
-            float sum = 0.0;
-            for (int k = 0; k < 3; k++)
-            {
-                for (int l = 0; l < 3; l++)
-                {
-                    int x = j + l;
-                    int y = i + k;
-
-                    // 0 padding
-                    if (x < 0 || x >= src->width || y < 0 || y >= src->height)
-                        continue;
-
-                    sum += src->data[y][x][0] * kernel->data[k][l];
-                }
-            }
-            src->data[i][j][0] = sum;
-        }
-    }
-}
-
 Matrix *cv_compute_gaussian_kernel(int size, float sigma)
 {
     Matrix *kernel = matrix_init(size, size, NULL);
@@ -521,6 +490,11 @@ Image *cv_sobel(Image *src, Image *dst, int kernel_size)
         errx(EXIT_FAILURE, "Error: cv_sobel: src is NULL");
     }
 
+    if (src->channels != 1)
+    {
+        errx(EXIT_FAILURE, "Error: cv_sobel: src must have 1 channel");
+    }
+
     if (dst == NULL)
     {
         dst = cv_image_copy(src);
@@ -572,8 +546,8 @@ Image *cv_sobel(Image *src, Image *dst, int kernel_size)
     Image *dst_x = cv_image_copy(dst);
     Image *dst_y = cv_image_copy(dst);
 
-    cv_apply_kernel_sobel(dst_x, kernel_x);
-    cv_apply_kernel_sobel(dst_y, kernel_y);
+    cv_apply_kernel(dst_x, kernel_x);
+    cv_apply_kernel(dst_y, kernel_y);
 
     for (int i = 0; i < dst->height; i++)
     {
@@ -597,6 +571,11 @@ Image *cv_canny(Image *src, Image *dst)
     if (src == NULL)
     {
         errx(EXIT_FAILURE, "Error: cv_canny: src is NULL");
+    }
+
+    if (src->channels != 1)
+    {
+        errx(EXIT_FAILURE, "Error: cv_canny: src must be grayscale");
     }
 
     if (dst == NULL)
@@ -644,8 +623,8 @@ Image *cv_canny(Image *src, Image *dst)
     Image *dst_x = cv_image_copy(dst_sobel);
     Image *dst_y = cv_image_copy(dst_sobel);
 
-    cv_apply_kernel_sobel(dst_x, kernel_x);
-    cv_apply_kernel_sobel(dst_y, kernel_y);
+    cv_apply_kernel(dst_x, kernel_x);
+    cv_apply_kernel(dst_y, kernel_y);
 
     for (int i = 0; i < dst_sobel->height; i++)
     {
@@ -729,7 +708,6 @@ Image *cv_canny(Image *src, Image *dst)
             {
                 dst_dt->data[i][j][0] = 0;
             }
-
             else
             {
                 dst_dt->data[i][j][0] = 127;
@@ -808,9 +786,49 @@ Image *cv_rotate(Image *src, Image *dst, float angle)
             int xt = x - hwidth;
             int yt = y - hheight;
 
-
             int xs = (int)round((cosma * xt - sinma * yt) + hwidth);
             int ys = (int)round((sinma * xt + cosma * yt) + hheight);
+
+            if (xs >= 0 && xs < src->width && ys >= 0 && ys < src->height)
+            {
+                for (int c = 0; c < src->channels; c++)
+                {
+                    dst->data[y][x][c] = src->data[ys][xs][c];
+                }
+            }
+            else
+            {
+                for (int c = 0; c < src->channels; c++)
+                {
+                    dst->data[y][x][c] = 0;
+                }
+            }
+        }
+    }
+    return dst;
+}
+
+Image *cv_scale(Image *src, Image *dst, float scale)
+{
+    if (src == NULL)
+    {
+        errx(EXIT_FAILURE, "Error: cv_scale: src is NULL");
+    }
+
+    if (dst == NULL)
+    {
+        dst = cv_image_copy(src);
+    }
+
+    int new_width = (int)round(src->width * scale);
+    int new_height = (int)round(src->height * scale);
+
+    for (int x = 0; x < new_width; x++)
+    {
+        for (int y = 0; y < new_height; y++)
+        {
+            int xs = (int)round((float)x / scale);
+            int ys = (int)round((float)y / scale);
 
             if (xs >= 0 && xs < src->width && ys >= 0 && ys < src->height)
             {

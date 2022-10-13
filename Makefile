@@ -46,6 +46,7 @@ run: build clean-sudoc
 	@./$(BUILD_DIR)/$(EXEC)
 
 test: build-test
+	@mkdir -p $(TEST_DATA_DIR)
 	@./$(BUILD_DIR)/$(EXEC_TEST)
 
 # test with valgrind
