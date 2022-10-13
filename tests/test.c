@@ -6,6 +6,7 @@
 #include "include/test_cv.h"
 
 #include "include/test_matrix.h"
+#include "include/test_nn.h"
 
 // lists of all dummy tests
 int (*test_dummy[])() = {
@@ -29,11 +30,19 @@ int (*tests_matrix[])() = {
     test_matrix_multiply,
     test_matrix_multiply_scalar,
     test_matrix_transpose,
+    test_matrix_map_function,
     test_matrix4_add,
     test_matrix4_subtract,
-    test_matrix4_multiply,
     test_matrix4_multiply_scalar,
     test_matrix4_transpose,
+    test_matrix4_map_function,
+    test_matrix4_convolve,
+    test_matrix4_add_bias,
+    test_matrix4_sum_rows,
+};
+
+int (*tests_nn[])() = {
+    test_nnxor,
 };
 
 int main()
@@ -67,6 +76,14 @@ int main()
     test_count += test_matrix_count;
     for (int i = 0; i < test_matrix_count; i++)
         failed += tests_matrix[i]();
+    printf("\n");
+
+    // nn tests
+    printf(YELLOW "Running nn tests...\n" RESET);
+    int test_nn_count = sizeof(tests_nn) / sizeof(tests_nn[0]);
+    test_count += test_nn_count;
+    for (int i = 0; i < test_nn_count; i++)
+        failed += tests_nn[i]();
     printf("\n");
 
     // stop timer
