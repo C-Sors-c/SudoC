@@ -6,7 +6,6 @@
 #include "include/test_cv.h"
 
 #include "include/test_matrix.h"
-#include "include/test_sdl.h"
 
 // lists of all dummy tests
 int (*test_dummy[])() = {
@@ -35,11 +34,6 @@ int (*tests_matrix[])() = {
     test_matrix4_multiply,
     test_matrix4_multiply_scalar,
     test_matrix4_transpose,
-};
-
-int (*tests_sdl[])() = {
-    test_sdl_surface_to_array_red,
-    test_to_green,
 };
 
 int main()
@@ -73,14 +67,6 @@ int main()
     test_count += test_matrix_count;
     for (int i = 0; i < test_matrix_count; i++)
         failed += tests_matrix[i]();
-    printf("\n");
-
-    // sdl tests
-    printf(YELLOW "Running sdl tests...\n" RESET);
-    int test_sdl_count = sizeof(tests_sdl) / sizeof(tests_sdl[0]);
-    test_count += test_sdl_count;
-    for (int i = 0; i < test_sdl_count; i++)
-        failed += tests_sdl[i]();
     printf("\n");
 
     // stop timer
