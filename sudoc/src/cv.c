@@ -740,30 +740,30 @@ Image *cv_canny(Image *src, Image *dst)
 
     // start hysteresis
 
-    Image *dst_hyst = cv_image_copy(dst_dt);
+    dst = cv_image_copy(dst_dt);
 
-    for (int i = 0; i < dst_hyst->height; i++)
+    for (int i = 0; i < dst->height; i++)
     {
-        for (int j = 0; j < dst_hyst->width; j++)
+        for (int j = 0; j < dst->width; j++)
         {
-            if (dst_hyst->data[i][j][0] == 127)
+            if (dst->data[i][j][0] == 127)
             {
-                if (i > 0 && j > 0 && i < dst_hyst->height - 1 && j < dst_hyst->width - 1)
+                if (i > 0 && j > 0 && i < dst->height - 1 && j < dst->width - 1)
                 {
-                    if (dst_hyst->data[i - 1][j - 1][0] == 255 ||
-                        dst_hyst->data[i - 1][j][0] == 255 ||
-                        dst_hyst->data[i - 1][j + 1][0] == 255 ||
-                        dst_hyst->data[i][j - 1][0] == 255 ||
-                        dst_hyst->data[i][j + 1][0] == 255 ||
-                        dst_hyst->data[i + 1][j - 1][0] == 255 ||
-                        dst_hyst->data[i + 1][j][0] == 255 ||
-                        dst_hyst->data[i + 1][j + 1][0] == 255)
+                    if (dst->data[i - 1][j - 1][0] == 255 ||
+                        dst->data[i - 1][j][0] == 255 ||
+                        dst->data[i - 1][j + 1][0] == 255 ||
+                        dst->data[i][j - 1][0] == 255 ||
+                        dst->data[i][j + 1][0] == 255 ||
+                        dst->data[i + 1][j - 1][0] == 255 ||
+                        dst->data[i + 1][j][0] == 255 ||
+                        dst->data[i + 1][j + 1][0] == 255)
                     {
-                        dst_hyst->data[i][j][0] = 255;
+                        dst->data[i][j][0] = 255;
                     }
                     else
                     {
-                        dst_hyst->data[i][j][0] = 0;
+                        dst->data[i][j][0] = 0;
                     }
                 }
             }
@@ -777,8 +777,6 @@ Image *cv_canny(Image *src, Image *dst)
     cv_free_image(dst_nms);
     cv_free_image(dst_dt);
 
-    dst = cv_image_copy(dst_hyst);
-    cv_free_image(dst_hyst);
     return dst;
 }
 
@@ -807,7 +805,6 @@ Image *cv_rotate(Image *src, Image *dst, float angle)
 
             int xt = x - hwidth;
             int yt = y - hheight;
-
 
             int xs = (int)round((cosma * xt - sinma * yt) + hwidth);
             int ys = (int)round((sinma * xt + cosma * yt) + hheight);
