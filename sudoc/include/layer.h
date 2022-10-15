@@ -1,7 +1,6 @@
 #pragma once
 
 #include "matrix.h"
-#include <math.h>
 
 // Fully connected layer
 struct FCLayer
