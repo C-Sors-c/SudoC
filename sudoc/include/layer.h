@@ -1,13 +1,14 @@
 #pragma once
 
 #include "matrix.h"
+#include <math.h>
 
 // Fully connected layer
 struct FCLayer
 {
     int input_size;
     int output_size;
-    
+
     float (*activation_func)(float);
     float (*d_activation_func)(float);
 
@@ -85,6 +86,8 @@ struct ActivationLayer
     int batch_size;
     Matrix *(*activation_func)(Matrix *);
     Matrix *(*d_activation_func)(Matrix *);
+    float (*loss_func)(Matrix *);
+    Matrix *(*d_loss_func)(Matrix *);
     Matrix *activations;
     Matrix *deltas;
 };
@@ -92,7 +95,7 @@ typedef struct ActivationLayer ActivationLayer;
 
 ActivationLayer *activation_layer_init(
     int input_size, int batch_size,
-    Matrix * (*activation_func)(Matrix *), Matrix * (*d_activation_func)(Matrix *));
+    Matrix *(*activation_func)(Matrix *), Matrix *(*d_activation_func)(Matrix *));
 Matrix *activation_layer_forward(ActivationLayer *layer, Matrix *input);
 Matrix *activation_layer_backward(ActivationLayer *layer, Matrix *previous_deltas);
 void activation_layer_destroy(ActivationLayer *layer);

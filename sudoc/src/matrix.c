@@ -87,6 +87,8 @@ Matrix *matrix_copy(Matrix *m, Matrix *dst)
 
     if (m->dim1 != dst->dim1 || m->dim2 != dst->dim2)
     {
+        matrix_print(m);
+        matrix_print(dst);
         errx(EXIT_FAILURE, "Error: matrix_copy: dimensions mismatch");
     }
 

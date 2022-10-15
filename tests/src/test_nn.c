@@ -30,9 +30,9 @@ int test_nnxor()
     matrix_set(input, 3, 1, 1);
     matrix_set(expected, 3, 0, 1);
 
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < 500; i++)
     {
-        float loss = nnxor_train_batch(network, input, expected, 0.01);
+        nnxor_train_batch(network, input, expected, 0.001);
     }
 
     Matrix *predictions = nnxor_forward(network, input);
