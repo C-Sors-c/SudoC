@@ -776,6 +776,8 @@ Image *cv_canny(Image *src, Image *dst)
     cv_free_image(dst_y);
     cv_free_image(dst_nms);
     cv_free_image(dst_dt);
+    matrix_destroy(kernel_x);
+    matrix_destroy(kernel_y);
 
     return dst;
 }
