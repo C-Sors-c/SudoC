@@ -104,16 +104,18 @@ Matrix *nnxor_forward(NNXor *neural_network, Matrix *input)
     y = fc_layer_forward(neural_network->fc_layers[1], y);
     y = fc_layer_forward(neural_network->fc_layers[2], y);
     y = activation_layer_forward(neural_network->output_layer, y);
-    return y;
+    return matrix_copy(y, NULL);
 }
 
 void nnxor_backward(NNXor *neural_network, Matrix *input, Matrix *predictions, Matrix *labels, float learning_rate)
 {
-    Matrix *deltas = matrix_subtract(predictions, labels, NULL);
-    deltas = activation_layer_backward(neural_network->output_layer, deltas);
+    Matrix *loss_deltas = matrix_subtract(predictions, labels, NULL);
+    Matrix *deltas = activation_layer_backward(neural_network->output_layer, loss_deltas);
     deltas = fc_layer_backward(neural_network->fc_layers[2], neural_network->fc_layers[1]->activations, deltas, learning_rate);
     deltas = fc_layer_backward(neural_network->fc_layers[1], neural_network->fc_layers[0]->activations, deltas, learning_rate);
     deltas = fc_layer_backward(neural_network->fc_layers[0], input, deltas, learning_rate);
+
+    matrix_destroy(loss_deltas);
 }
 
 float nnxor_train_batch(NNXor *neural_network, Matrix *input, Matrix *labels, float learning_rate)
@@ -129,6 +131,7 @@ void nnxor_destroy(NNXor *neural_network)
 {
     fc_layer_destroy(neural_network->fc_layers[0]);
     fc_layer_destroy(neural_network->fc_layers[1]);
+    fc_layer_destroy(neural_network->fc_layers[2]);
     activation_layer_destroy(neural_network->output_layer);
 
     free(neural_network->fc_layers);
