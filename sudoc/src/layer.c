@@ -53,7 +53,7 @@ FCLayer *fc_layer_init(
     // initialize matrices for backprop
     layer->weights_gradient = matrix_init(output_size, input_size, NULL);
     layer->biases_gradient = matrix_init(1, output_size, NULL);
-    
+
     return layer;
 }
 
@@ -103,7 +103,6 @@ Matrix *fc_layer_backward(FCLayer *layer, Matrix *prev_activations, Matrix *prev
     matrix_destroy(prev_activationsT);
 
     return layer->deltas;
-
 }
 
 void fc_layer_print(FCLayer *layer)
@@ -272,30 +271,31 @@ float d_leaky_relu(float x)
 
 Matrix *softmax(Matrix *m1)
 {
-    // m1 shape: (batchsize, input_shape)
-    Matrix *m2 = matrix_init(m1->dim1, m1->dim2, NULL);
+    Matrix *dst = matrix_init(m1->dim1, m1->dim2, NULL);
 
-    for (int i = 0; i < m2->dim1; i++)
+    for (int i = 0; i < m1->dim1; i++)
     {
         float sum = 0;
         for (int j = 0; j < m1->dim2; j++)
             sum += exp(m1->data[i][j]);
         for (int j = 0; j < m1->dim2; j++)
-            m2->data[i][j] = exp(m1->data[i][j]) / sum;
+            dst->data[i][j] = exp(m1->data[i][j]) / sum;
     }
-    return m2;
+    return dst;
 }
 
 Matrix *d_softmax(Matrix *m1)
 {
-    Matrix *m2 = matrix_init(m1->dim1, m1->dim2, NULL);
+    Matrix *dst = matrix_init(m1->dim1, m1->dim2, NULL);
     for (int i = 0; i < m1->dim1; i++)
         for (int j = 0; j < m1->dim2; j++)
-            m2->data[i][j] = m1->data[i][j] * (1 - m1->data[i][j]);
-    return m2;
+            dst->data[i][j] = m1->data[i][j] * (1 - m1->data[i][j]);
+    return dst;
 }
 
-ActivationLayer *activation_layer_init(int input_size, int batch_size, Matrix *(*activation_func)(Matrix *), Matrix *(*d_activation_func)(Matrix *))
+ActivationLayer *activation_layer_init(
+    int input_size, int batch_size,
+    Matrix *(*activation_func)(Matrix *), Matrix *(*d_activation_func)(Matrix *))
 {
     ActivationLayer *layer = malloc(sizeof(ActivationLayer));
     layer->input_size = input_size;
@@ -309,16 +309,18 @@ ActivationLayer *activation_layer_init(int input_size, int batch_size, Matrix *(
 
 Matrix *activation_layer_forward(ActivationLayer *layer, Matrix *input)
 {
-    matrix_copy(input, layer->activations);
-    return layer->activation_func(layer->activations);
+    Matrix *activations = layer->activation_func(input);
+    matrix_copy(activations, layer->activations);
+    matrix_destroy(activations);
+    return layer->activations;
 }
 
 Matrix *activation_layer_backward(ActivationLayer *layer, Matrix *previous_deltas)
-{
-    matrix_copy(previous_deltas, layer->deltas);
-    matrix_destroy(previous_deltas);
-
-    return layer->d_activation_func(layer->deltas);
+{   
+    Matrix *deltas = layer->d_activation_func(previous_deltas);
+    matrix_copy(deltas, layer->deltas);
+    matrix_destroy(deltas);
+    return layer->deltas;
 }
 
 void activation_layer_destroy(ActivationLayer *layer)
