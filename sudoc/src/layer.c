@@ -26,9 +26,12 @@ Matrix *fc_bias_init(int dim1, int dim2)
 // create a new fully connected layer
 FCLayer *fc_layer_init(
     int input_size, int output_size, int batch_size,
-    float (*activation_func)(float), float (*d_activation_func)(float), bool load_weights)
+    float (*activation_func)(float), float (*d_activation_func)(float),
+    bool load_weights, char *name)
 {
     FCLayer *layer = malloc(sizeof(FCLayer));
+    layer->name = name;
+
     layer->input_size = input_size;
     layer->output_size = output_size;
     layer->activation_func = activation_func;
@@ -156,9 +159,13 @@ Matrix *conv_bias_init(int dim1, int dim2)
 ConvLayer *conv_layer_init(
     int input_height, int input_width, int input_depth,
     int n_filters, int kernel_size, int stride, int padding,
-    int batch_size, float (*activation_func)(float), float (*d_activation_func)(float), bool load_weights)
+    int batch_size, float (*activation_func)(float), float (*d_activation_func)(float),
+    bool load_weights, char *name)
 {
     ConvLayer *layer = malloc(sizeof(ConvLayer));
+
+    layer->name = name;
+
     layer->input_height = input_height;
     layer->input_width = input_width;
     layer->input_depth = input_depth;
@@ -211,6 +218,7 @@ Matrix4 *conv_layer_forward(ConvLayer *layer, Matrix4 *input)
 Matrix4 *conv_layer_backward(ConvLayer *layer, Matrix4 *previous_activations, Matrix4 *previous_deltas, float learning_rate)
 {
     // TODO: implement and test
+    return NULL;
 }
 
 // print layer info
@@ -316,7 +324,7 @@ Matrix *activation_layer_forward(ActivationLayer *layer, Matrix *input)
 }
 
 Matrix *activation_layer_backward(ActivationLayer *layer, Matrix *previous_deltas)
-{   
+{
     Matrix *deltas = layer->d_activation_func(previous_deltas);
     matrix_copy(deltas, layer->deltas);
     matrix_destroy(deltas);
