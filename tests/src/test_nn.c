@@ -7,6 +7,7 @@ int test_nnxor()
     int batchsize = 4;
     bool load_weights = false;
     
+    
     // define the layers
     FCLayer **fc_layers = malloc(sizeof(FCLayer));
     fc_layers[0] = fc_layer_init(2, 32, batchsize, leaky_relu, d_leaky_relu, load_weights, "fc1");
@@ -14,6 +15,8 @@ int test_nnxor()
     fc_layers[2] = fc_layer_init(32, 2, batchsize, leaky_relu, d_leaky_relu, load_weights, "fc3");
     ActivationLayer *output_layer = activation_layer_init(2, batchsize, softmax, d_softmax);
     int num_fc_layers = 3;
+
+
 
     NN *network = nn_init(fc_layers, num_fc_layers, output_layer);
     Matrix *input = matrix_init(batchsize, 2, NULL);
@@ -23,24 +26,24 @@ int test_nnxor()
     // shape of expected: (4, 2) (batchsize, size)
 
     // 0 xor 0 = 0
-    matrix_set(input, 0, 0, 0); 
-    matrix_set(input, 0, 1, 0);
-    matrix_set(expected, 0, 0, 1);
+    m_set(input, 0, 0, 0); 
+    m_set(input, 0, 1, 0);
+    m_set(expected, 0, 0, 1);
 
     // 0 xor 1 = 1
-    matrix_set(input, 1, 0, 0);
-    matrix_set(input, 1, 1, 1);
-    matrix_set(expected, 1, 1, 1);
+    m_set(input, 1, 0, 0);
+    m_set(input, 1, 1, 1);
+    m_set(expected, 1, 1, 1);
 
     // 1 xor 0 = 1
-    matrix_set(input, 2, 0, 1);
-    matrix_set(input, 2, 1, 0);
-    matrix_set(expected, 2, 1, 1);
+    m_set(input, 2, 0, 1);
+    m_set(input, 2, 1, 0);
+    m_set(expected, 2, 1, 1);
 
     // 1 xor 1 = 0
-    matrix_set(input, 3, 0, 1);
-    matrix_set(input, 3, 1, 1);
-    matrix_set(expected, 3, 0, 1);
+    m_set(input, 3, 0, 1);
+    m_set(input, 3, 1, 1);
+    m_set(expected, 3, 0, 1);
 
     for (int i = 0; i < 500; i++)
     {
@@ -57,33 +60,33 @@ int test_nnxor()
     Matrix *test_expected = matrix_init(batchsize, 2, NULL);
 
     // 1 xor 0 = 1
-    matrix_set(test_input, 0, 0, 1);
-    matrix_set(test_input, 0, 1, 0);
-    matrix_set(test_expected, 0, 1, 1);
+    m_set(test_input, 0, 0, 1);
+    m_set(test_input, 0, 1, 0);
+    m_set(test_expected, 0, 1, 1);
 
     // 0 xor 0 = 0
-    matrix_set(test_input, 1, 0, 0); 
-    matrix_set(test_input, 1, 1, 0);
-    matrix_set(test_expected, 1, 0, 1);
+    m_set(test_input, 1, 0, 0); 
+    m_set(test_input, 1, 1, 0);
+    m_set(test_expected, 1, 0, 1);
 
     // 1 xor 1 = 0
-    matrix_set(test_input, 2, 0, 1);
-    matrix_set(test_input, 2, 1, 1);
-    matrix_set(test_expected, 2, 0, 1);
+    m_set(test_input, 2, 0, 1);
+    m_set(test_input, 2, 1, 1);
+    m_set(test_expected, 2, 0, 1);
 
     // 0 xor 1 = 1
-    matrix_set(test_input, 3, 0, 0);
-    matrix_set(test_input, 3, 1, 1);
-    matrix_set(test_expected, 3, 1, 1);
+    m_set(test_input, 3, 0, 0);
+    m_set(test_input, 3, 1, 1);
+    m_set(test_expected, 3, 1, 1);
 
 
     Matrix *predictions = nn_forward(network, test_input);
 
     int failed = 0;
-    failed = matrix_get(predictions, 0, 1) > 0.9 ? 0 : 1;
-    failed = matrix_get(predictions, 1, 0) > 0.9 ? 0 : 1;
-    failed = matrix_get(predictions, 2, 0) > 0.9 ? 0 : 1;
-    failed = matrix_get(predictions, 3, 1) > 0.9 ? 0 : 1;
+    failed = m_get(predictions, 0, 1) > 0.9 ? 0 : 1;
+    failed = m_get(predictions, 1, 0) > 0.9 ? 0 : 1;
+    failed = m_get(predictions, 2, 0) > 0.9 ? 0 : 1;
+    failed = m_get(predictions, 3, 1) > 0.9 ? 0 : 1;
 
     nn_destroy(network);
     matrix_destroy(test_input);
