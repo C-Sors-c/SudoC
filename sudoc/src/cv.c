@@ -228,29 +228,26 @@ float ***cv_float_from_image(Image *src)
     return img;
 }
 
-Matrix4 *cv_matrix_from_image(Image *src, Matrix4 *dst, int b)
+Matrix *cv_matrix_from_image(Image *src)
 {
     if (src == NULL)
         errx(1, RED "source image is null" RESET);
 
-    if (dst == NULL)
-    {
-        dst = matrix4_init(1, src->channels, src->height, src->width, NULL);
-        b = 0;
-    }
+    if (src->channels != 1)
+        errx(1, RED "invalid number of channels, must be 1" RESET);
 
+    Matrix *mat = matrix_init(src->height, src->width, NULL);
     for (int i = 0; i < src->height; i++)
     {
         for (int j = 0; j < src->width; j++)
         {
             for (int k = 0; k < src->channels; k++)
             {
-                dst->data[b * src->channels * src->height * src->width + k * src->height * src->width + i * src->width + j] = src->data[i][j][k];
+                mat->data[i * src->width + j][k] = src->data[i][j][k];
             }
         }
     }
-
-    return dst;
+    return mat;
 }
 
 SDL_Surface *cv_surface_from_path(char *path)
@@ -383,9 +380,11 @@ void cv_apply_kernel(Image *src, Matrix *kernel)
                     int kx = l + kernel->dim2 / 2;
                     int ky = k + kernel->dim1 / 2;
 
-                    for (int c = 0; c < src->channels; c++)
+                    sum += src->data[y][x][0] * kernel->data[ky][kx];
+                    if (src->channels == 3)
                     {
-                        sum += src->data[y][x][c] * kernel->data[ky * kernel->dim2 + kx];
+                        sum += src->data[y][x][1] * kernel->data[ky][kx];
+                        sum += src->data[y][x][2] * kernel->data[ky][kx];
                     }
                 }
             }
@@ -411,9 +410,9 @@ void cv_apply_kernel_sobel(Image *src, Matrix *kernel)
         for (int j = 0; j < src->width; j++)
         {
             float sum = 0.0;
-            for (int k = 0; k < kernel->dim1; k++)
+            for (int k = 0; k < 3; k++)
             {
-                for (int l = 0; l < kernel->dim2; l++)
+                for (int l = 0; l < 3; l++)
                 {
                     int x = j + l;
                     int y = i + k;
@@ -422,7 +421,7 @@ void cv_apply_kernel_sobel(Image *src, Matrix *kernel)
                     if (x < 0 || x >= src->width || y < 0 || y >= src->height)
                         continue;
 
-                    sum += src->data[y][x][0] * kernel->data[k * kernel->dim2 + l];
+                    sum += src->data[y][x][0] * kernel->data[k][l];
                 }
             }
             src->data[i][j][0] = sum;
@@ -442,7 +441,7 @@ Matrix *cv_compute_gaussian_kernel(int size, float sigma)
             float y = i - size / 2.0;
 
             float value = exp(-(x * x + y * y) / (2.0 * sigma * sigma));
-            kernel->data[i * kernel->dim2 + j] = value / (2.0 * M_PI * sigma * sigma);
+            kernel->data[i][j] = value / (2.0 * M_PI * sigma * sigma);
         }
     }
 
@@ -509,13 +508,13 @@ Image *cv_sharp(Image *src, Image *dst, int kernel_size)
     }
 
     Matrix *kernel = matrix_init(kernel_size, kernel_size, NULL);
-    kernel->data[(kernel_size / 2) * kernel->dim2 + kernel_size / 2] = 2.0;
+    kernel->data[kernel_size / 2][kernel_size / 2] = 2.0;
     cv_apply_kernel(dst, kernel);
     matrix_destroy(kernel);
     return dst;
 }
 
-Image *cv_sobel(Image *src, Image *dst)
+Image *cv_sobel(Image *src, Image *dst, int kernel_size)
 {
     if (src == NULL)
     {
@@ -534,26 +533,40 @@ Image *cv_sobel(Image *src, Image *dst)
              src->width, src->height, dst->width, dst->height);
     }
 
+    if (kernel_size % 2 == 0)
+    {
+        errx(EXIT_FAILURE, "Error: cv_sobel: kernel_size must be odd");
+    }
+
     // sharpen the given image
     cv_sharp(src, dst, 3);
     // Sobel kernels
 
-    Matrix *kernel_x = matrix_init(3, 3, NULL);
-    Matrix *kernel_y = matrix_init(3, 3, NULL);
+    Matrix *kernel_x = matrix_init(kernel_size, kernel_size, NULL);
+    Matrix *kernel_y = matrix_init(kernel_size, kernel_size, NULL);
 
-    kernel_x->data[0] = -1;
-    kernel_x->data[1] = -2;
-    kernel_x->data[2] = -1;
-    kernel_x->data[6] = 1;
-    kernel_x->data[7] = 2;
-    kernel_x->data[8] = 1;
+    for (int i = 0; i < kernel_size; i++)
+    {
+        for (int j = 0; j < kernel_size; j++)
+        {
+            kernel_x->data[i][j] = 0;
+            kernel_y->data[i][j] = 0;
+        }
+    }
 
-    kernel_y->data[0] = -1;
-    kernel_y->data[3] = -2;
-    kernel_y->data[6] = -1;
-    kernel_y->data[2] = 1;
-    kernel_y->data[5] = 2;
-    kernel_y->data[8] = 1;
+    kernel_x->data[0][0] = -1;
+    kernel_x->data[kernel_size / 2][0] = -2;
+    kernel_x->data[kernel_size - 1][0] = -1;
+    kernel_x->data[0][kernel_size - 1] = 1;
+    kernel_x->data[kernel_size / 2][kernel_size - 1] = 2;
+    kernel_x->data[kernel_size - 1][kernel_size - 1] = 1;
+
+    kernel_y->data[0][0] = -1;
+    kernel_y->data[0][kernel_size / 2] = -2;
+    kernel_y->data[0][kernel_size - 1] = -1;
+    kernel_y->data[kernel_size - 1][0] = 1;
+    kernel_y->data[kernel_size - 1][kernel_size / 2] = 2;
+    kernel_y->data[kernel_size - 1][kernel_size - 1] = 1;
     // End Sobel kernels
 
     Image *dst_x = cv_image_copy(dst);
@@ -604,20 +617,28 @@ Image *cv_canny(Image *src, Image *dst)
     Matrix *kernel_x = matrix_init(3, 3, NULL);
     Matrix *kernel_y = matrix_init(3, 3, NULL);
 
-    kernel_x->data[0] = -1;
-    kernel_x->data[1] = -2;
-    kernel_x->data[2] = -1;
-    kernel_x->data[6] = 1;
-    kernel_x->data[7] = 2;
-    kernel_x->data[8] = 1;
+    for (int i = 0; i < 3; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            kernel_x->data[i][j] = 0;
+            kernel_y->data[i][j] = 0;
+        }
+    }
 
-    kernel_y->data[0] = -1;
-    kernel_y->data[3] = -2;
-    kernel_y->data[6] = -1;
-    kernel_y->data[2] = 1;
-    kernel_y->data[5] = 2;
-    kernel_y->data[8] = 1;
+    kernel_x->data[0][0] = -1;
+    kernel_x->data[3 / 2][0] = -2;
+    kernel_x->data[3 - 1][0] = -1;
+    kernel_x->data[0][3 - 1] = 1;
+    kernel_x->data[3 / 2][3 - 1] = 2;
+    kernel_x->data[3 - 1][3 - 1] = 1;
 
+    kernel_y->data[0][0] = -1;
+    kernel_y->data[0][3 / 2] = -2;
+    kernel_y->data[0][3 - 1] = -1;
+    kernel_y->data[3 - 1][0] = 1;
+    kernel_y->data[3 - 1][3 / 2] = 2;
+    kernel_y->data[3 - 1][3 - 1] = 1;
     // End Sobel kernels
 
     Image *dst_x = cv_image_copy(dst_sobel);

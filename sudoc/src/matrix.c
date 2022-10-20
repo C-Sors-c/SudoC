@@ -41,19 +41,32 @@ Matrix *matrix_init(int dim1, int dim2, float *datap)
 
     m->dim1 = dim1;
     m->dim2 = dim2;
+    m->data = malloc(dim1 * sizeof(float *));
 
-    m->size = dim1 * dim2;
+    if (m->data == NULL)
+        malloc_error();
+
     if (datap != NULL)
     {
-        // copy provided data to the new matrix
-        m->data = malloc(m->size * sizeof(m->data));
-        for (int i = 0; i < m->size; i++)
-            m->data[i] = datap[i];
+        for (int i = 0; i < dim1; i++)
+        {
+            m->data[i] = malloc(dim2 * sizeof(float *));
+            if (m->data[i] == NULL)
+                malloc_error();
+
+            for (int j = 0; j < dim2; j++)
+            {
+                m->data[i][j] = datap[i * dim2 + j];
+            }
+        }
     }
     else
     {
-        // fill the data of the matrix with zeroes
-        m->data = calloc(m->size, sizeof(float));
+        for (int i = 0; i < dim1; i++)
+        {
+            // use of calloc, it initializes the memory to zero
+            m->data[i] = calloc(dim2, sizeof(float));
+        }
     }
     return m;
 }
@@ -79,8 +92,9 @@ Matrix *matrix_copy(Matrix *m, Matrix *dst)
         errx(EXIT_FAILURE, "Error: matrix_copy: dimensions mismatch");
     }
 
-    for (int i = 0; i < m->dim1 * m->dim2; i++)
-        dst->data[i] = m->data[i];
+    for (int i = 0; i < m->dim1; i++)
+        for (int j = 0; j < m->dim2; j++)
+            dst->data[i][j] = m->data[i][j];
 
     return dst;
 }
@@ -95,48 +109,9 @@ Matrix *matrix_copy(Matrix *m, Matrix *dst)
 
 void matrix_zero(Matrix *m)
 {
-    for (int i = 0; i < m->size; i++)
-        m->data[i] = 0;
-}
-
-// Function: m_get
-// -----------------------
-// Gets a value from a row major matrix
-//
-// Parameters:
-//   m - a pointer to the matrix
-//   dim1 - number of row
-//   dim2 - number of column
-//
-
-float m_get(Matrix *m, int i, int j)
-{
-    if (i < 0 || i >= m->dim1 || j < 0 || j >= m->dim2)
-    {
-        errx(EXIT_FAILURE, "m_get: out of range");
-    }
-
-    return m->data[i * m->dim2 + j];
-}
-
-// Function: m_set
-// ----------------------
-// Sets a value into a row major matrix
-//
-// Parameters:
-//   m - a pointer to the matrix
-//   dim1 - number of row
-//   dim2 - number of column
-//
-
-void m_set(Matrix *m, int dim1, int dim2, float value)
-{
-    if (dim1 < 0 || dim1 >= m->dim1 || dim2 < 0 || dim2 >= m->dim2)
-    {
-        errx(EXIT_FAILURE, "m_set: out of range");
-    }
-
-    m->data[dim1 * m->dim2 + dim2] = value;
+    for (int i = 0; i < m->dim1; i++)
+        for (int j = 0; j < m->dim2; j++)
+            m->data[i][j] = 0;
 }
 
 // Function: matrix_add
@@ -168,7 +143,7 @@ Matrix *matrix_add(Matrix *m1, Matrix *m2, Matrix *dst)
     {
         for (int j = 0; j < dst->dim2; j++)
         {
-            dst->data[i * dst->dim2 + j] = m1->data[i * dst->dim2 + j] + m2->data[i * dst->dim2 + j];
+            dst->data[i][j] = m1->data[i][j] + m2->data[i][j];
         }
     }
     return dst;
@@ -203,7 +178,7 @@ Matrix *matrix_add_bias(Matrix *m1, Matrix *m2, Matrix *dst)
     {
         for (int i = 0; i < dst->dim1; i++)
         {
-            dst->data[i * dst->dim2 + j] = dst->data[i * dst->dim2 + j] + m2->data[j];
+            dst->data[i][j] = m1->data[i][j] + m2->data[0][j];
         }
     }
     return dst;
@@ -236,14 +211,15 @@ Matrix *matrix_sum_rows(Matrix *m1, Matrix *dst)
 
     for (int j = 0; j < dst->dim2; j++)
     {
-        dst->data[j] = 0.0;
+        dst->data[0][j] = 0;
         for (int i = 0; i < dst->dim1; i++)
         {
-            dst->data[j] += m1->data[i * m1->dim2 + j];
+            dst->data[0][j] += m1->data[i][j];
         }
     }
     return dst;
 }
+
 
 // Function: matrix_subtract
 // --------------------
@@ -273,7 +249,7 @@ Matrix *matrix_subtract(Matrix *m1, Matrix *m2, Matrix *dst)
     {
         for (int j = 0; j < dst->dim2; j++)
         {
-            dst->data[i * dst->dim2 + j] = m1->data[i * dst->dim2 + j] - m2->data[i * dst->dim2 + j];
+            dst->data[i][j] = m1->data[i][j] - m2->data[i][j];
         }
     }
     return dst;
@@ -312,10 +288,10 @@ Matrix *matrix_multiply(Matrix *m1, Matrix *m2, Matrix *dst)
     {
         for (int j = 0; j < dst->dim2; j++)
         {
-            dst->data[i * dst->dim2 + j] = 0.0;
+            dst->data[i][j] = 0;
             for (int k = 0; k < m1->dim2; k++)
             {
-                dst->data[i * dst->dim2 + j] += m1->data[i * m1->dim2 + k] * m2->data[k * m2->dim2 + j];
+                dst->data[i][j] += m1->data[i][k] * m2->data[k][j];
             }
         }
     }
@@ -335,7 +311,7 @@ void matrix_multiply_scalar(Matrix *m, float s)
 {
     for (int i = 0; i < m->dim1; i++)
         for (int j = 0; j < m->dim2; j++)
-            m->data[i * m->dim2 + j] *= s;
+            m->data[i][j] *= s;
 }
 
 // Function: matrix_map_function
@@ -351,7 +327,7 @@ void matrix_map_function(Matrix *m, float(f)(float))
 {
     for (int i = 0; i < m->dim1; i++)
         for (int j = 0; j < m->dim2; j++)
-            m->data[i * m->dim2 + j] = f(m->data[i * m->dim2 + j]);
+            m->data[i][j] = f(m->data[i][j]);
 }
 
 // Function: matrix_destroy
@@ -364,8 +340,54 @@ void matrix_map_function(Matrix *m, float(f)(float))
 
 void matrix_destroy(Matrix *m)
 {
+    for (int i = 0; i < m->dim1; i++)
+    {
+        free(m->data[i]);
+    }
     free(m->data);
     free(m);
+}
+
+// Function: matrix_get
+// --------------------
+// Returns the value at the specified row and column.
+//
+// Parameters:
+//   m - pointer to the matrix
+//   row - row index
+//   col - column index
+//
+// Returns:
+//   the value at the specified row and column
+//
+
+float matrix_get(Matrix *m, int row, int col)
+{
+    if (row < 0 || row >= m->dim1 || col < 0 || col >= m->dim2)
+    {
+        errx(EXIT_FAILURE, "matrix_get: index out of bounds\n");
+    }
+    return m->data[row][col];
+}
+
+// Function: matrix_set
+// --------------------
+// Sets the value at the specified row and column.
+//
+// Parameters:
+//   m - pointer to the matrix
+//   row - row index
+//   col - column index
+//   value - value to set
+//
+
+void matrix_set(Matrix *m, int row, int col, float value)
+{
+    if (row < 0 || row >= m->dim1 || col < 0 || col >= m->dim2)
+    {
+        errx(EXIT_FAILURE, "matrix_set: index out of bounds, %i, %i, dim1:%i, dim2:%i\n", row, col, m->dim1, m->dim2);
+    }
+    m->data[row][col] = value;
 }
 
 // Function: matrix_transpose
@@ -391,7 +413,7 @@ Matrix *matrix_transpose(Matrix *m)
     {
         for (int j = 0; j < m->dim2; j++)
         {
-            t->data[j * m->dim2 + i] = m->data[i * m->dim2 + j];
+            t->data[j][i] = m->data[i][j];
         }
     }
     return t;
@@ -426,11 +448,12 @@ Matrix *matrix_elementwise_multiply(Matrix *m1, Matrix *m2, Matrix *dst)
     {
         for (int j = 0; j < dst->dim2; j++)
         {
-            dst->data[i * m1->dim2 + j] = m1->data[i * m1->dim2 + j] * m2->data[i * m2->dim2 + j];
+            dst->data[i][j] = m1->data[i][j] * m2->data[i][j];
         }
     }
     return dst;
 }
+
 
 // Function: matrix_elementwise_equal
 // ----------------------
@@ -448,9 +471,16 @@ bool matrix_element_wise_equal(Matrix *m1, Matrix *m2)
         errx(EXIT_FAILURE, "matrix_element_wise_equal: matrix dimensions do not match\n");
     }
 
-    for (int i = 0; i < m1->size; i++)
-        if (m1->data[i] != m2->data[i])
-            return false;
+    for (int i = 0; i < m1->dim1; i++)
+    {
+        for (int j = 0; j < m1->dim2; j++)
+        {
+            if (m1->data[i][j] != m2->data[i][j])
+            {
+                return false;
+            }
+        }
+    }
 
     return true;
 }
@@ -469,11 +499,11 @@ void matrix_print(Matrix *m)
     for (int i = 0; i < m->dim1; i++)
     {
         printf("[");
-        for (int j = 0; j < m->dim2 - 1; j++)
+        for (int j = 0; j < m->dim2; j++)
         {
-            printf("%f ", m->data[i * m->dim2 + j]);
+            printf("%f ", m->data[i][j]);
         }
-        printf("%f]\n", m->data[i * m->dim2 + m->dim2 - 1]);
+        printf("]\n");
     }
 }
 
@@ -509,24 +539,46 @@ Matrix4 *matrix4_init(int dim1, int dim2, int dim3, int dim4, float *datap)
     m->dim3 = dim3;
     m->dim4 = dim4;
 
-    m->size = dim1 * dim2 * dim3 * dim4;
+    m->data = malloc(dim1 * sizeof(float ****));
+    if (m->data == NULL)
+        malloc_error();
 
-    if (datap != NULL)
+    for (int i = 0; i < dim1; i++)
     {
-        m->data = calloc(m->size, sizeof(float));
-        for (int i = 0; i < m->size; i++)
+        m->data[i] = malloc(dim2 * sizeof(float ***));
+        if (m->data[i] == NULL)
+            malloc_error();
+
+        for (int j = 0; j < dim2; j++)
         {
-            // initialize data from datap
-            m->data[i] = datap[i];
+            m->data[i][j] = malloc(dim3 * sizeof(float **));
+            if (m->data[i][j] == NULL)
+                malloc_error();
+
+            for (int k = 0; k < dim3; k++)
+            {
+
+                if (datap != NULL)
+                {
+                    m->data[i][j][k] = malloc(dim4 * sizeof(float *));
+
+                    if (m->data[i] == NULL)
+                        malloc_error();
+
+                    for (int l = 0; l < dim4; l++)
+                    {
+                        // initialize data from datap
+                        m->data[i][j][k][l] = datap[i * dim2 * dim3 * dim4 + j * dim3 * dim4 + k * dim4 + l];
+                    }
+                }
+                else
+                {
+                    // use of calloc, it initializes the memory to zero
+                    m->data[i][j][k] = calloc(dim4, sizeof(float));
+                }
+            }
         }
     }
-    else
-    {
-        m->data = calloc(m->size, sizeof(float));
-        if (m->data == NULL)
-            malloc_error();
-    }
-
     return m;
 }
 
@@ -540,8 +592,11 @@ Matrix4 *matrix4_init(int dim1, int dim2, int dim3, int dim4, float *datap)
 
 void matrix4_zero(Matrix4 *m)
 {
-    for (int i = 0; i < m->size; i++)
-        m->data[i] = 0.0f;
+    for (int i = 0; i < m->dim1; i++)
+        for (int j = 0; j < m->dim2; j++)
+            for (int k = 0; k < m->dim3; k++)
+                for (int l = 0; l < m->dim4; l++)
+                    m->data[i][j][k][l] = 0;
 }
 
 // Function: matrix4_copy
@@ -560,53 +615,11 @@ void matrix4_copy(Matrix4 *m, Matrix4 *dst)
         errx(EXIT_FAILURE, "matrix4_copy: matrix dimensions do not match\n");
     }
 
-    for (int i = 0; i < m->size; i++)
-        dst->data[i] = m->data[i];
-}
-
-// Function: m4_get
-// ----------------
-// Gets the value at a specific index in a 4-dimensional matrix.
-//
-// Parameters:
-//   m - pointer to the matrix
-//   i - index of dimension 1
-//   j - index of dimension 2
-//   k - index of dimension 3
-//   l - index of dimension 4
-//
-
-float m4_get(Matrix4 *m, int i, int j, int k, int l)
-{
-    if (i < 0 || i >= m->dim1 || j < 0 || j >= m->dim2 || k < 0 || k >= m->dim3 || l < 0 || l >= m->dim4)
-    {
-        errx(EXIT_FAILURE, "m4_get: index out of bounds\n");
-    }
-
-    return m->data[i * m->dim2 * m->dim3 * m->dim4 + j * m->dim3 * m->dim4 + k * m->dim4 + l];
-}
-
-// Function: m4_set
-// ----------------
-// Sets a value in a 4-dimensional matrix.
-//
-// Parameters:
-//   m - pointer to the matrix
-//   i - index of dimension 1
-//   j - index of dimension 2
-//   k - index of dimension 3
-//   l - index of dimension 4
-//   value - value to set
-//
-
-void m4_set(Matrix4 *m, int i, int j, int k, int l, float value)
-{
-    if (i < 0 || i >= m->dim1 || j < 0 || j >= m->dim2 || k < 0 || k >= m->dim3 || l < 0 || l >= m->dim4)
-    {
-        errx(EXIT_FAILURE, "m4_set: index out of bounds\n");
-    }
-
-    m->data[i * m->dim2 * m->dim3 * m->dim4 + j * m->dim3 * m->dim4 + k * m->dim4 + l] = value;
+    for (int i = 0; i < m->dim1; i++)
+        for (int j = 0; j < m->dim2; j++)
+            for (int k = 0; k < m->dim3; k++)
+                for (int l = 0; l < m->dim4; l++)
+                    dst->data[i][j][k][l] = m->data[i][j][k][l];
 }
 
 // Function: matrix4_add
@@ -633,8 +646,11 @@ Matrix4 *matrix4_add(Matrix4 *m1, Matrix4 *m2, Matrix4 *dst)
         errx(EXIT_FAILURE, "matrix4_add: matrix dimensions do not match\n");
     }
 
-    for (int i = 0; i < m1->size; i++)
-        dst->data[i] = m1->data[i] + m2->data[i];
+    for (int i = 0; i < m1->dim1; i++)
+        for (int j = 0; j < m1->dim2; j++)
+            for (int k = 0; k < m1->dim3; k++)
+                for (int l = 0; l < m1->dim4; l++)
+                    dst->data[i][j][k][l] = m1->data[i][j][k][l] + m2->data[i][j][k][l];
 
     return dst;
 }
@@ -665,19 +681,10 @@ Matrix4 *matrix4_add_bias(Matrix4 *m1, Matrix *bias, Matrix4 *dst)
     }
 
     for (int i = 0; i < m1->dim1; i++)
-    {
         for (int j = 0; j < m1->dim2; j++)
-        {
             for (int k = 0; k < m1->dim3; k++)
-            {
                 for (int l = 0; l < m1->dim4; l++)
-                {
-                    dst->data[i * m1->dim2 * m1->dim3 * m1->dim4 + j * m1->dim3 * m1->dim4 + k * m1->dim4 + l] =
-                        m1->data[i * m1->dim2 * m1->dim3 * m1->dim4 + j * m1->dim3 * m1->dim4 + k * m1->dim4 + l] + bias->data[j];
-                }
-            }
-        }
-    }
+                    dst->data[i][j][k][l] = m1->data[i][j][k][l] + bias->data[j][0];
 
     return dst;
 }
@@ -700,13 +707,11 @@ Matrix *matrix4_flatten(Matrix4 *m, Matrix *dst)
         dst = matrix_init(m->dim1 * m->dim2 * m->dim3, m->dim4, NULL);
     }
 
-    if (m->dim1 * m->dim2 * m->dim3 != dst->dim1 || m->dim4 != dst->dim2)
-    {
-        errx(EXIT_FAILURE, "matrix4_flatten: matrix dimensions do not match\n");
-    }
-
-    for (int i = 0; i < m->size; i++)
-        dst->data[i] = m->data[i];
+    for (int i = 0; i < m->dim1; i++)
+        for (int j = 0; j < m->dim2; j++)
+            for (int k = 0; k < m->dim3; k++)
+                for (int l = 0; l < m->dim4; l++)
+                    dst->data[i][j * m->dim3 * m->dim4 + k * m->dim4 + l] = m->data[i][j][k][l];
 
     return dst;
 }
@@ -729,8 +734,9 @@ Matrix4 *matrix4_unflatten(Matrix *m, Matrix4 *dst)
         dst = matrix4_init(m->dim1, m->dim2 / (dst->dim3 * dst->dim4), dst->dim3, dst->dim4, NULL);
     }
 
-    for (int i = 0; i < m->size; i++)
-        dst->data[i] = m->data[i];
+    for (int i = 0; i < m->dim1; i++)
+        for (int j = 0; j < m->dim2; j++)
+            dst->data[i][j / (dst->dim3 * dst->dim4)][j / dst->dim4 % dst->dim3][j % dst->dim4] = m->data[i][j];
 
     return dst;
 }
@@ -760,18 +766,10 @@ Matrix *matrix4_sum_rows(Matrix4 *m, Matrix *dst)
     }
 
     for (int i = 0; i < m->dim1; i++)
-    {
         for (int j = 0; j < m->dim2; j++)
-        {
             for (int k = 0; k < m->dim3; k++)
-            {
                 for (int l = 0; l < m->dim4; l++)
-                {
-                    dst->data[j] += m->data[i * m->dim2 * m->dim3 * m->dim4 + j * m->dim3 * m->dim4 + k * m->dim4 + l];
-                }
-            }
-        }
-    }
+                    dst->data[0][j] += m->data[i][j][k][l];
 
     return dst;
 }
@@ -800,8 +798,11 @@ Matrix4 *matrix4_subtract(Matrix4 *m1, Matrix4 *m2, Matrix4 *dst)
         errx(EXIT_FAILURE, "matrix4_subtract: matrix dimensions do not match\n");
     }
 
-    for (int i = 0; i < m1->size; i++)
-        dst->data[i] = m1->data[i] - m2->data[i];
+    for (int i = 0; i < m1->dim1; i++)
+        for (int j = 0; j < m1->dim2; j++)
+            for (int k = 0; k < m1->dim3; k++)
+                for (int l = 0; l < m1->dim4; l++)
+                    dst->data[i][j][k][l] = m1->data[i][j][k][l] - m2->data[i][j][k][l];
 
     return dst;
 }
@@ -827,24 +828,10 @@ Matrix4 *matrix4_transpose(Matrix4 *m)
     }
 
     for (int i = 0; i < m->dim1; i++)
-    {
         for (int j = 0; j < m->dim2; j++)
-        {
             for (int k = 0; k < m->dim3; k++)
-            {
                 for (int l = 0; l < m->dim4; l++)
-                {
-                    t->data[i * m->dim2 * m->dim3 * m->dim4 + j * m->dim3 * m->dim4 + k * m->dim4 + l] =
-                        m->data[i * m->dim2 * m->dim3 * m->dim4 + j * m->dim3 * m->dim4 + l * m->dim3 + k];
-                }
-            }
-        }
-    }
-
-    // change dimensions
-    int tmp = t->dim3;
-    t->dim3 = t->dim4;
-    t->dim4 = tmp;
+                    t->data[i][j][l][k] = m->data[i][j][k][l];
 
     return t;
 }
@@ -895,17 +882,12 @@ Matrix4 *matrix4_convolve(Matrix4 *weights, Matrix4 *input, Matrix4 *dst, int st
     // optimized convolution using strides and padding
 
     for (int i = 0; i < batch_size; i++)
-    {
         for (int j = 0; j < out_channels; j++)
-        {
             for (int k = 0; k < out_height; k++)
-            {
                 for (int l = 0; l < out_width; l++)
                 {
                     for (int m = 0; m < in_channels; m++)
-                    {
                         for (int n = 0; n < kernel_height; n++)
-                        {
                             for (int o = 0; o < kernel_width; o++)
                             {
                                 int x = k * stride + n - padding;
@@ -913,17 +895,10 @@ Matrix4 *matrix4_convolve(Matrix4 *weights, Matrix4 *input, Matrix4 *dst, int st
 
                                 if (x >= 0 && x < height && y >= 0 && y < width)
                                 {
-                                    dst->data[i * out_channels * out_height * out_width + j * out_height * out_width + k * out_width + l] +=
-                                        weights->data[j * in_channels * kernel_height * kernel_width + m * kernel_height * kernel_width + n * kernel_width + o] *
-                                        input->data[i * in_channels * height * width + m * height * width + x * width + y];
+                                    dst->data[i][j][k][l] += weights->data[j][m][n][o] * input->data[i][m][x][y];
                                 }
                             }
-                        }
-                    }
                 }
-            }
-        }
-    }
 
     return dst;
 }
@@ -958,8 +933,11 @@ Matrix4 *matrix4_convolve_transpose(Matrix4 *weights, Matrix4 *input, Matrix4 *d
 //
 void matrix4_scalar_multiply(Matrix4 *m, float s)
 {
-    for (int i = 0; i < m->size; i++)
-        m->data[i] *= s;
+    for (int i = 0; i < m->dim1; i++)
+        for (int j = 0; j < m->dim2; j++)
+            for (int k = 0; k < m->dim3; k++)
+                for (int l = 0; l < m->dim4; l++)
+                    m->data[i][j][k][l] *= s;
 }
 
 // Function: matrix4_map_function
@@ -972,8 +950,11 @@ void matrix4_scalar_multiply(Matrix4 *m, float s)
 //
 void matrix4_map_function(Matrix4 *m, float(f)(float))
 {
-    for (int i = 0; i < m->size; i++)
-        m->data[i] = f(m->data[i]);
+    for (int i = 0; i < m->dim1; i++)
+        for (int j = 0; j < m->dim2; j++)
+            for (int k = 0; k < m->dim3; k++)
+                for (int l = 0; l < m->dim4; l++)
+                    m->data[i][j][k][l] = f(m->data[i][j][k][l]);
 }
 
 // Function: matrix4_element_wise_equal
@@ -994,11 +975,58 @@ bool matrix4_element_wise_equal(Matrix4 *m1, Matrix4 *m2)
         errx(EXIT_FAILURE, "matrix4_element_wise_equal: matrix dimensions do not match\n");
     }
 
-    for (int i = 0; i < m1->size; i++)
-        if (m1->data[i] != m2->data[i])
-            return false;
+    for (int i = 0; i < m1->dim1; i++)
+        for (int j = 0; j < m1->dim2; j++)
+            for (int k = 0; k < m1->dim3; k++)
+                for (int l = 0; l < m1->dim4; l++)
+                    if (m1->data[i][j][k][l] != m2->data[i][j][k][l])
+                        return false;
 
     return true;
+}
+
+// Function: matrix4_get
+// ---------------------
+// Returns the value at the specified row and column.
+//
+// Parameters:
+//   m - pointer to the matrix
+//   dim1 - first dimension index
+//   dim2 - second dimension index
+//   dim3 - third dimension index
+//   dim4 - fourth dimension index
+//
+// Returns:
+//   the value at the specified row and column
+//
+float matrix4_get(Matrix4 *m, int dim1, int dim2, int dim3, int dim4)
+{
+    if (dim1 < 0 || dim1 >= m->dim1 || dim2 < 0 || dim2 >= m->dim2 || dim3 < 0 || dim3 >= m->dim3 || dim4 < 0 || dim4 >= m->dim4)
+    {
+        errx(EXIT_FAILURE, "matrix4_get: index out of bounds\n");
+    }
+    return m->data[dim1][dim2][dim3][dim4];
+}
+
+// Function: matrix4_set
+// ----------------------
+// Sets the value of a matrix element.
+//
+// Parameters:
+//   m - pointer to the matrix
+//   dim1 - first dimension index
+//   dim2 - second dimension index
+//   dim3 - third dimension index
+//   dim4 - fourth dimension index
+//   value - value to set
+//
+void matrix4_set(Matrix4 *m, int dim1, int dim2, int dim3, int dim4, float value)
+{
+    if (dim1 < 0 || dim1 >= m->dim1 || dim2 < 0 || dim2 >= m->dim2 || dim3 < 0 || dim3 >= m->dim3 || dim4 < 0 || dim4 >= m->dim4)
+    {
+        errx(EXIT_FAILURE, "matrix4_set: index out of bounds\n");
+    }
+    m->data[dim1][dim2][dim3][dim4] = value;
 }
 
 // Function: matrix4_destroy
@@ -1010,6 +1038,18 @@ bool matrix4_element_wise_equal(Matrix4 *m1, Matrix4 *m2)
 //
 void matrix4_destroy(Matrix4 *m)
 {
+    for (int i = 0; i < m->dim1; i++)
+    {
+        for (int j = 0; j < m->dim2; j++)
+        {
+            for (int k = 0; k < m->dim3; k++)
+            {
+                free(m->data[i][j][k]);
+            }
+            free(m->data[i][j]);
+        }
+        free(m->data[i]);
+    }
     free(m->data);
     free(m);
 }
@@ -1036,9 +1076,9 @@ void matrix4_print(Matrix4 *m)
                 printf("        [");
                 for (int l = 0; l < m->dim4 - 1; l++)
                 {
-                    printf("%f ", m->data[i * m->dim2 * m->dim3 * m->dim4 + j * m->dim3 * m->dim4 + k * m->dim4 + l]);
+                    printf("%f ", m->data[i][j][k][l]);
                 }
-                printf("%f]\n", m->data[i * m->dim2 * m->dim3 * m->dim4 + j * m->dim3 * m->dim4 + k * m->dim4 + m->dim4 - 1]);
+                printf("%f]\n", m->data[i][j][k][m->dim4 - 1]);
             }
             printf("        ]\n");
         }

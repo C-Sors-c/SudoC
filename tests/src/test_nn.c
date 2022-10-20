@@ -23,24 +23,24 @@ int test_nnxor()
     // shape of expected: (4, 2) (batchsize, size)
 
     // 0 xor 0 = 0
-    m_set(input, 0, 0, 0); 
-    m_set(input, 0, 1, 0);
-    m_set(expected, 0, 0, 1);
+    matrix_set(input, 0, 0, 0); 
+    matrix_set(input, 0, 1, 0);
+    matrix_set(expected, 0, 0, 1);
 
     // 0 xor 1 = 1
-    m_set(input, 1, 0, 0);
-    m_set(input, 1, 1, 1);
-    m_set(expected, 1, 1, 1);
+    matrix_set(input, 1, 0, 0);
+    matrix_set(input, 1, 1, 1);
+    matrix_set(expected, 1, 1, 1);
 
     // 1 xor 0 = 1
-    m_set(input, 2, 0, 1);
-    m_set(input, 2, 1, 0);
-    m_set(expected, 2, 1, 1);
+    matrix_set(input, 2, 0, 1);
+    matrix_set(input, 2, 1, 0);
+    matrix_set(expected, 2, 1, 1);
 
     // 1 xor 1 = 0
-    m_set(input, 3, 0, 1);
-    m_set(input, 3, 1, 1);
-    m_set(expected, 3, 0, 1);
+    matrix_set(input, 3, 0, 1);
+    matrix_set(input, 3, 1, 1);
+    matrix_set(expected, 3, 0, 1);
 
     for (int i = 0; i < 500; i++)
     {
@@ -57,33 +57,33 @@ int test_nnxor()
     Matrix *test_expected = matrix_init(batchsize, 2, NULL);
 
     // 1 xor 0 = 1
-    m_set(test_input, 0, 0, 1);
-    m_set(test_input, 0, 1, 0);
-    m_set(test_expected, 0, 1, 1);
+    matrix_set(test_input, 0, 0, 1);
+    matrix_set(test_input, 0, 1, 0);
+    matrix_set(test_expected, 0, 1, 1);
 
     // 0 xor 0 = 0
-    m_set(test_input, 1, 0, 0); 
-    m_set(test_input, 1, 1, 0);
-    m_set(test_expected, 1, 0, 1);
+    matrix_set(test_input, 1, 0, 0); 
+    matrix_set(test_input, 1, 1, 0);
+    matrix_set(test_expected, 1, 0, 1);
 
     // 1 xor 1 = 0
-    m_set(test_input, 2, 0, 1);
-    m_set(test_input, 2, 1, 1);
-    m_set(test_expected, 2, 0, 1);
+    matrix_set(test_input, 2, 0, 1);
+    matrix_set(test_input, 2, 1, 1);
+    matrix_set(test_expected, 2, 0, 1);
 
     // 0 xor 1 = 1
-    m_set(test_input, 3, 0, 0);
-    m_set(test_input, 3, 1, 1);
-    m_set(test_expected, 3, 1, 1);
+    matrix_set(test_input, 3, 0, 0);
+    matrix_set(test_input, 3, 1, 1);
+    matrix_set(test_expected, 3, 1, 1);
 
 
     Matrix *predictions = nn_forward(network, test_input);
 
     int failed = 0;
-    failed = m_get(predictions, 0, 1) > 0.9 ? 0 : 1;
-    failed = m_get(predictions, 1, 0) > 0.9 ? 0 : 1;
-    failed = m_get(predictions, 2, 0) > 0.9 ? 0 : 1;
-    failed = m_get(predictions, 3, 1) > 0.9 ? 0 : 1;
+    failed = matrix_get(predictions, 0, 1) > 0.9 ? 0 : 1;
+    failed = matrix_get(predictions, 1, 0) > 0.9 ? 0 : 1;
+    failed = matrix_get(predictions, 2, 0) > 0.9 ? 0 : 1;
+    failed = matrix_get(predictions, 3, 1) > 0.9 ? 0 : 1;
 
     nn_destroy(network);
     matrix_destroy(test_input);
