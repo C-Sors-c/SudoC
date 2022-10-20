@@ -4,28 +4,34 @@
 #include "weight_parser.h"
 #include "layer.h"
 
-struct CNN {
+struct CNN
+{
     ConvLayer **conv_layers;
+    int num_conv_layers;
     FCLayer **fc_layers;
+    int num_fc_layers;
     ActivationLayer *output_layer;
 };
 typedef struct CNN CNN;
 
-CNN *cnn_init(int batch_size, bool load_weights);
+CNN *cnn_init(ConvLayer **conv_layers, int num_conv_layers,
+              FCLayer **fc_layers, int num_fc_layers,
+              ActivationLayer *output_layer);
 Matrix *cnn_forward(CNN *network, Matrix4 *input);
-void cnn_backward(CNN *network, Matrix *predictions, Matrix *labels, float learning_rate);
+void cnn_backward(CNN *network, Matrix4 *input, Matrix *predictions, Matrix *labels, float learning_rate);
 float cnn_train_batch(CNN *network, Matrix4 *input, Matrix *expected, float learning_rate);
 void cnn_destroy(CNN *network);
 
-
-struct NNXor {
+struct NN
+{
     FCLayer **fc_layers;
+    int num_fc_layers;
     ActivationLayer *output_layer;
 };
-typedef struct NNXor NNXor;
+typedef struct NN NN;
 
-NNXor *nnxor_init(int batchsize, bool load_weights);
-Matrix *nnxor_forward(NNXor *network, Matrix *input);
-void nnxor_backward(NNXor *network, Matrix *input, Matrix *predictions, Matrix *labels, float learning_rate);
-float nnxor_train_batch(NNXor *network, Matrix *input, Matrix *expected, float learning_rate);
-void nnxor_destroy(NNXor *network);
+NN *nn_init(FCLayer **fc_layer, int num_fc_layers, ActivationLayer *output_layer);
+Matrix *nn_forward(NN *network, Matrix *input);
+void nn_backward(NN *network, Matrix *input, Matrix *predictions, Matrix *labels, float learning_rate);
+float nn_train_batch(NN *network, Matrix *input, Matrix *expected, float learning_rate);
+void nn_destroy(NN *network);
