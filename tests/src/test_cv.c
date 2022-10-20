@@ -52,7 +52,7 @@ int test_cv_sobel()
     Image *img = cv_image_from_path("tests/samples/lena.png");
     Image *gray = cv_grayscale(img, NULL);
     Image *blur = cv_gaussian_blur(gray, NULL, 9, 3);
-    Image *sobel = cv_sobel(blur, NULL, 3);
+    Image *sobel = cv_sobel(blur, NULL);
 
     cv_save_image(sobel, "tests/out/lena_sobel.png");
 
