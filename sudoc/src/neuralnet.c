@@ -106,7 +106,7 @@ void cnn_backward(CNN *neural_network, Matrix4 *input, Matrix *predictions, Matr
 
     for (int i = neural_network->num_fc_layers - 1; i > 0; i--)
         deltas = fc_layer_backward(neural_network->fc_layers[i], neural_network->fc_layers[i - 1]->activations, deltas, learning_rate);
-    deltas = fc_layer_backward(neural_network->fc_layers[0], input, deltas, learning_rate);
+    // deltas = fc_layer_backward(neural_network->fc_layers[0], fc_input, deltas, learning_rate);
 
 
 
