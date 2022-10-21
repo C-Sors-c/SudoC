@@ -45,9 +45,8 @@ float nn_train_batch(NN *neural_network, Matrix *input, Matrix *labels, float le
 
 void nn_destroy(NN *neural_network)
 {
-    fc_layer_destroy(neural_network->fc_layers[0]);
-    fc_layer_destroy(neural_network->fc_layers[1]);
-    fc_layer_destroy(neural_network->fc_layers[2]);
+    for (int i = 0; i < neural_network->num_fc_layers; i++)
+        fc_layer_destroy(neural_network->fc_layers[i]);
     activation_layer_destroy(neural_network->output_layer);
 
     free(neural_network->fc_layers);
@@ -124,10 +123,10 @@ float cnn_train_batch(CNN *neural_network, Matrix4 *input, Matrix *labels, float
 
 void cnn_destroy(CNN *neural_network)
 {
-    conv_layer_destroy(neural_network->conv_layers[0]);
-    conv_layer_destroy(neural_network->conv_layers[1]);
-    fc_layer_destroy(neural_network->fc_layers[0]);
-    fc_layer_destroy(neural_network->fc_layers[1]);
+
+    for (int i = 0; i < neural_network->num_conv_layers; i++)
+        conv_layer_destroy(neural_network->conv_layers[i]);
+    for (int i = 0; i < neural_network->num_fc_layers; i++)
     activation_layer_destroy(neural_network->output_layer);
 
     free(neural_network->conv_layers);

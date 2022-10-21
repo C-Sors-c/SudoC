@@ -18,7 +18,7 @@ typedef struct Matrix Matrix;
 Matrix *matrix_init(int dim1, int dim2, float *datap);
 Matrix *matrix_copy(Matrix *m, Matrix *dst);
 void matrix_zero(Matrix *m);
-float m_get(Matrix *m, int dim1, int dim2);
+float m_get(Matrix *m, int i, int j);
 void m_set(Matrix *m, int dim1, int dim2, float value);
 
 Matrix *matrix_add(Matrix *m1, Matrix *m2, Matrix *dst);

@@ -106,8 +106,8 @@ void matrix_zero(Matrix *m)
 //
 // Parameters:
 //   m - a pointer to the matrix
-//   dim1 - number of row
-//   dim2 - number of column
+//   i - row index
+//   j - col index
 //
 
 float m_get(Matrix *m, int i, int j)
