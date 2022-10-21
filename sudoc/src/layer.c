@@ -7,9 +7,8 @@
 Matrix *fc_weight_init(int dim1, int dim2)
 {
     Matrix *weight = matrix_init(dim1, dim2, NULL);
-    for (int i = 0; i < dim1; i++)
-        for (int j = 0; j < dim2; j++)
-            weight->data[i][j] = (float)rand() / (float)(RAND_MAX / 2) - 1;
+    for (int i = 0; i < weight->size; i++)
+        weight->data[i] = (float)rand() / (float)(RAND_MAX / 2) - 1;
     return weight;
 }
 
@@ -17,9 +16,6 @@ Matrix *fc_weight_init(int dim1, int dim2)
 Matrix *fc_bias_init(int dim1, int dim2)
 {
     Matrix *bias = matrix_init(dim1, dim2, NULL);
-    for (int i = 0; i < dim1; i++)
-        for (int j = 0; j < dim2; j++)
-            bias->data[i][j] = 0;
     return bias;
 }
 
@@ -137,11 +133,8 @@ void fc_layer_destroy(FCLayer *layer)
 Matrix4 *conv_weight_init(int dim1, int dim2, int dim3, int dim4)
 {
     Matrix4 *weight = matrix4_init(dim1, dim2, dim3, dim4, NULL);
-    for (int i = 0; i < dim1; i++)
-        for (int j = 0; j < dim2; j++)
-            for (int k = 0; k < dim3; k++)
-                for (int l = 0; l < dim4; l++)
-                    weight->data[i][j][k][l] = (float)rand() / (float)(RAND_MAX / 2) - 1;
+    for (int i = 0; i < weight->size; i++)
+        weight->data[i] = (float)rand() / (float)(RAND_MAX / 2) - 1;
     return weight;
 }
 
@@ -149,9 +142,6 @@ Matrix4 *conv_weight_init(int dim1, int dim2, int dim3, int dim4)
 Matrix *conv_bias_init(int dim1, int dim2)
 {
     Matrix *bias = matrix_init(dim1, dim2, NULL);
-    for (int i = 0; i < dim1; i++)
-        for (int j = 0; j < dim2; j++)
-            bias->data[i][j] = 0;
     return bias;
 }
 
@@ -285,9 +275,9 @@ Matrix *softmax(Matrix *m1)
     {
         float sum = 0;
         for (int j = 0; j < m1->dim2; j++)
-            sum += exp(m1->data[i][j]);
+            sum += exp(m1->data[i * m1->dim2 + j]);
         for (int j = 0; j < m1->dim2; j++)
-            dst->data[i][j] = exp(m1->data[i][j]) / sum;
+            dst->data[i * m1->dim2 + j] = exp(m1->data[i * m1->dim2 + j]) / sum;
     }
     return dst;
 }
@@ -297,7 +287,7 @@ Matrix *d_softmax(Matrix *m1)
     Matrix *dst = matrix_init(m1->dim1, m1->dim2, NULL);
     for (int i = 0; i < m1->dim1; i++)
         for (int j = 0; j < m1->dim2; j++)
-            dst->data[i][j] = m1->data[i][j] * (1 - m1->data[i][j]);
+            dst->data[i * m1->dim2 + j] = m1->data[i * m1->dim2 + j] * (1 - m1->data[i * m1->dim2 + j]);
     return dst;
 }
 
@@ -379,9 +369,8 @@ void flatten_layer_destroy(FlattenLayer *layer)
 float cross_entropy_loss(Matrix *predictions, Matrix *labels)
 {
     float loss = 0;
-    for (int i = 0; i < predictions->dim1; i++)
-        for (int j = 0; j < predictions->dim2; j++)
-            loss += labels->data[i][j] * log(predictions->data[i][j]);
+    for (int i = 0; i < predictions->size; i++)
+        loss += labels->data[i] * log(predictions->data[i]);
     return -loss / predictions->dim1;
 }
 

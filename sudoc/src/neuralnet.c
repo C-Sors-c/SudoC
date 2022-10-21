@@ -15,10 +15,6 @@ NN *nn_init(FCLayer **fc_layer, int num_fc_layers, ActivationLayer *output_layer
 
 Matrix *nn_forward(NN *neural_network, Matrix *input)
 {   
-
-    // Matrix *y = fc_layer_forward(neural_network->fc_layers[0], input);
-    // y = fc_layer_forward(neural_network->fc_layers[1], y);
-    // y = fc_layer_forward(neural_network->fc_layers[2], y);
     for (int i = 0; i < neural_network->num_fc_layers; i++)
         input = fc_layer_forward(neural_network->fc_layers[i], input);
 
@@ -49,9 +45,8 @@ float nn_train_batch(NN *neural_network, Matrix *input, Matrix *labels, float le
 
 void nn_destroy(NN *neural_network)
 {
-    fc_layer_destroy(neural_network->fc_layers[0]);
-    fc_layer_destroy(neural_network->fc_layers[1]);
-    fc_layer_destroy(neural_network->fc_layers[2]);
+    for (int i = 0; i < neural_network->num_fc_layers; i++)
+        fc_layer_destroy(neural_network->fc_layers[i]);
     activation_layer_destroy(neural_network->output_layer);
 
     free(neural_network->fc_layers);
@@ -109,7 +104,6 @@ void cnn_backward(CNN *neural_network, Matrix4 *input, Matrix *predictions, Matr
     // deltas = fc_layer_backward(neural_network->fc_layers[0], fc_input, deltas, learning_rate);
 
 
-
     // Matrix4 *deltas4 = matrix4_unflatten(deltas, NULL);
     // deltas4 = conv_layer_backward(neural_network->conv_layers[1], neural_network->conv_layers[0]->activations, deltas4, learning_rate);
     // deltas4 = conv_layer_backward(neural_network->conv_layers[0], neural_network->conv_layers[0]->activations, deltas4, learning_rate);
@@ -129,10 +123,10 @@ float cnn_train_batch(CNN *neural_network, Matrix4 *input, Matrix *labels, float
 
 void cnn_destroy(CNN *neural_network)
 {
-    conv_layer_destroy(neural_network->conv_layers[0]);
-    conv_layer_destroy(neural_network->conv_layers[1]);
-    fc_layer_destroy(neural_network->fc_layers[0]);
-    fc_layer_destroy(neural_network->fc_layers[1]);
+
+    for (int i = 0; i < neural_network->num_conv_layers; i++)
+        conv_layer_destroy(neural_network->conv_layers[i]);
+    for (int i = 0; i < neural_network->num_fc_layers; i++)
     activation_layer_destroy(neural_network->output_layer);
 
     free(neural_network->conv_layers);
