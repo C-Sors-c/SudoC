@@ -7,9 +7,8 @@
 Matrix *fc_weight_init(int dim1, int dim2)
 {
     Matrix *weight = matrix_init(dim1, dim2, NULL);
-    for (int i = 0; i < dim1; i++)
-        for (int j = 0; j < dim2; j++)
-            weight->data[i][j] = (float)rand() / (float)(RAND_MAX / 2) - 1;
+    for (int i = 0; i < weight->size; i++)
+        weight->data[i] = (float)rand() / (float)(RAND_MAX / 2) - 1;
     return weight;
 }
 
@@ -17,18 +16,18 @@ Matrix *fc_weight_init(int dim1, int dim2)
 Matrix *fc_bias_init(int dim1, int dim2)
 {
     Matrix *bias = matrix_init(dim1, dim2, NULL);
-    for (int i = 0; i < dim1; i++)
-        for (int j = 0; j < dim2; j++)
-            bias->data[i][j] = 0;
     return bias;
 }
 
 // create a new fully connected layer
 FCLayer *fc_layer_init(
     int input_size, int output_size, int batch_size,
-    float (*activation_func)(float), float (*d_activation_func)(float), bool load_weights)
+    float (*activation_func)(float), float (*d_activation_func)(float),
+    bool load_weights, char *name)
 {
     FCLayer *layer = malloc(sizeof(FCLayer));
+    layer->name = name;
+
     layer->input_size = input_size;
     layer->output_size = output_size;
     layer->activation_func = activation_func;
@@ -53,7 +52,7 @@ FCLayer *fc_layer_init(
     // initialize matrices for backprop
     layer->weights_gradient = matrix_init(output_size, input_size, NULL);
     layer->biases_gradient = matrix_init(1, output_size, NULL);
-    
+
     return layer;
 }
 
@@ -103,7 +102,6 @@ Matrix *fc_layer_backward(FCLayer *layer, Matrix *prev_activations, Matrix *prev
     matrix_destroy(prev_activationsT);
 
     return layer->deltas;
-
 }
 
 void fc_layer_print(FCLayer *layer)
@@ -135,11 +133,8 @@ void fc_layer_destroy(FCLayer *layer)
 Matrix4 *conv_weight_init(int dim1, int dim2, int dim3, int dim4)
 {
     Matrix4 *weight = matrix4_init(dim1, dim2, dim3, dim4, NULL);
-    for (int i = 0; i < dim1; i++)
-        for (int j = 0; j < dim2; j++)
-            for (int k = 0; k < dim3; k++)
-                for (int l = 0; l < dim4; l++)
-                    weight->data[i][j][k][l] = (float)rand() / (float)(RAND_MAX / 2) - 1;
+    for (int i = 0; i < weight->size; i++)
+        weight->data[i] = (float)rand() / (float)(RAND_MAX / 2) - 1;
     return weight;
 }
 
@@ -147,9 +142,6 @@ Matrix4 *conv_weight_init(int dim1, int dim2, int dim3, int dim4)
 Matrix *conv_bias_init(int dim1, int dim2)
 {
     Matrix *bias = matrix_init(dim1, dim2, NULL);
-    for (int i = 0; i < dim1; i++)
-        for (int j = 0; j < dim2; j++)
-            bias->data[i][j] = 0;
     return bias;
 }
 
@@ -157,9 +149,13 @@ Matrix *conv_bias_init(int dim1, int dim2)
 ConvLayer *conv_layer_init(
     int input_height, int input_width, int input_depth,
     int n_filters, int kernel_size, int stride, int padding,
-    int batch_size, float (*activation_func)(float), float (*d_activation_func)(float), bool load_weights)
+    int batch_size, float (*activation_func)(float), float (*d_activation_func)(float),
+    bool load_weights, char *name)
 {
     ConvLayer *layer = malloc(sizeof(ConvLayer));
+
+    layer->name = name;
+
     layer->input_height = input_height;
     layer->input_width = input_width;
     layer->input_depth = input_depth;
@@ -212,6 +208,7 @@ Matrix4 *conv_layer_forward(ConvLayer *layer, Matrix4 *input)
 Matrix4 *conv_layer_backward(ConvLayer *layer, Matrix4 *previous_activations, Matrix4 *previous_deltas, float learning_rate)
 {
     // TODO: implement and test
+    return NULL;
 }
 
 // print layer info
@@ -272,30 +269,31 @@ float d_leaky_relu(float x)
 
 Matrix *softmax(Matrix *m1)
 {
-    // m1 shape: (batchsize, input_shape)
-    Matrix *m2 = matrix_init(m1->dim1, m1->dim2, NULL);
+    Matrix *dst = matrix_init(m1->dim1, m1->dim2, NULL);
 
-    for (int i = 0; i < m2->dim1; i++)
+    for (int i = 0; i < m1->dim1; i++)
     {
         float sum = 0;
         for (int j = 0; j < m1->dim2; j++)
-            sum += exp(m1->data[i][j]);
+            sum += exp(m1->data[i * m1->dim2 + j]);
         for (int j = 0; j < m1->dim2; j++)
-            m2->data[i][j] = exp(m1->data[i][j]) / sum;
+            dst->data[i * m1->dim2 + j] = exp(m1->data[i * m1->dim2 + j]) / sum;
     }
-    return m2;
+    return dst;
 }
 
 Matrix *d_softmax(Matrix *m1)
 {
-    Matrix *m2 = matrix_init(m1->dim1, m1->dim2, NULL);
+    Matrix *dst = matrix_init(m1->dim1, m1->dim2, NULL);
     for (int i = 0; i < m1->dim1; i++)
         for (int j = 0; j < m1->dim2; j++)
-            m2->data[i][j] = m1->data[i][j] * (1 - m1->data[i][j]);
-    return m2;
+            dst->data[i * m1->dim2 + j] = m1->data[i * m1->dim2 + j] * (1 - m1->data[i * m1->dim2 + j]);
+    return dst;
 }
 
-ActivationLayer *activation_layer_init(int input_size, int batch_size, Matrix *(*activation_func)(Matrix *), Matrix *(*d_activation_func)(Matrix *))
+ActivationLayer *activation_layer_init(
+    int input_size, int batch_size,
+    Matrix *(*activation_func)(Matrix *), Matrix *(*d_activation_func)(Matrix *))
 {
     ActivationLayer *layer = malloc(sizeof(ActivationLayer));
     layer->input_size = input_size;
@@ -309,16 +307,18 @@ ActivationLayer *activation_layer_init(int input_size, int batch_size, Matrix *(
 
 Matrix *activation_layer_forward(ActivationLayer *layer, Matrix *input)
 {
-    matrix_copy(input, layer->activations);
-    return layer->activation_func(layer->activations);
+    Matrix *activations = layer->activation_func(input);
+    matrix_copy(activations, layer->activations);
+    matrix_destroy(activations);
+    return layer->activations;
 }
 
 Matrix *activation_layer_backward(ActivationLayer *layer, Matrix *previous_deltas)
 {
-    matrix_copy(previous_deltas, layer->deltas);
-    matrix_destroy(previous_deltas);
-
-    return layer->d_activation_func(layer->deltas);
+    Matrix *deltas = layer->d_activation_func(previous_deltas);
+    matrix_copy(deltas, layer->deltas);
+    matrix_destroy(deltas);
+    return layer->deltas;
 }
 
 void activation_layer_destroy(ActivationLayer *layer)
@@ -369,9 +369,8 @@ void flatten_layer_destroy(FlattenLayer *layer)
 float cross_entropy_loss(Matrix *predictions, Matrix *labels)
 {
     float loss = 0;
-    for (int i = 0; i < predictions->dim1; i++)
-        for (int j = 0; j < predictions->dim2; j++)
-            loss += labels->data[i][j] * log(predictions->data[i][j]);
+    for (int i = 0; i < predictions->size; i++)
+        loss += labels->data[i] * log(predictions->data[i]);
     return -loss / predictions->dim1;
 }
 

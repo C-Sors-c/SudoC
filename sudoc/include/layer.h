@@ -5,9 +5,11 @@
 // Fully connected layer
 struct FCLayer
 {
+    char *name;
+
     int input_size;
     int output_size;
-    
+
     float (*activation_func)(float);
     float (*d_activation_func)(float);
 
@@ -25,7 +27,8 @@ Matrix *fc_weight_init(int dim1, int dim2);
 Matrix *fc_bias_init(int dim1, int dim2);
 FCLayer *fc_layer_init(
     int input_size, int output_size, int batch_size,
-    float (*activation_func)(float), float (*d_activation_func)(float), bool load_weights);
+    float (*activation_func)(float), float (*d_activation_func)(float),
+    bool load_weights, char *name);
 Matrix *fc_layer_forward(FCLayer *layer, Matrix *input);
 Matrix *fc_layer_backward(FCLayer *layer, Matrix *prev_Z, Matrix *prev_deltas, float learning_rate);
 void fc_layer_print(FCLayer *layer);
@@ -34,6 +37,8 @@ void fc_layer_destroy(FCLayer *layer);
 // Convolution layer
 struct ConvLayer
 {
+    char *name;
+
     int input_height;
     int input_width;
     int input_depth;
@@ -63,7 +68,8 @@ Matrix *conv_bias_init(int dim1, int dim2);
 ConvLayer *conv_layer_init(
     int input_height, int input_width, int input_depth,
     int n_filters, int kernel_size, int stride, int padding, int batch_size,
-    float (*activation_func)(float), float (*d_activation_func)(float), bool load_weights);
+    float (*activation_func)(float), float (*d_activation_func)(float),
+    bool load_weights, char *name);
 Matrix4 *conv_layer_forward(ConvLayer *layer, Matrix4 *input);
 Matrix4 *conv_layer_backward(ConvLayer *layer, Matrix4 *previous_activations, Matrix4 *previous_deltas, float learning_rate);
 void conv_layer_print(ConvLayer *layer);
@@ -85,6 +91,8 @@ struct ActivationLayer
     int batch_size;
     Matrix *(*activation_func)(Matrix *);
     Matrix *(*d_activation_func)(Matrix *);
+    float (*loss_func)(Matrix *);
+    Matrix *(*d_loss_func)(Matrix *);
     Matrix *activations;
     Matrix *deltas;
 };
@@ -92,7 +100,7 @@ typedef struct ActivationLayer ActivationLayer;
 
 ActivationLayer *activation_layer_init(
     int input_size, int batch_size,
-    Matrix * (*activation_func)(Matrix *), Matrix * (*d_activation_func)(Matrix *));
+    Matrix *(*activation_func)(Matrix *), Matrix *(*d_activation_func)(Matrix *));
 Matrix *activation_layer_forward(ActivationLayer *layer, Matrix *input);
 Matrix *activation_layer_backward(ActivationLayer *layer, Matrix *previous_deltas);
 void activation_layer_destroy(ActivationLayer *layer);

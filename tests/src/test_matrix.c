@@ -173,6 +173,13 @@ int test_matrix_map_function()
 
 #pragma region matrix_4_tests
 
+int test_matrix4_init()
+{
+    Matrix4 *m = matrix4_init(5, 1000, 1000, 3, NULL);
+    matrix4_destroy(m);
+    return print_test(true, true, "test_matrix4_init");
+}
+
 int test_matrix4_add()
 {
     float c[] = {

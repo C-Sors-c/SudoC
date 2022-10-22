@@ -31,6 +31,7 @@ int (*tests_matrix[])() = {
     test_matrix_multiply_scalar,
     test_matrix_transpose,
     test_matrix_map_function,
+    test_matrix4_init,
     test_matrix4_add,
     test_matrix4_subtract,
     test_matrix4_multiply_scalar,
