@@ -2,18 +2,11 @@
 #include <stdlib.h>
 #include <time.h>
 #include "../sudoc/include/utils.h"
-#include "include/test_add.h"
 #include "include/test_cv.h"
 
 #include "include/test_matrix.h"
 #include "include/test_sdl.h"
 #include "include/test_nn.h"
-
-// lists of all dummy tests
-int (*test_dummy[])() = {
-    test_add_positive,
-    test_add_negative,
-};
 
 // lists of all cv tests
 int (*test_cv[])() = {
@@ -60,14 +53,6 @@ int main()
     // run all tests
     int failed = 0;
     int test_count = 0;
-
-    // dummy test to check if the test suite is working
-    printf(YELLOW "Running dummy tests...\n" RESET);
-    int test_dummy_count = sizeof(test_dummy) / sizeof(test_dummy[0]);
-    test_count += test_dummy_count;
-    for (int i = 0; i < test_dummy_count; i++)
-        failed += test_dummy[i]();
-    printf("\n");
 
     // cv tests
     printf(YELLOW "Running cv tests...\n" RESET);
