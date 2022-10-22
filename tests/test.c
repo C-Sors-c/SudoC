@@ -5,7 +5,6 @@
 #include "include/test_cv.h"
 
 #include "include/test_matrix.h"
-#include "include/test_sdl.h"
 #include "include/test_nn.h"
 
 // lists of all cv tests
@@ -36,11 +35,6 @@ int (*tests_matrix[])() = {
     test_matrix4_sum_rows,
 };
 
-int (*tests_sdl[])() = {
-    test_sdl_surface_to_array_red,
-    test_to_green,
-};
-
 int (*tests_nn[])() = {
     test_nnxor,
 };
@@ -68,14 +62,6 @@ int main()
     test_count += test_matrix_count;
     for (int i = 0; i < test_matrix_count; i++)
         failed += tests_matrix[i]();
-    printf("\n");
-
-    // sdl tests
-    printf(YELLOW "Running sdl tests...\n" RESET);
-    int test_sdl_count = sizeof(tests_sdl) / sizeof(tests_sdl[0]);
-    test_count += test_sdl_count;
-    for (int i = 0; i < test_sdl_count; i++)
-        failed += tests_sdl[i]();
     printf("\n");
 
     // nn tests
