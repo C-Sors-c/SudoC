@@ -46,7 +46,9 @@ Image *CV_ZEROS(int channels, int height, int width)
 Image *CV_ONES(int channels, int height, int width)
 {
     Image *image = CV_IMAGE_INIT(channels, height, width);
-    memset(image->data, 255, channels * height * width * sizeof(pixel_t));
+
+    for (int i = 0; i < channels * height * width; i++)
+        image->data[i] = 1;
 
     return image;
 }
@@ -126,11 +128,11 @@ Image *CV_IMAGE_FROM_SURFACE(SDL_Surface *surface)
         for (int j = 0; j < w; j++)
         {
             Uint32 pixel = pixels[i * w + j];
-            pixel_t r, g, b;
+            Uint8 r, g, b;
             SDL_GetRGB(pixel, format, &r, &g, &b);
-            PIXEL(image, 0, i, j) = r;
-            PIXEL(image, 1, i, j) = g;
-            PIXEL(image, 2, i, j) = b;
+            PIXEL(image, 0, i, j) = r / 255.0;
+            PIXEL(image, 1, i, j) = g / 255.0;
+            PIXEL(image, 2, i, j) = b / 255.0;
         }
     }
 
@@ -155,9 +157,9 @@ SDL_Surface *CV_SURFACE_FROM_IMAGE(Image *image)
         {
             for (int j = 0; j < image->w; j++)
             {
-                pixel_t r = PIXEL(image, 0, i, j);
-                pixel_t g = PIXEL(image, 1, i, j);
-                pixel_t b = PIXEL(image, 2, i, j);
+                Uint8 r = MIN(MAX(PIXEL(image, 0, i, j), 0), 1) * 255;
+                Uint8 g = MIN(MAX(PIXEL(image, 1, i, j), 0), 1) * 255;
+                Uint8 b = MIN(MAX(PIXEL(image, 2, i, j), 0), 1) * 255;
                 Uint32 pixel = SDL_MapRGB(format, r, g, b);
                 pixels[i * image->w + j] = pixel;
             }
@@ -169,7 +171,7 @@ SDL_Surface *CV_SURFACE_FROM_IMAGE(Image *image)
         {
             for (int j = 0; j < image->w; j++)
             {
-                pixel_t r = PIXEL(image, 0, i, j);
+                Uint8 r = MIN(MAX(PIXEL(image, 0, i, j), 0), 1) * 255;
                 Uint32 pixel = SDL_MapRGB(format, r, r, r);
                 pixels[i * image->w + j] = pixel;
             }
@@ -211,17 +213,11 @@ Matrix4 *CV_MATRIX4_FROM_IMAGE(Image *image, Matrix4 *matrix, int index)
     CV_CHECK_PTR(matrix->data);
     CV_CHECK_INDEX(matrix, index);
 
-    for (int c = 0; c < image->c; c++)
-    {
-        for (int i = 0; i < image->h; i++)
-        {
-            for (int j = 0; j < image->w; j++)
-            {
-                float value = PIXEL(image, c, i, j) / 255.0;
-                m4_set(matrix, index, c, i, j, value);
-            }
-        }
-    }
+    size_t size = image->c * image->h * image->w;
+    float *dst = matrix->data + index * size;
+    float *src = image->data;
+    memcpy(dst, src, size * sizeof(float));
+
     return matrix;
 }
 
@@ -246,7 +242,7 @@ Image *CV_IMAGE_FROM_MATRIX4(Matrix4 *matrix, Image *image, int index)
             for (int j = 0; j < matrix->dim4; j++)
             {
                 float value = m4_get(matrix, index, c, i, j);
-                PIXEL(image, c, i, j) = value * 255;
+                PIXEL(image, c, i, j) = value;
             }
         }
     }
@@ -425,8 +421,7 @@ Image *CV_RGB_TO_GRAY(Image *src, Image *dst)
             float g = PIXEL(src, 1, i, j);
             float b = PIXEL(src, 2, i, j);
 
-            float gray = (r + g + b) / 3.0;
-            PIXEL(dst, 0, i, j) = gray;
+            PIXEL(dst, 0, i, j) = (r + g + b) / 3.0;
         }
     }
 
@@ -460,24 +455,132 @@ Image *CV_GRAY_TO_RGB(Image *src, Image *dst)
     return dst;
 }
 
+Image *CV_APPLY_FILTER(Image *src, Image *dst, Matrix *kernel)
+{
+    CV_CHECK_IMAGE(src);
+
+    if (dst == NULL)
+        dst = CV_IMAGE_COPY(src);
+
+    CV_CHECK_PTR(kernel);
+    CV_CHECK_PTR(kernel->data);
+
+    int k = kernel->dim1 / 2;
+
+    for (int c = 0; c < src->c; c++)
+    {
+        for (int i = 0; i < src->h; i++)
+        {
+            for (int j = 0; j < src->w; j++)
+            {
+                float sum = 0;
+                for (int m = 0; m < kernel->dim1; m++)
+                {
+                    for (int n = 0; n < kernel->dim2; n++)
+                    {
+                        int x = i + m - k;
+                        int y = j + n - k;
+
+                        if (x < 0 || x >= src->h || y < 0 || y >= src->w)
+                            continue;
+                    }
+                }
+
+                PIXEL(dst, c, i, j) = sum;
+            }
+        }
+    }
+
+    return dst;
+}
+
 Matrix *CV_GET_GAUSSIAN_KERNEL(int size, float sigma)
 {
+    if (size % 2 == 0)
+        errx(1, "Kernel size must be odd");
+
     Matrix *kernel = matrix_init(size, size, NULL);
     CV_CHECK_PTR(kernel);
+
+    int center = size / 2;
+    float sum = 0.0;
 
     for (int i = 0; i < size; i++)
     {
         for (int j = 0; j < size; j++)
         {
-            float x = j - size / 2.0;
-            float y = i - size / 2.0;
+            float x = i - center;
+            float y = j - center;
 
-            float value = exp(-(x * x + y * y) / (2.0 * sigma * sigma));
-            MATRIX(kernel, i, j) = value / (2.0 * PI * sigma * sigma);
+            float value = exp(-(x * x + y * y) / (2 * sigma * sigma));
+            MATRIX(kernel, i, j) = value;
+            sum += value;
         }
     }
 
+    // normalize kernel
+    for (int i = 0; i < size; i++)
+        for (int j = 0; j < size; j++)
+            MATRIX(kernel, i, j) /= sum;
+
     return kernel;
+}
+
+Image *CV_GAUSSIAN_BLUR(Image *src, Image *dst, int size, float sigma)
+{
+    CV_CHECK_IMAGE(src);
+
+    if (dst == NULL)
+        dst = CV_IMAGE_INIT(src->c, src->h, src->w);
+
+    CV_CHECK_IMAGE(dst);
+
+    Matrix *kernel = CV_GET_GAUSSIAN_KERNEL(size, sigma);
+    CV_CHECK_PTR(kernel);
+
+    dst = CV_APPLY_FILTER(src, dst, kernel);
+    matrix_destroy(kernel);
+
+    return dst;
+}
+
+Matrix *CV_GET_SHARPEN_KERNEL(float sigma)
+{
+    Matrix *kernel = matrix_init(3, 3, NULL);
+    CV_CHECK_PTR(kernel);
+
+    for (int i = 0; i < 3; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            if (i == 1 && j == 1)
+                MATRIX(kernel, i, j) = 4 * sigma;
+            else if (i == 1 || j == 1)
+                MATRIX(kernel, i, j) = -1 * sigma;
+            else
+                MATRIX(kernel, i, j) = 0;
+        }
+    }
+
+    MATRIX(kernel, 1, 1) += 1;
+    return kernel;
+}
+
+Image *CV_SHARPEN(Image *src, Image *dst, float sigma)
+{
+    CV_CHECK_IMAGE(src);
+
+    if (dst == NULL)
+        dst = CV_IMAGE_INIT(src->c, src->h, src->w);
+    CV_CHECK_IMAGE(dst);
+
+    Matrix *kernel = CV_GET_SHARPEN_KERNEL(sigma);
+    CV_CHECK_PTR(kernel);
+
+    dst = CV_APPLY_FILTER(src, dst, kernel);
+    matrix_destroy(kernel);
+
+    return dst;
 }
 
 #pragma endregion Transform

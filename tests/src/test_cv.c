@@ -47,10 +47,11 @@ int test_cv_ones()
 {
     Image *image = CV_ONES(3, 100, 100);
     for (int i = 0; i < image->w * image->h * image->c; i++)
-        if (image->data[i] != 255)
+        if (image->data[i] != 1.0)
         {
+            int a = image->data[i];
             CV_IMAGE_FREE(image);
-            return assert(false, true, "test_cv_ones");
+            return assert(a, true, "test_cv_ones");
         }
 
     CV_SAVE(image, "tests/out/test_cv_ones.png");
@@ -158,6 +159,62 @@ int test_cv_rgb_to_gray()
 
     CV_IMAGE_FREE(image);
     return assert(true, true, "test_cv_rgb_to_gray");
+}
+
+int test_cv_get_gaussian_kernel()
+{
+    Matrix *kernel = CV_GET_GAUSSIAN_KERNEL(5, 1.0);
+    float expected[25] = {
+        0.0029690167, 0.01330621, 0.02193823, 0.01330621, 0.0029690167,
+        0.01330621, 0.059634295, 0.09832033, 0.059634295, 0.01330621,
+        0.02193823, 0.09832033, 0.16210282, 0.09832033, 0.02193823,
+        0.01330621, 0.059634295, 0.09832033, 0.059634295, 0.01330621,
+        0.0029690167, 0.01330621, 0.02193823, 0.01330621, 0.0029690167};
+
+    for (int i = 0; i < 25; i++)
+        if (kernel->data[i] != expected[i])
+        {
+            float x = kernel->data[i];
+            matrix_destroy(kernel);
+            return assert(x, expected[i], "test_cv_get_gaussian_kernel");
+        }
+
+    matrix_destroy(kernel);
+    return assert(true, true, "test_cv_get_gaussian_kernel");
+}
+
+int test_cv_gaussian_blur()
+{
+    Image *image = CV_LOAD("tests/samples/lena.png", CV_RGB);
+    Image *blurred = CV_GAUSSIAN_BLUR(image, NULL, 9, 2.0);
+    CV_SAVE(blurred, "tests/out/test_cv_gaussian_blur.png");
+
+    CV_IMAGE_FREE(image);
+    CV_IMAGE_FREE(blurred);
+    return assert(true, true, "test_cv_gaussian_blur");
+}
+
+int test_cv_gaussian_blur_gray()
+{
+    Image *image = CV_LOAD("tests/samples/lena.png", CV_GRAYSCALE);
+    Image *blurred = CV_GAUSSIAN_BLUR(image, NULL, 9, 2.0);
+    CV_SAVE(blurred, "tests/out/test_cv_gaussian_blur_gray.png");
+
+    CV_IMAGE_FREE(image);
+    CV_IMAGE_FREE(blurred);
+    return assert(true, true, "test_cv_gaussian_blur_gray");
+}
+
+int test_cv_sharp()
+{
+    Image *image = CV_LOAD("tests/samples/lena.png", CV_RGB);
+    Image *sharped = CV_SHARPEN(image, NULL, 1);
+
+    CV_SAVE(sharped, "tests/out/test_cv_sharp.png");
+
+    CV_IMAGE_FREE(image);
+    CV_IMAGE_FREE(sharped);
+    return assert(true, true, "test_cv_sharp");
 }
 
 /*

@@ -10,7 +10,7 @@
 #include "../include/matrix.h"
 #include "../include/utils.h"
 
-typedef unsigned char pixel_t;
+typedef float pixel_t;
 
 typedef struct
 {
@@ -32,7 +32,12 @@ typedef struct
     } while (0)
 
 // chanel major access : data[height * width * channel + height * width + width]
-#define PIXEL(image, c, i, j) (image->data[(c) * (image)->h * (image)->w + (i) * (image)->w + (j)])
+#define PIXEL(image, c, i, j) \
+    (image->data[(c) * (image)->h * (image)->w + (i) * (image)->w + (j)])
+
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 // print info about an error
 #define ERROR_INFO                                                            \
@@ -64,6 +69,14 @@ typedef struct
     {                                                                                  \
         ERROR_INFO;                                                                    \
         errx(1, RED "invalid number of channels: %d != %d \n" RESET, (image)->c, (n)); \
+    }
+
+// check if the number of channels is valid
+#define CV_CMP_DIMS(m, n)                                                         \
+    if ((m) != (n))                                                               \
+    {                                                                             \
+        ERROR_INFO;                                                               \
+        errx(1, RED "invalid number of dimensions: %d != %d \n" RESET, (m), (n)); \
     }
 
 // check if the index is valid
@@ -104,3 +117,11 @@ Matrix4 *CV_MATRIX4_FROM_PATH(char *path, Matrix4 *matrix, int index, int batch_
 
 Image *CV_RGB_TO_GRAY(Image *src, Image *dst);
 Image *CV_GRAY_TO_RGB(Image *src, Image *dst);
+
+Image *CV_APPLY_FILTER(Image *src, Image *dst, Matrix *kernel);
+
+Matrix *CV_GET_GAUSSIAN_KERNEL(int size, float sigma);
+Image *CV_GAUSSIAN_BLUR(Image *src, Image *dst, int size, float sigma);
+
+Matrix *CV_GET_SHARPEN_KERNEL(float sigma);
+Image *CV_SHARPEN(Image *src, Image *dst, float sigma);
