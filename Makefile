@@ -54,10 +54,6 @@ tv: build-test
 	@mkdir -p ${TEST_DATA_DIR}
 	@valgrind --leak-check=full --show-leak-kinds=all ./${BUILD_DIR}/${EXEC_TEST}
 
-test-no-valgrind: build-test
-	@mkdir -p ${TEST_DATA_DIR}
-	@./${BUILD_DIR}/${EXEC_TEST}
-
 # CLEAN
 clean-sudoc:
 	${RM} ${OBJ}
