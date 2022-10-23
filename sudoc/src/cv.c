@@ -235,17 +235,11 @@ Image *CV_IMAGE_FROM_MATRIX4(Matrix4 *matrix, Image *image, int index)
     CV_CHECK_IMAGE(image);
     CV_CHECK_CHANNEL(image, matrix->dim2);
 
-    for (int c = 0; c < matrix->dim2; c++)
-    {
-        for (int i = 0; i < matrix->dim3; i++)
-        {
-            for (int j = 0; j < matrix->dim4; j++)
-            {
-                float value = m4_get(matrix, index, c, i, j);
-                PIXEL(image, c, i, j) = value;
-            }
-        }
-    }
+    size_t size = image->c * image->h * image->w;
+    float *dst = image->data;
+    float *src = matrix->data + index * size;
+    memcpy(dst, src, size * sizeof(float));
+
     return image;
 }
 
