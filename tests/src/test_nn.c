@@ -3,6 +3,7 @@
 
 int test_nnxor()
 {
+    init_rand();
 
     int batchsize = 4;
     bool load_weights = false;
@@ -42,7 +43,7 @@ int test_nnxor()
     m_set(input, 3, 1, 1);
     m_set(expected, 3, 0, 1);
 
-    for (int i = 0; i < 500; i++)
+    for (int i = 0; i < 10000; i++)
     {
         nn_train_batch(network, input, expected, 0.001);
     }
