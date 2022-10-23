@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include "../include/utils.h"
 
 /// @brief Asserts that the given condition is true.
@@ -19,4 +18,9 @@ int assert(int result, int expected, char name[])
         printf(RED "%s: Test failed, got %i, expected %i\n" RESET, name, result, expected);
         return 1;
     }
+}
+
+void init_rand()
+{
+    srand(time(NULL));
 }
