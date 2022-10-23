@@ -2,27 +2,32 @@
 #include <stdlib.h>
 #include <time.h>
 #include "../sudoc/include/utils.h"
-#include "include/test_add.h"
 #include "include/test_cv.h"
 
 #include "include/test_matrix.h"
-#include "include/test_sdl.h"
 #include "include/test_nn.h"
-
-// lists of all dummy tests
-int (*test_dummy[])() = {
-    test_add_positive,
-    test_add_negative,
-};
 
 // lists of all cv tests
 int (*test_cv[])() = {
+    test_cv_load,
+    test_cv_save,
+    test_cv_zeros,
+    test_cv_ones,
+    test_cv_load_folder,
+    test_cv_matrix_from_folder,
+    test_cv_matrix_from_path,
     test_cv_rgb_to_gray,
+    test_cv_list_files,
+    test_cv_get_gaussian_kernel,
     test_cv_gaussian_blur,
+    test_cv_gaussian_blur_gray,
     test_cv_sharp,
     test_cv_sobel,
-    test_cv_canny,
-    test_cv_rotate};
+    // test_cv_sharp,
+    // test_cv_sobel,
+    // test_cv_canny,
+    // test_cv_rotate,
+};
 
 // lists of all matrix tests
 int (*tests_matrix[])() = {
@@ -43,11 +48,6 @@ int (*tests_matrix[])() = {
     test_matrix4_sum_rows,
 };
 
-int (*tests_sdl[])() = {
-    test_sdl_surface_to_array_red,
-    test_to_green,
-};
-
 int (*tests_nn[])() = {
     test_nnxor,
 };
@@ -61,44 +61,28 @@ int main()
     int failed = 0;
     int test_count = 0;
 
-    // dummy test to check if the test suite is working
-    printf(YELLOW "Running dummy tests...\n" RESET);
-    int test_dummy_count = sizeof(test_dummy) / sizeof(test_dummy[0]);
-    test_count += test_dummy_count;
-    for (int i = 0; i < test_dummy_count; i++)
-        failed += test_dummy[i]();
-    printf("\n");
-
-    // cv tests
-    printf(YELLOW "Running cv tests...\n" RESET);
-    int test_cv_count = sizeof(test_cv) / sizeof(test_cv[0]);
-    test_count += test_cv_count;
-    for (int i = 0; i < test_cv_count; i++)
-        failed += test_cv[i]();
-    printf("\n");
-
-    // matrix tests
-    printf(YELLOW "Running matrix tests...\n" RESET);
+    // MATRIX tests
+    printf(YELLOW "Running MATRIX tests...\n" RESET);
     int test_matrix_count = sizeof(tests_matrix) / sizeof(tests_matrix[0]);
     test_count += test_matrix_count;
     for (int i = 0; i < test_matrix_count; i++)
         failed += tests_matrix[i]();
     printf("\n");
 
-    // sdl tests
-    printf(YELLOW "Running sdl tests...\n" RESET);
-    int test_sdl_count = sizeof(tests_sdl) / sizeof(tests_sdl[0]);
-    test_count += test_sdl_count;
-    for (int i = 0; i < test_sdl_count; i++)
-        failed += tests_sdl[i]();
-    printf("\n");
-
-    // nn tests
-    printf(YELLOW "Running nn tests...\n" RESET);
+    // NN tests
+    printf(YELLOW "Running NN tests...\n" RESET);
     int test_nn_count = sizeof(tests_nn) / sizeof(tests_nn[0]);
     test_count += test_nn_count;
     for (int i = 0; i < test_nn_count; i++)
         failed += tests_nn[i]();
+    printf("\n");
+
+    // CV tests
+    printf(YELLOW "Running CV tests...\n" RESET);
+    int test_cv_count = sizeof(test_cv) / sizeof(test_cv[0]);
+    test_count += test_cv_count;
+    for (int i = 0; i < test_cv_count; i++)
+        failed += test_cv[i]();
     printf("\n");
 
     // stop timer
