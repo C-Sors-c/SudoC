@@ -217,6 +217,18 @@ int test_cv_sharp()
     return assert(true, true, "test_cv_sharp");
 }
 
+int test_cv_sobel()
+{
+    Image *image = CV_LOAD("tests/samples/lena.png", CV_GRAYSCALE);
+    Image *sobel = CV_SOBEL(image, NULL);
+
+    CV_SAVE(sobel, "tests/out/test_cv_sobel.png");
+
+    CV_IMAGE_FREE(image);
+    CV_IMAGE_FREE(sobel);
+    return assert(true, true, "test_cv_sobel");
+}
+
 /*
 
 

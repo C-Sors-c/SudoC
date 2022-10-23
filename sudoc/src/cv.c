@@ -477,6 +477,8 @@ Image *CV_APPLY_FILTER(Image *src, Image *dst, Matrix *kernel)
 
                         if (x < 0 || x >= src->h || y < 0 || y >= src->w)
                             continue;
+
+                        sum += PIXEL(src, c, x, y) * MATRIX(kernel, m, n);
                     }
                 }
 
@@ -573,6 +575,48 @@ Image *CV_SHARPEN(Image *src, Image *dst, float sigma)
 
     dst = CV_APPLY_FILTER(src, dst, kernel);
     matrix_destroy(kernel);
+
+    return dst;
+}
+
+Image *CV_SOBEL(Image *src, Image *dst)
+{
+    CV_CHECK_IMAGE(src);
+
+    if (dst == NULL)
+        dst = CV_IMAGE_INIT(src->c, src->h, src->w);
+    CV_CHECK_IMAGE(dst);
+
+    float mkernel_x[] = {-1.0, 0.0, 1.0, -2.0, 0.0, 2.0, -1.0, 0.0, 1.0};
+
+    float mkernel_y[] = {-1.0, -2.0, -1.0, 0.0, 0.0, 0.0, 1.0, 2.0, 1.0};
+
+    Matrix *kernel_x = matrix_init(3, 3, mkernel_x);
+    CV_CHECK_PTR(kernel_x);
+
+    Matrix *kernel_y = matrix_init(3, 3, mkernel_y);
+    CV_CHECK_PTR(kernel_y);
+
+    Image *dst_x = CV_APPLY_FILTER(src, NULL, kernel_x);
+    Image *dst_y = CV_APPLY_FILTER(src, NULL, kernel_y);
+
+    for (int c = 0; c < src->c; c++)
+    {
+        for (int i = 0; i < src->h; i++)
+        {
+            for (int j = 0; j < src->w; j++)
+            {
+                float x = PIXEL(dst_x, c, i, j);
+                float y = PIXEL(dst_y, c, i, j);
+                PIXEL(dst, c, i, j) = sqrt(x * x + y * y);
+            }
+        }
+    }
+
+    matrix_destroy(kernel_x);
+    matrix_destroy(kernel_y);
+    CV_IMAGE_FREE(dst_x);
+    CV_IMAGE_FREE(dst_y);
 
     return dst;
 }

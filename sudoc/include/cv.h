@@ -125,3 +125,5 @@ Image *CV_GAUSSIAN_BLUR(Image *src, Image *dst, int size, float sigma);
 
 Matrix *CV_GET_SHARPEN_KERNEL(float sigma);
 Image *CV_SHARPEN(Image *src, Image *dst, float sigma);
+
+Image *CV_SOBEL(Image *src, Image *dst);
