@@ -9,12 +9,20 @@
 
 // lists of all cv tests
 int (*test_cv[])() = {
+    test_cv_load,
+    test_cv_save,
+    test_cv_zeros,
+    test_cv_ones,
+    test_cv_load_folder,
+    test_cv_matrix_from_folder,
+    test_cv_matrix_from_path,
     test_cv_rgb_to_gray,
-    test_cv_gaussian_blur,
-    test_cv_sharp,
-    test_cv_sobel,
-    test_cv_canny,
-    test_cv_rotate,
+    test_cv_list_files,
+    // test_cv_gaussian_blur,
+    // test_cv_sharp,
+    // test_cv_sobel,
+    // test_cv_canny,
+    // test_cv_rotate,
 };
 
 // lists of all matrix tests
@@ -49,28 +57,28 @@ int main()
     int failed = 0;
     int test_count = 0;
 
-    // cv tests
-    printf(YELLOW "Running cv tests...\n" RESET);
-    int test_cv_count = sizeof(test_cv) / sizeof(test_cv[0]);
-    test_count += test_cv_count;
-    for (int i = 0; i < test_cv_count; i++)
-        failed += test_cv[i]();
-    printf("\n");
-
-    // matrix tests
-    printf(YELLOW "Running matrix tests...\n" RESET);
+    // MATRIX tests
+    printf(YELLOW "Running MATRIX tests...\n" RESET);
     int test_matrix_count = sizeof(tests_matrix) / sizeof(tests_matrix[0]);
     test_count += test_matrix_count;
     for (int i = 0; i < test_matrix_count; i++)
         failed += tests_matrix[i]();
     printf("\n");
 
-    // nn tests
-    printf(YELLOW "Running nn tests...\n" RESET);
+    // NN tests
+    printf(YELLOW "Running NN tests...\n" RESET);
     int test_nn_count = sizeof(tests_nn) / sizeof(tests_nn[0]);
     test_count += test_nn_count;
     for (int i = 0; i < test_nn_count; i++)
         failed += tests_nn[i]();
+    printf("\n");
+
+    // CV tests
+    printf(YELLOW "Running CV tests...\n" RESET);
+    int test_cv_count = sizeof(test_cv) / sizeof(test_cv[0]);
+    test_count += test_cv_count;
+    for (int i = 0; i < test_cv_count; i++)
+        failed += test_cv[i]();
     printf("\n");
 
     // stop timer

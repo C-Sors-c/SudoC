@@ -1,9 +1,8 @@
 #include "include/solver.h"
 #include "include/grid_parser.h"
 
-
 /* Driver Program to test above functions */
-int main(int argc, char** argv )
+int main(int argc, char **argv)
 {
     if (argc != 2)
         errx(EXIT_FAILURE, "Usage: file\n");
@@ -15,4 +14,3 @@ int main(int argc, char** argv )
     save_grid(argv[1], grid);
     return 0;
 }
-

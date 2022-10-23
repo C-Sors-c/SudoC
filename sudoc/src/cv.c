@@ -1,134 +1,116 @@
 #include "../include/cv.h"
-
-#include <err.h>
 #include <math.h>
-#include <stdlib.h>
 
 #pragma region Image
 
-void cv_free_image(Image *image)
+void CV_IMAGE_FREE(Image *image)
 {
-    if (image == NULL)
-        return;
-
-    for (int i = 0; i < image->height; i++)
+    if (image != NULL)
     {
-        for (int j = 0; j < image->width; j++)
-        {
-            free(image->data[i][j]);
-        }
-        free(image->data[i]);
+        if (image->data != NULL)
+            FREE(image->data);
+        FREE(image);
     }
-    free(image->data);
-    free(image);
 }
 
-Image *cv_image_init(int width, int height, int channels)
+Image *CV_IMAGE_INIT(int channels, int height, int width)
 {
     Image *image = malloc(sizeof(Image));
-    if (image == NULL)
-    {
-        err(1, "malloc");
-    }
+    CV_CHECK_PTR(image);
 
-    image->width = width;
-    image->height = height;
-    image->channels = channels;
-    image->data = malloc(sizeof(float **) * height);
+    image->c = channels;
+    image->w = width;
+    image->h = height;
 
-    if (image->data == NULL)
-    {
-        errx(1, "malloc");
-    }
+    image->data = malloc(channels * height * width * sizeof(pixel_t));
+    CV_CHECK_PTR(image->data);
 
-    for (int i = 0; i < height; i++)
-    {
-        image->data[i] = malloc(sizeof(float *) * width);
-
-        if (image->data[i] == NULL)
-        {
-            errx(1, "malloc");
-        }
-
-        for (int j = 0; j < width; j++)
-        {
-            image->data[i][j] = calloc(channels, sizeof(float));
-
-            if (image->data[i][j] == NULL)
-            {
-                errx(1, "malloc");
-            }
-        }
-    }
     return image;
 }
 
-Image *cv_image_copy(Image *src)
+Image *CV_ZEROS(int channels, int height, int width)
 {
-    if (src == NULL)
-        errx(1, "source image is null");
+    Image *image = malloc(sizeof(Image));
+    CV_CHECK_PTR(image);
 
-    Image *img = cv_image_init(src->width, src->height, src->channels);
-    for (int i = 0; i < src->height; i++)
+    image->c = channels;
+    image->w = width;
+    image->h = height;
+
+    image->data = calloc(channels * height * width, sizeof(pixel_t));
+    CV_CHECK_PTR(image->data);
+
+    return image;
+}
+
+Image *CV_ONES(int channels, int height, int width)
+{
+    Image *image = CV_IMAGE_INIT(channels, height, width);
+    memset(image->data, 255, channels * height * width * sizeof(pixel_t));
+
+    return image;
+}
+
+Image *CV_IMAGE_COPY(Image *image)
+{
+    CV_CHECK_IMAGE(image);
+    Image *copy = CV_IMAGE_INIT(image->c, image->h, image->w);
+    memcpy(copy->data, image->data, image->c * image->h * image->w * sizeof(pixel_t));
+
+    return copy;
+}
+
+void CV_IMAGE_SHOW(Image *image, char *title)
+{
+    CV_CHECK_IMAGE(image);
+
+    SDL_Surface *surface = CV_SURFACE_FROM_IMAGE(image);
+    SDL_Window *window = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, surface->w, surface->h, SDL_WINDOW_SHOWN);
+    CV_CHECK_PTR(window);
+
+    SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    CV_CHECK_PTR(renderer);
+
+    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
+    CV_CHECK_PTR(texture);
+
+    SDL_RenderCopy(renderer, texture, NULL, NULL);
+    SDL_RenderPresent(renderer);
+
+    SDL_Event event;
+    while (1)
     {
-        for (int j = 0; j < src->width; j++)
+        if (SDL_PollEvent(&event))
         {
-            for (int k = 0; k < src->channels; k++)
+            if (event.type == SDL_QUIT)
             {
-                img->data[i][j][k] = src->data[i][j][k];
+                break;
             }
         }
     }
-    return img;
-}
 
-Image *cv_image_from_u8(unsigned char ***src, int width, int height, int channels)
-{
-    if (src == NULL)
-        errx(1, "source image is null");
-
-    Image *img = cv_image_init(width, height, channels);
-    for (int i = 0; i < height; i++)
-    {
-        for (int j = 0; j < width; j++)
-        {
-            for (int k = 0; k < channels; k++)
-            {
-                img->data[i][j][k] = (float)src[i][j][k];
-            }
-        }
-    }
-    return img;
-}
-
-Image *cv_image_from_float(float ***src, int width, int height, int channels)
-{
-    if (src == NULL)
-        errx(1, "source image is null");
-
-    Image *img = cv_image_init(width, height, channels);
-    for (int i = 0; i < height; i++)
-    {
-        for (int j = 0; j < width; j++)
-        {
-            for (int k = 0; k < channels; k++)
-            {
-                img->data[i][j][k] = src[i][j][k];
-            }
-        }
-    }
-    return img;
-}
-
-Image *cv_image_from_path(char *path)
-{
-    SDL_Surface *surface = cv_surface_from_path(path);
-    Image *image = cv_image_from_surface(surface);
+    SDL_DestroyTexture(texture);
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
     SDL_FreeSurface(surface);
-    return image;
 }
 
-Image *cv_image_from_surface(SDL_Surface *surface)
+void CV_IMAGE_SHOW_MATRIX4(Matrix4 *matrix, char *title, int index)
+{
+    CV_CHECK_PTR(matrix);
+    CV_CHECK_PTR(matrix->data);
+    CV_CHECK_INDEX(matrix, index);
+
+    Image *image = CV_IMAGE_INIT(matrix->dim2, matrix->dim3, matrix->dim4);
+    CV_CHECK_IMAGE(image);
+    CV_CHECK_CHANNEL(image, matrix->dim2);
+
+    CV_IMAGE_FROM_MATRIX4(matrix, image, index);
+    CV_IMAGE_SHOW(image, title);
+    CV_IMAGE_FREE(image);
+}
+
+Image *CV_IMAGE_FROM_SURFACE(SDL_Surface *surface)
 {
     SDL_LockSurface(surface);
 
@@ -137,18 +119,18 @@ Image *cv_image_from_surface(SDL_Surface *surface)
 
     SDL_PixelFormat *format = surface->format;
     Uint32 *pixels = surface->pixels;
-    Image *image = cv_image_init(w, h, 3);
+    Image *image = CV_IMAGE_INIT(3, h, w);
 
     for (int i = 0; i < h; i++)
     {
         for (int j = 0; j < w; j++)
         {
             Uint32 pixel = pixels[i * w + j];
-            Uint8 r, g, b;
+            pixel_t r, g, b;
             SDL_GetRGB(pixel, format, &r, &g, &b);
-            image->data[i][j][0] = (float)r;
-            image->data[i][j][1] = (float)g;
-            image->data[i][j][2] = (float)b;
+            PIXEL(image, 0, i, j) = r;
+            PIXEL(image, 1, i, j) = g;
+            PIXEL(image, 2, i, j) = b;
         }
     }
 
@@ -156,149 +138,41 @@ Image *cv_image_from_surface(SDL_Surface *surface)
     return image;
 }
 
-unsigned char ***cv_uint8_from_image(Image *src)
+SDL_Surface *CV_SURFACE_FROM_IMAGE(Image *image)
 {
-    if (src == NULL)
-        errx(1, "source image is null");
+    CV_CHECK_IMAGE(image);
 
-    unsigned char ***img = malloc(sizeof(unsigned char **) * src->height);
-
-    if (img == NULL)
-        errx(1, "malloc");
-
-    for (int i = 0; i < src->height; i++)
-    {
-        img[i] = malloc(sizeof(unsigned char *) * src->width);
-
-        if (img[i] == NULL)
-            errx(1, "malloc");
-
-        for (int j = 0; j < src->width; j++)
-        {
-            img[i][j] = malloc(sizeof(unsigned char) * 3);
-
-            if (img[i][j] == NULL)
-                errx(1, "malloc");
-
-            if (src->channels == 1)
-            {
-                for (int k = 0; k < 3; k++)
-                    img[i][j][k] = (unsigned char)src->data[i][j][0];
-            }
-            else if (src->channels == 3)
-            {
-                for (int k = 0; k < 3; k++)
-                    img[i][j][k] = (unsigned char)src->data[i][j][k];
-            }
-            else
-                errx(1, "invalid number of channels");
-        }
-    }
-    return img;
-}
-
-float ***cv_float_from_image(Image *src)
-{
-    if (src == NULL)
-        errx(1, "source image is null");
-
-    float ***img = malloc(sizeof(float **) * src->height);
-
-    if (img == NULL)
-        errx(1, "malloc");
-
-    for (int i = 0; i < src->height; i++)
-    {
-        img[i] = malloc(sizeof(float *) * src->width);
-
-        if (img[i] == NULL)
-            errx(1, "malloc");
-
-        for (int j = 0; j < src->width; j++)
-        {
-            img[i][j] = malloc(sizeof(float) * src->channels);
-
-            if (img[i][j] == NULL)
-                errx(1, "malloc");
-
-            for (int k = 0; k < src->channels; k++)
-                img[i][j][k] = src->data[i][j][k];
-        }
-    }
-    return img;
-}
-
-Matrix4 *cv_matrix_from_image(Image *src, Matrix4 *dst, int b)
-{
-    if (src == NULL)
-        errx(1, RED "source image is null" RESET);
-
-    if (dst == NULL)
-    {
-        dst = matrix4_init(1, src->channels, src->height, src->width, NULL);
-        b = 0;
-    }
-
-    for (int i = 0; i < src->height; i++)
-    {
-        for (int j = 0; j < src->width; j++)
-        {
-            for (int k = 0; k < src->channels; k++)
-            {
-                dst->data[b * src->channels * src->height * src->width + k * src->height * src->width + i * src->width + j] = src->data[i][j][k];
-            }
-        }
-    }
-
-    return dst;
-}
-
-SDL_Surface *cv_surface_from_path(char *path)
-{
-    SDL_Surface *tempImage = NULL;
-    SDL_Surface *Image = NULL;
-    tempImage = IMG_Load(path);
-    if (tempImage == NULL)
-    {
-        errx(1, "Unable to load image %s: %s", path, IMG_GetError());
-    }
-    Image = SDL_ConvertSurfaceFormat(tempImage, SDL_PIXELFORMAT_RGB888, 0);
-    SDL_FreeSurface(tempImage);
-    return Image;
-}
-
-SDL_Surface *cv_surface_from_image(Image *image)
-{
-    SDL_Surface *surface = SDL_CreateRGBSurface(0, image->width, image->height, 32, 0, 0, 0, 0);
+    SDL_Surface *surface = SDL_CreateRGBSurface(0, image->w, image->h, 32, 0, 0, 0, 0);
+    CV_CHECK_PTR(surface);
     SDL_LockSurface(surface);
 
     SDL_PixelFormat *format = surface->format;
     Uint32 *pixels = surface->pixels;
 
-    for (int i = 0; i < image->height; i++)
+    if (image->c == 3)
     {
-        for (int j = 0; j < image->width; j++)
+        for (int i = 0; i < image->h; i++)
         {
-            if (image->channels == 1)
+            for (int j = 0; j < image->w; j++)
             {
-                Uint8 r = (Uint8)image->data[i][j][0];
-                Uint8 g = (Uint8)image->data[i][j][0];
-                Uint8 b = (Uint8)image->data[i][j][0];
-
+                pixel_t r = PIXEL(image, 0, i, j);
+                pixel_t g = PIXEL(image, 1, i, j);
+                pixel_t b = PIXEL(image, 2, i, j);
                 Uint32 pixel = SDL_MapRGB(format, r, g, b);
-                pixels[i * image->width + j] = pixel;
+                pixels[i * image->w + j] = pixel;
             }
-            else if (image->channels == 3)
+        }
+    }
+    else if (image->c == 1)
+    {
+        for (int i = 0; i < image->h; i++)
+        {
+            for (int j = 0; j < image->w; j++)
             {
-                Uint8 r = (Uint8)image->data[i][j][0];
-                Uint8 g = (Uint8)image->data[i][j][1];
-                Uint8 b = (Uint8)image->data[i][j][2];
-
-                Uint32 pixel = SDL_MapRGB(format, r, g, b);
-                pixels[i * image->width + j] = pixel;
+                pixel_t r = PIXEL(image, 0, i, j);
+                Uint32 pixel = SDL_MapRGB(format, r, r, r);
+                pixels[i * image->w + j] = pixel;
             }
-            else
-                errx(1, "invalid number of channels");
         }
     }
 
@@ -306,133 +180,290 @@ SDL_Surface *cv_surface_from_image(Image *image)
     return surface;
 }
 
-void cv_save_image(Image *image, char *path)
+SDL_Surface *CV_SURFACE_FROM_PATH(char *path)
 {
-    SDL_Surface *surface = cv_surface_from_image(image);
+    SDL_Surface *tempImage = NULL;
+    SDL_Surface *Image = NULL;
+
+    tempImage = IMG_Load(path);
+    if (tempImage == NULL)
+    {
+        ERROR_INFO;
+        errx(1, "Unable to load image %s: %s", path, IMG_GetError());
+    }
+
+    Image = SDL_ConvertSurfaceFormat(tempImage, SDL_PIXELFORMAT_RGB888, 0);
+    SDL_FreeSurface(tempImage);
+    return Image;
+}
+
+Matrix4 *CV_MATRIX4_FROM_IMAGE(Image *image, Matrix4 *matrix, int index)
+{
+    CV_CHECK_IMAGE(image);
+
+    if (matrix == NULL)
+    {
+        matrix = matrix4_init(1, image->c, image->h, image->w, NULL);
+        index = 0;
+    }
+
+    CV_CHECK_PTR(matrix);
+    CV_CHECK_PTR(matrix->data);
+    CV_CHECK_INDEX(matrix, index);
+
+    for (int c = 0; c < image->c; c++)
+    {
+        for (int i = 0; i < image->h; i++)
+        {
+            for (int j = 0; j < image->w; j++)
+            {
+                float value = PIXEL(image, c, i, j) / 255.0;
+                m4_set(matrix, index, c, i, j, value);
+            }
+        }
+    }
+    return matrix;
+}
+
+Image *CV_IMAGE_FROM_MATRIX4(Matrix4 *matrix, Image *image, int index)
+{
+    CV_CHECK_PTR(matrix);
+    CV_CHECK_PTR(matrix->data);
+    CV_CHECK_INDEX(matrix, index);
+
+    if (image == NULL)
+    {
+        image = CV_IMAGE_INIT(matrix->dim2, matrix->dim3, matrix->dim4);
+    }
+
+    CV_CHECK_IMAGE(image);
+    CV_CHECK_CHANNEL(image, matrix->dim2);
+
+    for (int c = 0; c < matrix->dim2; c++)
+    {
+        for (int i = 0; i < matrix->dim3; i++)
+        {
+            for (int j = 0; j < matrix->dim4; j++)
+            {
+                float value = m4_get(matrix, index, c, i, j);
+                PIXEL(image, c, i, j) = value * 255;
+            }
+        }
+    }
+    return image;
+}
+
+void CV_SAVE(Image *image, char *path)
+{
+    CV_CHECK_IMAGE(image);
+    SDL_Surface *surface = CV_SURFACE_FROM_IMAGE(image);
     IMG_SavePNG(surface, path);
     SDL_FreeSurface(surface);
 }
 
+Image *CV_LOAD(char *path, int mode)
+{
+    CV_CHECK_PTR(path);
+
+    SDL_Surface *surface = CV_SURFACE_FROM_PATH(path);
+    Image *image = CV_IMAGE_FROM_SURFACE(surface);
+    SDL_FreeSurface(surface);
+
+    if (mode == CV_RGB)
+        return image;
+
+    if (mode == CV_GRAYSCALE)
+    {
+        Image *gray = CV_RGB_TO_GRAY(image, NULL);
+        CV_IMAGE_FREE(image);
+        return gray;
+    }
+
+    errx(1, "Invalid mode");
+}
+
+char **CV_LIST_FILES(char *path, int *count)
+{
+    DIR *dir = opendir(path);
+    CV_CHECK_PTR(dir);
+
+    struct dirent *entry;
+    int n = 0;
+    while ((entry = readdir(dir)) != NULL)
+    {
+        if (entry->d_type == 8)
+        {
+            n++;
+        }
+    }
+    closedir(dir);
+
+    char **files = malloc(n * sizeof(char *));
+    CV_CHECK_PTR(files);
+
+    dir = opendir(path);
+    CV_CHECK_PTR(dir);
+
+    int i = 0;
+    while ((entry = readdir(dir)) != NULL)
+    {
+        if (entry->d_type == 8)
+        {
+            char *file = malloc(strlen(path) + strlen(entry->d_name) + 2);
+            sprintf(file, "%s/%s", path, entry->d_name);
+
+            files[i] = file;
+            i++;
+        }
+    }
+    closedir(dir);
+
+    *count = n;
+    return files;
+}
+
+Image **CV_LOAD_FOLDER(char *path, int *count, int mode)
+{
+    CV_CHECK_PTR(path);
+    CV_CHECK_PTR(count);
+
+    Image **images = malloc(sizeof(Image *));
+    *count = 0;
+
+    DIR *dir = opendir(path);
+    CV_CHECK_PTR(dir);
+
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL)
+    {
+        if (entry->d_type == 8)
+        {
+            char *file = malloc(strlen(path) + strlen(entry->d_name) + 2);
+            sprintf(file, "%s/%s", path, entry->d_name);
+
+            Image *image = CV_LOAD(file, mode);
+            if (image != NULL)
+            {
+                images = realloc(images, sizeof(Image *) * (*count + 1));
+                images[*count] = image;
+                (*count)++;
+            }
+            free(file);
+        }
+    }
+
+    closedir(dir);
+    return images;
+}
+
+Matrix4 *CV_MATRIX4_FROM_FOLDER(char *path, int *count, int mode)
+{
+    CV_CHECK_PTR(path);
+    CV_CHECK_PTR(count);
+
+    int n = 0;
+    Image **images = CV_LOAD_FOLDER(path, &n, mode);
+
+    Matrix4 *matrix = matrix4_init(n, images[0]->c, images[0]->h, images[0]->w, NULL);
+
+    for (int i = 0; i < n; i++)
+    {
+        CV_MATRIX4_FROM_IMAGE(images[i], matrix, i);
+        CV_IMAGE_FREE(images[i]);
+    }
+
+    free(images);
+    *count = n;
+
+    return matrix;
+}
+
+Matrix4 *CV_MATRIX4_FROM_PATH(char *path, Matrix4 *matrix, int index, int batch_size, int mode)
+{
+    CV_CHECK_PTR(path);
+
+    Image *image = CV_LOAD(path, mode);
+    CV_CHECK_IMAGE(image);
+
+    if (matrix == NULL)
+    {
+        matrix = matrix4_init(batch_size, mode, image->h, image->w, NULL);
+        index = 0;
+    }
+
+    CV_CHECK_PTR(matrix);
+    CV_CHECK_PTR(matrix->data);
+
+    matrix = CV_MATRIX4_FROM_IMAGE(image, matrix, index);
+    CV_IMAGE_FREE(image);
+
+    return matrix;
+}
+
 #pragma endregion Image
 
-Image *cv_grayscale(Image *src, Image *dst)
+#pragma region Transform
+
+Image *CV_RGB_TO_GRAY(Image *src, Image *dst)
 {
-    if (src == NULL)
-    {
-        errx(EXIT_FAILURE, "Error: cv_grayscale: src is NULL");
-    }
+    CV_CHECK_IMAGE(src);
+    CV_CHECK_CHANNEL(src, 3);
 
     if (dst == NULL)
     {
-        dst = cv_image_init(src->width, src->height, 1);
+        dst = CV_IMAGE_INIT(1, src->h, src->w);
     }
 
-    if (src->width != dst->width || src->height != dst->height)
-    {
-        errx(
-            EXIT_FAILURE,
-            "Error: cv_grayscale: image sizes do not match (src: %dx%d, dst: %dx%d)",
-            src->width, src->height, dst->width, dst->height);
-    }
+    CV_CHECK_IMAGE(dst);
+    CV_CHECK_CHANNEL(dst, 1);
 
-    if (src->channels == 1)
+    for (int i = 0; i < src->h; i++)
     {
-        return dst;
-    }
-
-    if (src->channels != 3)
-    {
-        errx(EXIT_FAILURE, "Error: cv_grayscale: src must have 3 channels");
-    }
-
-    for (int i = 0; i < src->height; i++)
-    {
-        for (int j = 0; j < src->width; j++)
+        for (int j = 0; j < src->w; j++)
         {
-            double sum = src->data[i][j][0] + src->data[i][j][1] + src->data[i][j][2];
-            dst->data[i][j][0] = sum / 3.0;
+            float r = PIXEL(src, 0, i, j);
+            float g = PIXEL(src, 1, i, j);
+            float b = PIXEL(src, 2, i, j);
+
+            float gray = (r + g + b) / 3.0;
+            PIXEL(dst, 0, i, j) = gray;
         }
     }
 
     return dst;
 }
 
-void cv_apply_kernel(Image *src, Matrix *kernel)
+Image *CV_GRAY_TO_RGB(Image *src, Image *dst)
 {
-    if (src->channels != 1 && src->channels != 3)
+    CV_CHECK_IMAGE(src);
+    CV_CHECK_CHANNEL(src, 1);
+
+    if (dst == NULL)
     {
-        errx(1, "invalid number of channels");
+        dst = CV_IMAGE_INIT(3, src->h, src->w);
     }
 
-    for (int i = 0; i < src->height; i++)
+    CV_CHECK_IMAGE(dst);
+    CV_CHECK_CHANNEL(dst, 3);
+
+    for (int i = 0; i < src->h; i++)
     {
-        for (int j = 0; j < src->width; j++)
+        for (int j = 0; j < src->w; j++)
         {
-            float sum = 0.0;
-            for (int k = -kernel->dim1 / 2; k <= kernel->dim1 / 2; k++)
-            {
-                for (int l = -kernel->dim2 / 2; l <= kernel->dim2 / 2; l++)
-                {
-                    int x = j + l;
-                    int y = i + k;
-
-                    // 0 padding
-                    if (x < 0 || x >= src->width || y < 0 || y >= src->height)
-                        continue;
-
-                    int kx = l + kernel->dim2 / 2;
-                    int ky = k + kernel->dim1 / 2;
-
-                    for (int c = 0; c < src->channels; c++)
-                    {
-                        sum += src->data[y][x][c] * kernel->data[ky * kernel->dim2 + kx];
-                    }
-                }
-            }
-            src->data[i][j][0] = sum;
-            if (src->channels == 3)
-            {
-                src->data[i][j][1] = sum;
-                src->data[i][j][2] = sum;
-            }
+            float gray = PIXEL(src, 0, i, j);
+            PIXEL(dst, 0, i, j) = gray;
+            PIXEL(dst, 1, i, j) = gray;
+            PIXEL(dst, 2, i, j) = gray;
         }
     }
+
+    return dst;
 }
 
-void cv_apply_kernel_sobel(Image *src, Matrix *kernel)
-{
-    if (src->channels != 1 && src->channels != 3)
-    {
-        errx(1, "invalid number of channels");
-    }
-
-    for (int i = 0; i < src->height; i++)
-    {
-        for (int j = 0; j < src->width; j++)
-        {
-            float sum = 0.0;
-            for (int k = 0; k < kernel->dim1; k++)
-            {
-                for (int l = 0; l < kernel->dim2; l++)
-                {
-                    int x = j + l;
-                    int y = i + k;
-
-                    // 0 padding
-                    if (x < 0 || x >= src->width || y < 0 || y >= src->height)
-                        continue;
-
-                    sum += src->data[y][x][0] * kernel->data[k * kernel->dim2 + l];
-                }
-            }
-            src->data[i][j][0] = sum;
-        }
-    }
-}
-
-Matrix *cv_compute_gaussian_kernel(int size, float sigma)
+Matrix *CV_GET_GAUSSIAN_KERNEL(int size, float sigma)
 {
     Matrix *kernel = matrix_init(size, size, NULL);
+    CV_CHECK_PTR(kernel);
 
     for (int i = 0; i < size; i++)
     {
@@ -442,369 +473,11 @@ Matrix *cv_compute_gaussian_kernel(int size, float sigma)
             float y = i - size / 2.0;
 
             float value = exp(-(x * x + y * y) / (2.0 * sigma * sigma));
-            kernel->data[i * kernel->dim2 + j] = value / (2.0 * M_PI * sigma * sigma);
+            MATRIX(kernel, i, j) = value / (2.0 * PI * sigma * sigma);
         }
     }
 
     return kernel;
 }
 
-Image *cv_gaussian_blur(Image *src, Image *dst, int kernel_size, double sigma)
-{
-    if (src == NULL)
-    {
-        errx(EXIT_FAILURE, "Error: cv_gaussian_blur: src is NULL");
-    }
-
-    if (dst == NULL)
-    {
-        dst = cv_image_copy(src);
-    }
-
-    if (src->width != dst->width || src->height != dst->height)
-    {
-        errx(EXIT_FAILURE,
-             "Error: cv_gaussian_blur: image sizes do not match (src: %dx%d, dst: %dx%d)",
-             src->width, src->height, dst->width, dst->height);
-    }
-
-    if (kernel_size % 2 == 0)
-    {
-        errx(EXIT_FAILURE, "Error: cv_gaussian_blur: kernel_size must be odd");
-    }
-
-    if (sigma <= 0)
-    {
-        sigma = (kernel_size - 1) / 6.0;
-    }
-
-    Matrix *kernel = cv_compute_gaussian_kernel(kernel_size, sigma);
-    cv_apply_kernel(dst, kernel);
-    matrix_destroy(kernel);
-    return dst;
-}
-
-Image *cv_sharp(Image *src, Image *dst, int kernel_size)
-{
-    if (src == NULL)
-    {
-        errx(EXIT_FAILURE, "Error: cv_sharp: src is NULL");
-    }
-
-    if (dst == NULL)
-    {
-        dst = cv_image_copy(src);
-    }
-
-    if (src->width != dst->width || src->height != dst->height)
-    {
-        errx(EXIT_FAILURE,
-             "Error: cv_sharp: image sizes do not match (src: %dx%d, dst: %dx%d)",
-             src->width, src->height, dst->width, dst->height);
-    }
-
-    if (kernel_size % 2 == 0)
-    {
-        errx(EXIT_FAILURE, "Error: cv_sharp: kernel_size must be odd");
-    }
-
-    Matrix *kernel = matrix_init(kernel_size, kernel_size, NULL);
-    kernel->data[(kernel_size / 2) * kernel->dim2 + kernel_size / 2] = 2.0;
-    cv_apply_kernel(dst, kernel);
-    matrix_destroy(kernel);
-    return dst;
-}
-
-Image *cv_sobel(Image *src, Image *dst)
-{
-    if (src == NULL)
-    {
-        errx(EXIT_FAILURE, "Error: cv_sobel: src is NULL");
-    }
-
-    if (dst == NULL)
-    {
-        dst = cv_image_copy(src);
-    }
-
-    if (src->width != dst->width || src->height != dst->height)
-    {
-        errx(EXIT_FAILURE,
-             "Error: cv_sobel: image sizes do not match (src: %dx%d, dst: %dx%d)",
-             src->width, src->height, dst->width, dst->height);
-    }
-
-    // sharpen the given image
-    cv_sharp(src, dst, 3);
-    // Sobel kernels
-
-    Matrix *kernel_x = matrix_init(3, 3, NULL);
-    Matrix *kernel_y = matrix_init(3, 3, NULL);
-
-    kernel_x->data[0] = -1;
-    kernel_x->data[1] = -2;
-    kernel_x->data[2] = -1;
-    kernel_x->data[6] = 1;
-    kernel_x->data[7] = 2;
-    kernel_x->data[8] = 1;
-
-    kernel_y->data[0] = -1;
-    kernel_y->data[3] = -2;
-    kernel_y->data[6] = -1;
-    kernel_y->data[2] = 1;
-    kernel_y->data[5] = 2;
-    kernel_y->data[8] = 1;
-    // End Sobel kernels
-
-    Image *dst_x = cv_image_copy(dst);
-    Image *dst_y = cv_image_copy(dst);
-
-    cv_apply_kernel_sobel(dst_x, kernel_x);
-    cv_apply_kernel_sobel(dst_y, kernel_y);
-
-    for (int i = 0; i < dst->height; i++)
-    {
-        for (int j = 0; j < dst->width; j++)
-        {
-            dst->data[i][j][0] = sqrt(dst_x->data[i][j][0] * dst_x->data[i][j][0] +
-                                      dst_y->data[i][j][0] * dst_y->data[i][j][0]);
-        }
-    }
-
-    cv_free_image(dst_x);
-    cv_free_image(dst_y);
-    matrix_destroy(kernel_x);
-    matrix_destroy(kernel_y);
-
-    return dst;
-}
-
-Image *cv_canny(Image *src, Image *dst)
-{
-    if (src == NULL)
-    {
-        errx(EXIT_FAILURE, "Error: cv_canny: src is NULL");
-    }
-
-    if (dst == NULL)
-    {
-        dst = cv_image_copy(src);
-    }
-
-    if (src->width != dst->width || src->height != dst->height)
-    {
-        errx(EXIT_FAILURE,
-             "Error: cv_canny: image sizes do not match (src: %dx%d, dst: %dx%d)",
-             src->width, src->height, dst->width, dst->height);
-    }
-
-    Image *dst_sobel = cv_image_copy(dst);
-
-    // start sobel treatment
-    Matrix *kernel_x = matrix_init(3, 3, NULL);
-    Matrix *kernel_y = matrix_init(3, 3, NULL);
-
-    kernel_x->data[0] = -1;
-    kernel_x->data[1] = -2;
-    kernel_x->data[2] = -1;
-    kernel_x->data[6] = 1;
-    kernel_x->data[7] = 2;
-    kernel_x->data[8] = 1;
-
-    kernel_y->data[0] = -1;
-    kernel_y->data[3] = -2;
-    kernel_y->data[6] = -1;
-    kernel_y->data[2] = 1;
-    kernel_y->data[5] = 2;
-    kernel_y->data[8] = 1;
-
-    // End Sobel kernels
-
-    Image *dst_x = cv_image_copy(dst_sobel);
-    Image *dst_y = cv_image_copy(dst_sobel);
-
-    cv_apply_kernel_sobel(dst_x, kernel_x);
-    cv_apply_kernel_sobel(dst_y, kernel_y);
-
-    for (int i = 0; i < dst_sobel->height; i++)
-    {
-        for (int j = 0; j < dst_sobel->width; j++)
-        {
-            dst_sobel->data[i][j][0] = sqrt(dst_x->data[i][j][0] * dst_x->data[i][j][0] +
-                                            dst_y->data[i][j][0] * dst_y->data[i][j][0]);
-        }
-    }
-    // end sobel treatment
-
-    // start non-maximum suppression
-    Image *dst_nms = cv_image_copy(dst_sobel);
-
-    for (int i = 1; i < dst_sobel->height - 1; i++)
-    {
-        for (int j = 1; j < dst_sobel->width - 1; j++)
-        {
-            if (dst_sobel->data[i][j][0] == 0)
-            {
-                dst_nms->data[i][j][0] = 0;
-            }
-            else
-            {
-                float tangente = dst_y->data[i][j][0] / dst_x->data[i][j][0];
-                if (tangente > 0)
-                {
-                    if (tangente > 1)
-                    {
-                        if (dst_sobel->data[i][j][0] < dst_sobel->data[i - 1][j + 1][0] ||
-                            dst_sobel->data[i][j][0] < dst_sobel->data[i + 1][j - 1][0])
-                        {
-                            dst_nms->data[i][j][0] = 0;
-                        }
-                    }
-                    else
-                    {
-                        if (dst_sobel->data[i][j][0] < dst_sobel->data[i - 1][j][0] ||
-                            dst_sobel->data[i][j][0] < dst_sobel->data[i + 1][j][0])
-                        {
-                            dst_nms->data[i][j][0] = 0;
-                        }
-                    }
-                }
-                else
-                {
-                    if (tangente < -1)
-                    {
-                        if (dst_sobel->data[i][j][0] < dst_sobel->data[i - 1][j - 1][0] ||
-                            dst_sobel->data[i][j][0] < dst_sobel->data[i + 1][j + 1][0])
-                        {
-                            dst_nms->data[i][j][0] = 0;
-                        }
-                    }
-                    else
-                    {
-                        if (dst_sobel->data[i][j][0] < dst_sobel->data[i][j - 1][0] ||
-                            dst_sobel->data[i][j][0] < dst_sobel->data[i][j + 1][0])
-                        {
-                            dst_nms->data[i][j][0] = 0;
-                        }
-                    }
-                }
-            }
-        }
-    }
-    // end non-maximum suppression
-
-    // start double threshold
-    Image *dst_dt = cv_image_copy(dst_nms);
-
-    for (int i = 0; i < dst_dt->height; i++)
-    {
-        for (int j = 0; j < dst_dt->width; j++)
-        {
-            if (dst_dt->data[i][j][0] > 255 * 0.6) // if color is almost white
-            {
-                dst_dt->data[i][j][0] = 255;
-            }
-            else if (dst_dt->data[i][j][0] < 255 * 0.4) // if color is almost black
-            {
-                dst_dt->data[i][j][0] = 0;
-            }
-
-            else
-            {
-                dst_dt->data[i][j][0] = 127;
-            }
-        }
-    }
-    // end double threshold
-
-    // start hysteresis
-
-    dst = cv_image_copy(dst_dt);
-
-    for (int i = 0; i < dst->height; i++)
-    {
-        for (int j = 0; j < dst->width; j++)
-        {
-            if (dst->data[i][j][0] == 127)
-            {
-                if (i > 0 && j > 0 && i < dst->height - 1 && j < dst->width - 1)
-                {
-                    if (dst->data[i - 1][j - 1][0] == 255 ||
-                        dst->data[i - 1][j][0] == 255 ||
-                        dst->data[i - 1][j + 1][0] == 255 ||
-                        dst->data[i][j - 1][0] == 255 ||
-                        dst->data[i][j + 1][0] == 255 ||
-                        dst->data[i + 1][j - 1][0] == 255 ||
-                        dst->data[i + 1][j][0] == 255 ||
-                        dst->data[i + 1][j + 1][0] == 255)
-                    {
-                        dst->data[i][j][0] = 255;
-                    }
-                    else
-                    {
-                        dst->data[i][j][0] = 0;
-                    }
-                }
-            }
-        }
-    }
-    // end hysteresis
-
-    cv_free_image(dst_sobel);
-    cv_free_image(dst_x);
-    cv_free_image(dst_y);
-    cv_free_image(dst_nms);
-    cv_free_image(dst_dt);
-    matrix_destroy(kernel_x);
-    matrix_destroy(kernel_y);
-
-    return dst;
-}
-
-Image *cv_rotate(Image *src, Image *dst, float angle)
-{
-    if (src == NULL)
-    {
-        errx(EXIT_FAILURE, "Error: cv_rotate: src is NULL");
-    }
-
-    if (dst == NULL)
-    {
-        dst = cv_image_copy(src);
-    }
-
-    float radians = angle * M_PI / 180.0;
-    int hwidth = src->width / 2;
-    int hheight = src->height / 2;
-    double sinma = sin(-radians);
-    double cosma = cos(-radians);
-
-    for (int x = 0; x < src->width; x++)
-    {
-        for (int y = 0; y < src->height; y++)
-        {
-
-            int xt = x - hwidth;
-            int yt = y - hheight;
-
-            int xs = (int)round((cosma * xt - sinma * yt) + hwidth);
-            int ys = (int)round((sinma * xt + cosma * yt) + hheight);
-
-            if (xs >= 0 && xs < src->width && ys >= 0 && ys < src->height)
-            {
-                for (int c = 0; c < src->channels; c++)
-                {
-                    dst->data[y][x][c] = src->data[ys][xs][c];
-                }
-            }
-            else
-            {
-                for (int c = 0; c < src->channels; c++)
-                {
-                    dst->data[y][x][c] = 0;
-                }
-            }
-        }
-    }
-    return dst;
-}
+#pragma endregion Transform

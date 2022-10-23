@@ -6,8 +6,7 @@ int test_nnxor()
 
     int batchsize = 4;
     bool load_weights = false;
-    
-    
+
     // define the layers
     FCLayer **fc_layers = malloc(sizeof(FCLayer));
     fc_layers[0] = fc_layer_init(2, 32, batchsize, leaky_relu, d_leaky_relu, load_weights, "fc1");
@@ -15,8 +14,6 @@ int test_nnxor()
     fc_layers[2] = fc_layer_init(32, 2, batchsize, leaky_relu, d_leaky_relu, load_weights, "fc3");
     ActivationLayer *output_layer = activation_layer_init(2, batchsize, softmax, d_softmax);
     int num_fc_layers = 3;
-
-
 
     NN *network = nn_init(fc_layers, num_fc_layers, output_layer);
     Matrix *input = matrix_init(batchsize, 2, NULL);
@@ -26,7 +23,7 @@ int test_nnxor()
     // shape of expected: (4, 2) (batchsize, size)
 
     // 0 xor 0 = 0
-    m_set(input, 0, 0, 0); 
+    m_set(input, 0, 0, 0);
     m_set(input, 0, 1, 0);
     m_set(expected, 0, 0, 1);
 
@@ -55,7 +52,7 @@ int test_nnxor()
 
     // test the network with different inputs
     // (to make sure there is no issue with batch order)
-    
+
     Matrix *test_input = matrix_init(batchsize, 2, NULL);
     Matrix *test_expected = matrix_init(batchsize, 2, NULL);
 
@@ -65,7 +62,7 @@ int test_nnxor()
     m_set(test_expected, 0, 1, 1);
 
     // 0 xor 0 = 0
-    m_set(test_input, 1, 0, 0); 
+    m_set(test_input, 1, 0, 0);
     m_set(test_input, 1, 1, 0);
     m_set(test_expected, 1, 0, 1);
 
@@ -78,7 +75,6 @@ int test_nnxor()
     m_set(test_input, 3, 0, 0);
     m_set(test_input, 3, 1, 1);
     m_set(test_expected, 3, 1, 1);
-
 
     Matrix *predictions = nn_forward(network, test_input);
 
@@ -93,5 +89,5 @@ int test_nnxor()
     matrix_destroy(test_expected);
     matrix_destroy(predictions);
 
-    return print_test(failed == 0, true, "test_nnxor");
+    return assert(failed == 0, true, "test_nnxor");
 }

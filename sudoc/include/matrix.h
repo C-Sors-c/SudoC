@@ -15,6 +15,7 @@ struct Matrix
 };
 
 typedef struct Matrix Matrix;
+#define MATRIX(matrix, i, j) (matrix->data[(i)*matrix->dim2 + (j)])
 Matrix *matrix_init(int dim1, int dim2, float *datap);
 Matrix *matrix_copy(Matrix *m, Matrix *dst);
 void matrix_zero(Matrix *m);

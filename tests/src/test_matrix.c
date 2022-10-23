@@ -45,7 +45,7 @@ int test_matrix_add()
     matrix_destroy(m3);
     matrix_destroy(expected);
 
-    return print_test(diff, true, "test_matrix_add");
+    return assert(diff, true, "test_matrix_add");
 }
 
 int test_matrix_subtract()
@@ -71,7 +71,7 @@ int test_matrix_subtract()
     matrix_destroy(m3);
     matrix_destroy(expected);
 
-    return print_test(diff, true, "test_matrix_subtract");
+    return assert(diff, true, "test_matrix_subtract");
 }
 
 int test_matrix_multiply()
@@ -97,7 +97,7 @@ int test_matrix_multiply()
     matrix_destroy(m3);
     matrix_destroy(expected);
 
-    return print_test(diff, true, "test_matrix_multiply");
+    return assert(diff, true, "test_matrix_multiply");
 }
 
 int test_matrix_multiply_scalar()
@@ -120,7 +120,7 @@ int test_matrix_multiply_scalar()
     matrix_destroy(m1);
     matrix_destroy(expected);
 
-    return print_test(diff, true, "test_matrix_multiply_scalar");
+    return assert(diff, true, "test_matrix_multiply_scalar");
 }
 
 int test_matrix_transpose()
@@ -144,7 +144,7 @@ int test_matrix_transpose()
     matrix_destroy(m2);
     matrix_destroy(expected);
 
-    return print_test(diff, true, "test_matrix_transpose");
+    return assert(diff, true, "test_matrix_transpose");
 }
 
 int test_matrix_map_function()
@@ -166,7 +166,7 @@ int test_matrix_map_function()
     matrix_destroy(m1);
     matrix_destroy(expected);
 
-    return print_test(diff, true, "test_matrix_map_function");
+    return assert(diff, true, "test_matrix_map_function");
 }
 
 #pragma endregion matrix_tests
@@ -177,7 +177,7 @@ int test_matrix4_init()
 {
     Matrix4 *m = matrix4_init(5, 1000, 1000, 3, NULL);
     matrix4_destroy(m);
-    return print_test(true, true, "test_matrix4_init");
+    return assert(true, true, "test_matrix4_init");
 }
 
 int test_matrix4_add()
@@ -202,7 +202,7 @@ int test_matrix4_add()
     matrix4_destroy(m3);
     matrix4_destroy(expected);
 
-    return print_test(diff, true, "test_matrix4_add");
+    return assert(diff, true, "test_matrix4_add");
 }
 
 int test_matrix4_subtract()
@@ -228,7 +228,7 @@ int test_matrix4_subtract()
     matrix4_destroy(m3);
     matrix4_destroy(expected);
 
-    return print_test(diff, true, "test_matrix4_subtract");
+    return assert(diff, true, "test_matrix4_subtract");
 }
 
 int test_matrix4_multiply_scalar()
@@ -250,7 +250,7 @@ int test_matrix4_multiply_scalar()
     matrix4_destroy(m1);
     matrix4_destroy(expected);
 
-    return print_test(diff, true, "test_matrix4_multiply_scalar");
+    return assert(diff, true, "test_matrix4_multiply_scalar");
 }
 
 int test_matrix4_transpose()
@@ -273,7 +273,7 @@ int test_matrix4_transpose()
     matrix4_destroy(m2);
     matrix4_destroy(expected);
 
-    return print_test(diff, true, "test_matrix4_transpose");
+    return assert(diff, true, "test_matrix4_transpose");
 }
 
 int test_matrix4_map_function()
@@ -295,7 +295,7 @@ int test_matrix4_map_function()
     matrix4_destroy(m1);
     matrix4_destroy(expected);
 
-    return print_test(diff, true, "test_matrix4_map_function");
+    return assert(diff, true, "test_matrix4_map_function");
 }
 
 int test_matrix4_convolve()
@@ -345,7 +345,7 @@ int test_matrix4_convolve()
     matrix4_destroy(m3);
     matrix4_destroy(expected);
 
-    return print_test(diff, true, "test_matrix4_convolve");
+    return assert(diff, true, "test_matrix4_convolve");
 }
 
 int test_matrix4_add_bias()
@@ -374,7 +374,7 @@ int test_matrix4_add_bias()
     matrix4_destroy(expected);
     matrix_destroy(m2);
 
-    return print_test(diff, true, "test_matrix4_add_bias");
+    return assert(diff, true, "test_matrix4_add_bias");
 }
 
 int test_matrix4_sum_rows()
@@ -394,7 +394,7 @@ int test_matrix4_sum_rows()
     matrix_destroy(m2);
     matrix_destroy(expected);
 
-    return print_test(diff, true, "test_matrix4_sum_rows");
+    return assert(diff, true, "test_matrix4_sum_rows");
 }
 
 // TODO: more tests on the new matrix functions
