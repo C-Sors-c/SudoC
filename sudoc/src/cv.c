@@ -580,26 +580,72 @@ Image *CV_SHARPEN(Image *src, Image *dst, float sigma)
     return dst;
 }
 
-Image *CV_SOBEL(Image *src, Image *dst)
+Matrix *GET_SOBEL_KERNEL_X()
+{
+    Matrix *kernel = matrix_init(3, 3, NULL);
+    CV_CHECK_PTR(kernel);
+
+    MATRIX(kernel, 0, 0) = -1;
+    MATRIX(kernel, 0, 1) = 0;
+    MATRIX(kernel, 0, 2) = 1;
+
+    MATRIX(kernel, 1, 0) = -2;
+    MATRIX(kernel, 1, 1) = 0;
+    MATRIX(kernel, 1, 2) = 2;
+
+    MATRIX(kernel, 2, 0) = -1;
+    MATRIX(kernel, 2, 1) = 0;
+    MATRIX(kernel, 2, 2) = 1;
+
+    return kernel;
+}
+
+Matrix *GET_SOBEL_KERNEL_Y()
+{
+    Matrix *kernel = matrix_init(3, 3, NULL);
+    CV_CHECK_PTR(kernel);
+
+    MATRIX(kernel, 0, 0) = -1;
+    MATRIX(kernel, 0, 1) = -2;
+    MATRIX(kernel, 0, 2) = -1;
+
+    MATRIX(kernel, 1, 0) = 0;
+    MATRIX(kernel, 1, 1) = 0;
+    MATRIX(kernel, 1, 2) = 0;
+
+    MATRIX(kernel, 2, 0) = 1;
+    MATRIX(kernel, 2, 1) = 2;
+    MATRIX(kernel, 2, 2) = 1;
+
+    return kernel;
+}
+
+Image *CV_SOBEL(Image *src, Image *dst, Image *dst_x, Image *dst_y)
 {
     CV_CHECK_IMAGE(src);
+    int null_x = dst_x == NULL;
+    int null_y = dst_y == NULL;
 
     if (dst == NULL)
         dst = CV_IMAGE_INIT(src->c, src->h, src->w);
     CV_CHECK_IMAGE(dst);
 
-    float mkernel_x[] = {-1.0, 0.0, 1.0, -2.0, 0.0, 2.0, -1.0, 0.0, 1.0};
-
-    float mkernel_y[] = {-1.0, -2.0, -1.0, 0.0, 0.0, 0.0, 1.0, 2.0, 1.0};
-
-    Matrix *kernel_x = matrix_init(3, 3, mkernel_x);
+    Matrix *kernel_x = GET_SOBEL_KERNEL_X();
     CV_CHECK_PTR(kernel_x);
-
-    Matrix *kernel_y = matrix_init(3, 3, mkernel_y);
+    Matrix *kernel_y = GET_SOBEL_KERNEL_Y();
     CV_CHECK_PTR(kernel_y);
 
-    Image *dst_x = CV_APPLY_FILTER(src, NULL, kernel_x);
-    Image *dst_y = CV_APPLY_FILTER(src, NULL, kernel_y);
+    if (null_x)
+    {
+        dst_x = CV_APPLY_FILTER(src, NULL, kernel_x);
+        CV_CHECK_IMAGE(dst_x);
+    }
+
+    if (null_y)
+    {
+        dst_y = CV_APPLY_FILTER(src, NULL, kernel_y);
+        CV_CHECK_IMAGE(dst_y);
+    }
 
     for (int c = 0; c < src->c; c++)
     {
@@ -616,8 +662,12 @@ Image *CV_SOBEL(Image *src, Image *dst)
 
     matrix_destroy(kernel_x);
     matrix_destroy(kernel_y);
-    CV_IMAGE_FREE(dst_x);
-    CV_IMAGE_FREE(dst_y);
+
+    if (null_x)
+        CV_IMAGE_FREE(dst_x);
+
+    if (null_y)
+        CV_IMAGE_FREE(dst_y);
 
     return dst;
 }
@@ -629,6 +679,16 @@ Image *CV_CANNY(Image *src, Image *dst, float lower_threshold, float upper_thres
     if (dst == NULL)
         dst = CV_IMAGE_INIT(src->c, src->h, src->w);
     CV_CHECK_IMAGE(dst);
+    Matrix *kernel_x = GET_SOBEL_KERNEL_X();
+    CV_CHECK_PTR(kernel_x);
+
+    Matrix *kernel_y = GET_SOBEL_KERNEL_Y();
+    CV_CHECK_PTR(kernel_y);
+    Image *dst_x = CV_APPLY_FILTER(src, NULL, kernel_x);
+    CV_CHECK_IMAGE(dst_x);
+    Image *dst_y = CV_APPLY_FILTER(src, NULL, kernel_y);
+    CV_CHECK_IMAGE(dst_y);
+    src = CV_SOBEL(src, dst, dst_x, dst_y);
 
     // non - maximum suppression, straight forward implementation
     // src is the sobel image
@@ -639,15 +699,39 @@ Image *CV_CANNY(Image *src, Image *dst, float lower_threshold, float upper_thres
             for (int j = 1; j < src->w - 1; j++)
             {
                 float p = PIXEL(src, c, i, j);
-                float p1 = PIXEL(src, c, i - 1, j);
-                float p2 = PIXEL(src, c, i + 1, j);
-                float p3 = PIXEL(src, c, i, j - 1);
-                float p4 = PIXEL(src, c, i, j + 1);
-
-                if (p < p1 || p < p2 || p < p3 || p < p4)
-                    PIXEL(dst, c, i, j) = 0;
+                if (p == 0)
+                    continue;
                 else
-                    PIXEL(dst, c, i, j) = p;
+                {
+
+                    float tangeante = PIXEL(dst_y, c, i, j) / PIXEL(dst_x, c, i, j);
+                    if (tangeante > 0)
+                    {
+                        if (tangeante > 1)
+                        {
+                            if (p < PIXEL(src, c, i - 1, j + 1) || p < PIXEL(src, c, i + 1, j - 1))
+                                PIXEL(dst, c, i, j) = 0;
+                        }
+                        else
+                        {
+                            if (p < PIXEL(src, c, i - 1, j) || p < PIXEL(src, c, i + 1, j))
+                                PIXEL(dst, c, i, j) = 0;
+                        }
+                    }
+                    else
+                    {
+                        if (tangeante < -1)
+                        {
+                            if (p < PIXEL(src, c, i - 1, j - 1) || p < PIXEL(src, c, i + 1, j + 1))
+                                PIXEL(dst, c, i, j) = 0;
+                        }
+                        else
+                        {
+                            if (p < PIXEL(src, c, i, j - 1) || p < PIXEL(src, c, i, j + 1))
+                                PIXEL(dst, c, i, j) = 0;
+                        }
+                    }
+                }
             }
         }
     }
@@ -700,6 +784,10 @@ Image *CV_CANNY(Image *src, Image *dst, float lower_threshold, float upper_thres
         }
     }
 
+    matrix_destroy(kernel_x);
+    matrix_destroy(kernel_y);
+    CV_IMAGE_FREE(dst_x);
+    CV_IMAGE_FREE(dst_y);
     return dst;
 }
 
