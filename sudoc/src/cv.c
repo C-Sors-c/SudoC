@@ -905,4 +905,128 @@ Image *CV_OR(Image *src1, Image *src2, Image *dst)
     return dst;
 }
 
+Image *CV_LINE(Image *dst, int x1, int x2, int y1, int y2, int line_size)
+{
+    CV_CHECK_IMAGE(dst);
+    CV_CHECK_CHANNEL(dst, 1);
+
+    int dx = abs(x2 - x1);
+    int dy = abs(y2 - y1);
+    int sx = x1 < x2 ? 1 : -1;
+    int sy = y1 < y2 ? 1 : -1;
+    int err = dx - dy;
+
+    while (1)
+    {
+        for (int i = -line_size; i <= line_size; i++)
+        {
+            for (int j = -line_size; j <= line_size; j++)
+            {
+                if (x1 + i >= 0 && x1 + i < dst->w && y1 + j >= 0 && y1 + j < dst->h)
+                    PIXEL(dst, 0, y1 + j, x1 + i) = 1;
+            }
+        }
+
+        if (x1 == x2 && y1 == y2)
+            break;
+
+        int e2 = 2 * err;
+        if (e2 > -dy)
+        {
+            err = err - dy;
+            x1 = x1 + sx;
+        }
+        if (e2 < dx)
+        {
+            err = err + dx;
+            y1 = y1 + sy;
+        }
+    }
+
+    return dst;
+}
+
+// hough lines transform, has a matrix with 2 columns, the first column is the angle, the second column is the distance
+// draws the lines on the image if draw is true
+// return the images with the lines drawn
+
+Matrix *CV_HOUGH_LINES(Image *src, Image *dst)
+{
+    CV_CHECK_IMAGE(src);
+    CV_CHECK_CHANNEL(src, 1);
+
+    if (dst == NULL)
+        dst = CV_IMAGE_COPY(src);
+    CV_CHECK_IMAGE(dst);
+
+    int max_dist = (int)sqrt(src->h * src->h + src->w * src->w);
+    int max_angle = 180;
+    int max_dist_angle = max_dist * max_angle; // number of possible combinations of distance and angle
+
+    int *accumulator = (int *)calloc(max_dist_angle, sizeof(int));
+    for (int c = 0; c < src->c; c++)
+    {
+        for (int i = 0; i < src->h; i++)
+        {
+            for (int j = 0; j < src->w; j++)
+            {
+                if (PIXEL(src, c, i, j) == 1)
+                {
+                    for (int angle = 0; angle < max_angle; angle++)
+                    {
+                        float dist = j * cos(angle * PI / 180.0) + i * sin(angle * PI / 180.0);
+                        int dist_angle = (int)(dist * max_angle + angle);
+                        accumulator[dist_angle]++;
+                    }
+                }
+            }
+        }
+    }
+    int max = 0;
+    for (int i = 0; i < max_dist_angle; i++)
+    {
+        if (accumulator[i] > max)
+            max = accumulator[i];
+    }
+
+    int count = 0;
+    for (int i = 0; i < max_dist_angle; i++)
+    {
+        if (accumulator[i] > max / 2)
+        {
+            count++;
+        }
+    }
+    Matrix *lines = matrix_init(count, 2, NULL);
+
+    for (int i = 0; i < max_dist_angle; i++)
+    {
+        if (accumulator[i] > max / 2)
+        {
+            int angle = i % max_angle;
+            int dist = i / max_angle;
+
+            MATRIX(lines, i, 0) = angle;
+            MATRIX(lines, i, 1) = dist;
+        }
+    }
+    // draw lines
+    // for (int i = 0; i < count; i++)
+    // {
+    //     float angle = m_get(lines, i, 0);
+    //     float dist = m_get(lines, i, 1);
+
+    //     float x1 = 0;
+    //     float y1 = dist / sin(angle * PI / 180.0);
+    //     float x2 = src->w;
+    //     float y2 = (dist - x2 * cos(angle * PI / 180.0));
+
+    //     dst = CV_LINE(dst, x1, x2, y1, y2, 1);
+    // }
+    printf("count: %d\n", count);
+    free(accumulator);
+    // matrix_destroy(lines);
+    return lines;
+}
+
 #pragma endregion Transform

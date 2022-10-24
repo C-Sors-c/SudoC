@@ -268,3 +268,21 @@ int test_cv_otsu()
     CV_IMAGE_FREE(orimg);
     return assert(true, true, "test_cv_otsu");
 }
+
+int test_cv_hough_lines()
+{
+    Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", CV_GRAYSCALE);
+    Image *blur = CV_GAUSSIAN_BLUR(image, NULL, 5, 0);
+    Image *canny = CV_CANNY(blur, NULL, 0.05, 0.1);
+    Matrix *lines = CV_HOUGH_LINES(canny, NULL);
+
+    matrix_print(lines);
+    // CV_SAVE(lines, "tests/out/test_cv_hough_lines.png");
+
+    CV_IMAGE_FREE(image);
+    CV_IMAGE_FREE(blur);
+    CV_IMAGE_FREE(canny);
+    matrix_destroy(lines);
+    // CV_IMAGE_FREE(lines);
+    return assert(true, true, "test_cv_hough_lines");
+}

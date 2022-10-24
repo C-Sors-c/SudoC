@@ -141,3 +141,6 @@ Image *CV_CANNY(Image *src, Image *dst, float low, float high);
 
 Image *CV_OTSU(Image *src, Image *dst);
 Image *CV_OR(Image *src1, Image *src2, Image *dst);
+
+Image *CV_LINE(Image *dst, int x1, int x2, int y1, int y2, int line_size);
+Matrix *CV_HOUGH_LINES(Image *src, Image *dst);
