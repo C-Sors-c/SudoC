@@ -157,9 +157,9 @@ SDL_Surface *CV_SURFACE_FROM_IMAGE(Image *image)
         {
             for (int j = 0; j < image->w; j++)
             {
-                Uint8 r = MIN(MAX(PIXEL(image, 0, i, j), 0), 1) * 255;
-                Uint8 g = MIN(MAX(PIXEL(image, 1, i, j), 0), 1) * 255;
-                Uint8 b = MIN(MAX(PIXEL(image, 2, i, j), 0), 1) * 255;
+                Uint8 r = NORM(PIXEL(image, 0, i, j)) * 255;
+                Uint8 g = NORM(PIXEL(image, 1, i, j)) * 255;
+                Uint8 b = NORM(PIXEL(image, 2, i, j)) * 255;
                 Uint32 pixel = SDL_MapRGB(format, r, g, b);
                 pixels[i * image->w + j] = pixel;
             }
@@ -171,7 +171,7 @@ SDL_Surface *CV_SURFACE_FROM_IMAGE(Image *image)
         {
             for (int j = 0; j < image->w; j++)
             {
-                Uint8 r = MIN(MAX(PIXEL(image, 0, i, j), 0), 1) * 255;
+                Uint8 r = NORM(PIXEL(image, 0, i, j)) * 255;
                 Uint32 pixel = SDL_MapRGB(format, r, r, r);
                 pixels[i * image->w + j] = pixel;
             }
@@ -400,9 +400,7 @@ Image *CV_RGB_TO_GRAY(Image *src, Image *dst)
     CV_CHECK_CHANNEL(src, 3);
 
     if (dst == NULL)
-    {
         dst = CV_IMAGE_INIT(1, src->h, src->w);
-    }
 
     CV_CHECK_IMAGE(dst);
     CV_CHECK_CHANNEL(dst, 1);
@@ -416,7 +414,7 @@ Image *CV_RGB_TO_GRAY(Image *src, Image *dst)
             float b = PIXEL(src, 2, i, j);
 
             float gray = (r + g + b) / 3.0;
-            PIXEL(dst, 0, i, j) = MIN(MAX(gray, 0), 1);
+            PIXEL(dst, 0, i, j) = NORM(gray);
         }
     }
 
@@ -429,9 +427,7 @@ Image *CV_GRAY_TO_RGB(Image *src, Image *dst)
     CV_CHECK_CHANNEL(src, 1);
 
     if (dst == NULL)
-    {
         dst = CV_IMAGE_INIT(3, src->h, src->w);
-    }
 
     CV_CHECK_IMAGE(dst);
     CV_CHECK_CHANNEL(dst, 3);
@@ -483,7 +479,7 @@ Image *CV_APPLY_FILTER(Image *src, Image *dst, Matrix *kernel)
                     }
                 }
 
-                PIXEL(dst, c, i, j) = MIN(MAX(sum, 0), 1);
+                PIXEL(dst, c, i, j) = NORM(sum);
             }
         }
     }
@@ -497,7 +493,12 @@ Matrix *CV_GET_GAUSSIAN_KERNEL(int size, float sigma)
         errx(1, "Kernel size must be odd");
 
     Matrix *kernel = matrix_init(size, size, NULL);
+
     CV_CHECK_PTR(kernel);
+    CV_CHECK_PTR(kernel->data);
+
+    if (sigma == 0)
+        sigma = (size - 1) / 2;
 
     int center = size / 2;
     float sum = 0.0;
@@ -530,12 +531,9 @@ Image *CV_GAUSSIAN_BLUR(Image *src, Image *dst, int size, float sigma)
     if (dst == NULL)
         dst = CV_IMAGE_INIT(src->c, src->h, src->w);
 
-    CV_CHECK_IMAGE(dst);
-
     Matrix *kernel = CV_GET_GAUSSIAN_KERNEL(size, sigma);
-    CV_CHECK_PTR(kernel);
-
     dst = CV_APPLY_FILTER(src, dst, kernel);
+
     matrix_destroy(kernel);
 
     return dst;
@@ -544,7 +542,9 @@ Image *CV_GAUSSIAN_BLUR(Image *src, Image *dst, int size, float sigma)
 Matrix *CV_GET_SHARPEN_KERNEL(float sigma)
 {
     Matrix *kernel = matrix_init(3, 3, NULL);
+
     CV_CHECK_PTR(kernel);
+    CV_CHECK_PTR(kernel->data);
 
     for (int i = 0; i < 3; i++)
     {
@@ -569,10 +569,8 @@ Image *CV_SHARPEN(Image *src, Image *dst, float sigma)
 
     if (dst == NULL)
         dst = CV_IMAGE_INIT(src->c, src->h, src->w);
-    CV_CHECK_IMAGE(dst);
 
     Matrix *kernel = CV_GET_SHARPEN_KERNEL(sigma);
-    CV_CHECK_PTR(kernel);
 
     dst = CV_APPLY_FILTER(src, dst, kernel);
     matrix_destroy(kernel);
@@ -580,72 +578,47 @@ Image *CV_SHARPEN(Image *src, Image *dst, float sigma)
     return dst;
 }
 
-Matrix *GET_SOBEL_KERNEL_X()
+Matrix *CV_GET_SOBEL_KERNEL_X()
 {
-    Matrix *kernel = matrix_init(3, 3, NULL);
+    const float x[] = {-1, 0, 1, -2, 0, 2, -1, 0, 1};
+    Matrix *kernel = matrix_init(3, 3, x);
+
     CV_CHECK_PTR(kernel);
-
-    MATRIX(kernel, 0, 0) = -1;
-    MATRIX(kernel, 0, 1) = 0;
-    MATRIX(kernel, 0, 2) = 1;
-
-    MATRIX(kernel, 1, 0) = -2;
-    MATRIX(kernel, 1, 1) = 0;
-    MATRIX(kernel, 1, 2) = 2;
-
-    MATRIX(kernel, 2, 0) = -1;
-    MATRIX(kernel, 2, 1) = 0;
-    MATRIX(kernel, 2, 2) = 1;
+    CV_CHECK_PTR(kernel->data);
 
     return kernel;
 }
 
-Matrix *GET_SOBEL_KERNEL_Y()
+Matrix *CV_GET_SOBEL_KERNEL_Y()
 {
-    Matrix *kernel = matrix_init(3, 3, NULL);
+    const float y[] = {-1, -2, -1, 0, 0, 0, 1, 2, 1};
+    Matrix *kernel = matrix_init(3, 3, y);
+
     CV_CHECK_PTR(kernel);
-
-    MATRIX(kernel, 0, 0) = -1;
-    MATRIX(kernel, 0, 1) = -2;
-    MATRIX(kernel, 0, 2) = -1;
-
-    MATRIX(kernel, 1, 0) = 0;
-    MATRIX(kernel, 1, 1) = 0;
-    MATRIX(kernel, 1, 2) = 0;
-
-    MATRIX(kernel, 2, 0) = 1;
-    MATRIX(kernel, 2, 1) = 2;
-    MATRIX(kernel, 2, 2) = 1;
+    CV_CHECK_PTR(kernel->data);
 
     return kernel;
 }
 
-Image *CV_SOBEL(Image *src, Image *dst, Image *dst_x, Image *dst_y)
+Image *CV_SOBEL_PROCESS(Image *src, Image *dst, Image *dst_x, Image *dst_y)
 {
     CV_CHECK_IMAGE(src);
+
+    // check if dst_x and dst_y are NULL
     int null_x = dst_x == NULL;
     int null_y = dst_y == NULL;
 
     if (dst == NULL)
         dst = CV_IMAGE_INIT(src->c, src->h, src->w);
-    CV_CHECK_IMAGE(dst);
 
-    Matrix *kernel_x = GET_SOBEL_KERNEL_X();
-    CV_CHECK_PTR(kernel_x);
-    Matrix *kernel_y = GET_SOBEL_KERNEL_Y();
-    CV_CHECK_PTR(kernel_y);
+    Matrix *kernel_x = CV_GET_SOBEL_KERNEL_X();
+    Matrix *kernel_y = CV_GET_SOBEL_KERNEL_Y();
 
     if (null_x)
-    {
         dst_x = CV_APPLY_FILTER(src, NULL, kernel_x);
-        CV_CHECK_IMAGE(dst_x);
-    }
 
     if (null_y)
-    {
         dst_y = CV_APPLY_FILTER(src, NULL, kernel_y);
-        CV_CHECK_IMAGE(dst_y);
-    }
 
     for (int c = 0; c < src->c; c++)
     {
@@ -655,7 +628,8 @@ Image *CV_SOBEL(Image *src, Image *dst, Image *dst_x, Image *dst_y)
             {
                 float x = PIXEL(dst_x, c, i, j);
                 float y = PIXEL(dst_y, c, i, j);
-                PIXEL(dst, c, i, j) = sqrt(x * x + y * y);
+
+                PIXEL(dst, c, i, j) = NORM(sqrt(x * x + y * y));
             }
         }
     }
@@ -672,26 +646,113 @@ Image *CV_SOBEL(Image *src, Image *dst, Image *dst_x, Image *dst_y)
     return dst;
 }
 
-Image *CV_CANNY(Image *src, Image *dst, float lower_threshold, float upper_threshold)
+Image *CV_SOBEL(Image *src, Image *dst)
 {
     CV_CHECK_IMAGE(src);
 
     if (dst == NULL)
         dst = CV_IMAGE_INIT(src->c, src->h, src->w);
-    CV_CHECK_IMAGE(dst);
-    Matrix *kernel_x = GET_SOBEL_KERNEL_X();
-    CV_CHECK_PTR(kernel_x);
 
-    Matrix *kernel_y = GET_SOBEL_KERNEL_Y();
-    CV_CHECK_PTR(kernel_y);
-    Image *dst_x = CV_APPLY_FILTER(src, NULL, kernel_x);
-    CV_CHECK_IMAGE(dst_x);
-    Image *dst_y = CV_APPLY_FILTER(src, NULL, kernel_y);
-    CV_CHECK_IMAGE(dst_y);
-    src = CV_SOBEL(src, dst, dst_x, dst_y);
+    dst = CV_SOBEL_PROCESS(src, dst, NULL, NULL);
 
-    // non - maximum suppression, straight forward implementation
-    // src is the sobel image
+    return dst;
+}
+
+float CV_ARCTAN2(Image *src, int c, int i, int j)
+{
+    float x = PIXEL(src, c, i, j);
+    float y = PIXEL(src, c, i + 1, j + 1);
+
+    return atan2(y, x);
+}
+
+Image *CV_NON_MAX_SUPPRESSION(Image *src, Image *dst, Image *dst_x, Image *dst_y)
+{
+    CV_CHECK_IMAGE(src);
+
+    // check if dst_x and dst_y are NULL
+    int null_x = dst_x == NULL;
+    int null_y = dst_y == NULL;
+
+    if (dst == NULL)
+        dst = CV_IMAGE_INIT(src->c, src->h, src->w);
+
+    if (null_x)
+        dst_x = CV_SOBEL_PROCESS(src, NULL, NULL, NULL);
+
+    if (null_y)
+        dst_y = CV_SOBEL_PROCESS(src, NULL, NULL, NULL);
+
+    for (int c = 0; c < src->c; c++)
+    {
+        for (int i = 0; i < src->h; i++)
+        {
+            for (int j = 0; j < src->w; j++)
+            {
+                float angle = CV_ARCTAN2(dst_y, c, i, j);
+                float mag = PIXEL(src, c, i, j);
+
+                if (angle < 0)
+                    angle += 2 * PI;
+
+                if (angle >= 0 && angle < PI8)
+                {
+                    if (mag < PIXEL(src, c, i, j + 1) || mag < PIXEL(src, c, i, j - 1))
+                        PIXEL(dst, c, i, j) = 0;
+                    else
+                        PIXEL(dst, c, i, j) = mag;
+                }
+                else if (angle >= PI8 && angle < 3 * PI8)
+                {
+                    if (mag < PIXEL(src, c, i + 1, j + 1) || mag < PIXEL(src, c, i - 1, j - 1))
+                        PIXEL(dst, c, i, j) = 0;
+                    else
+                        PIXEL(dst, c, i, j) = mag;
+                }
+                else if (angle >= 3 * PI8 && angle < 5 * PI8)
+                {
+                    if (mag < PIXEL(src, c, i + 1, j) || mag < PIXEL(src, c, i - 1, j))
+                        PIXEL(dst, c, i, j) = 0;
+                    else
+                        PIXEL(dst, c, i, j) = mag;
+                }
+                else if (angle >= 5 * PI8 && angle < 7 * PI8)
+                {
+                    if (mag < PIXEL(src, c, i + 1, j - 1) || mag < PIXEL(src, c, i - 1, j + 1))
+                        PIXEL(dst, c, i, j) = 0;
+                    else
+                        PIXEL(dst, c, i, j) = mag;
+                }
+                else if (angle >= 7 * PI8 && angle <= 2 * PI)
+                {
+                    if (mag < PIXEL(src, c, i, j + 1) || mag < PIXEL(src, c, i, j - 1))
+                        PIXEL(dst, c, i, j) = 0;
+                    else
+                        PIXEL(dst, c, i, j) = mag;
+                }
+            }
+        }
+    }
+
+    if (null_x)
+        CV_IMAGE_FREE(dst_x);
+
+    if (null_y)
+        CV_IMAGE_FREE(dst_y);
+
+    return dst;
+}
+
+Image *CV_HYSTERESIS_THRESHOLDING(Image *src, Image *dst, float low, float high)
+{
+    CV_CHECK_IMAGE(src);
+
+    if (dst == NULL)
+        dst = CV_IMAGE_INIT(src->c, src->h, src->w);
+
+    CV_CHECK_CHANNEL(src, 1);
+    CV_CHECK_CHANNEL(dst, 1);
+
     for (int c = 0; c < src->c; c++)
     {
         for (int i = 1; i < src->h - 1; i++)
@@ -699,95 +760,58 @@ Image *CV_CANNY(Image *src, Image *dst, float lower_threshold, float upper_thres
             for (int j = 1; j < src->w - 1; j++)
             {
                 float p = PIXEL(src, c, i, j);
-                if (p == 0)
-                    continue;
-                else
-                {
 
-                    float tangeante = PIXEL(dst_y, c, i, j) / PIXEL(dst_x, c, i, j);
-                    if (tangeante > 0)
-                    {
-                        if (tangeante > 1)
-                        {
-                            if (p < PIXEL(src, c, i - 1, j + 1) || p < PIXEL(src, c, i + 1, j - 1))
-                                PIXEL(dst, c, i, j) = 0;
-                        }
-                        else
-                        {
-                            if (p < PIXEL(src, c, i - 1, j) || p < PIXEL(src, c, i + 1, j))
-                                PIXEL(dst, c, i, j) = 0;
-                        }
-                    }
-                    else
-                    {
-                        if (tangeante < -1)
-                        {
-                            if (p < PIXEL(src, c, i - 1, j - 1) || p < PIXEL(src, c, i + 1, j + 1))
-                                PIXEL(dst, c, i, j) = 0;
-                        }
-                        else
-                        {
-                            if (p < PIXEL(src, c, i, j - 1) || p < PIXEL(src, c, i, j + 1))
-                                PIXEL(dst, c, i, j) = 0;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // double threshold
-    for (int c = 0; c < src->c; c++)
-    {
-        for (int i = 0; i < src->h; i++)
-        {
-            for (int j = 0; j < src->w; j++)
-            {
-                float p = PIXEL(dst, c, i, j);
-                if (p > upper_threshold)
+                if (p > high)
                     PIXEL(dst, c, i, j) = 1;
-                else if (p < lower_threshold)
+                else if (p < low)
                     PIXEL(dst, c, i, j) = 0;
                 else
-                    PIXEL(dst, c, i, j) = 0.5;
-            }
-        }
-    }
-
-    // hysteresis
-
-    for (int c = 0; c < src->c; c++)
-    {
-        for (int i = 0; i < src->h; i++)
-        {
-            for (int j = 0; j < src->w; j++)
-            {
-                float p = PIXEL(dst, c, i, j);
-                if (p == 0.5)
                 {
-                    if (i > 0 && j > 0 && i < dst->h - 1 && j < dst->w - 1)
-                    {
-                        if (PIXEL(dst, c, i - 1, j - 1) == 1 ||
-                            PIXEL(dst, c, i - 1, j) == 1 ||
-                            PIXEL(dst, c, i - 1, j + 1) == 1 ||
-                            PIXEL(dst, c, i, j - 1) == 1 ||
-                            PIXEL(dst, c, i, j + 1) == 1 ||
-                            PIXEL(dst, c, i + 1, j - 1) == 1 ||
-                            PIXEL(dst, c, i + 1, j) == 1 ||
-                            PIXEL(dst, c, i + 1, j + 1) == 1)
-                            PIXEL(dst, c, i, j) = 1;
-                        else
-                            PIXEL(dst, c, i, j) = 0;
-                    }
+                    float p1 = PIXEL(src, c, i - 1, j);
+                    float p2 = PIXEL(src, c, i + 1, j);
+                    float p3 = PIXEL(src, c, i, j - 1);
+                    float p4 = PIXEL(src, c, i, j + 1);
+
+                    if (p1 > high || p2 > high || p3 > high || p4 > high)
+                        PIXEL(dst, c, i, j) = 1;
+                    else
+                        PIXEL(dst, c, i, j) = 0;
                 }
             }
         }
     }
+
+    return dst;
+}
+
+Image *CV_CANNY(Image *src, Image *dst, float low, float high)
+{
+    CV_CHECK_IMAGE(src);
+
+    if (dst == NULL)
+        dst = CV_IMAGE_INIT(src->c, src->h, src->w);
+    CV_CHECK_IMAGE(dst);
+
+    CV_CHECK_CHANNEL(src, 1);
+    CV_CHECK_CHANNEL(dst, 1);
+
+    Matrix *kernel_x = CV_GET_SOBEL_KERNEL_X();
+    Matrix *kernel_y = CV_GET_SOBEL_KERNEL_Y();
+
+    Image *dst_x = CV_APPLY_FILTER(src, NULL, kernel_x);
+    Image *dst_y = CV_APPLY_FILTER(src, NULL, kernel_y);
+
+    CV_SOBEL_PROCESS(src, dst, dst_x, dst_y);
+
+    Image *non_max = CV_NON_MAX_SUPPRESSION(dst, NULL, dst_x, dst_y);
+    dst = CV_HYSTERESIS_THRESHOLDING(non_max, dst, low, high);
 
     matrix_destroy(kernel_x);
     matrix_destroy(kernel_y);
     CV_IMAGE_FREE(dst_x);
     CV_IMAGE_FREE(dst_y);
+    CV_IMAGE_FREE(non_max);
+
     return dst;
 }
 

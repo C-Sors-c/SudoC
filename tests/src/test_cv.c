@@ -186,7 +186,7 @@ int test_cv_get_gaussian_kernel()
 int test_cv_gaussian_blur()
 {
     Image *image = CV_LOAD("tests/samples/lena.png", CV_RGB);
-    Image *blurred = CV_GAUSSIAN_BLUR(image, NULL, 9, 2.0);
+    Image *blurred = CV_GAUSSIAN_BLUR(image, NULL, 5, 0);
     CV_SAVE(blurred, "tests/out/test_cv_gaussian_blur.png");
 
     CV_IMAGE_FREE(image);
@@ -197,7 +197,7 @@ int test_cv_gaussian_blur()
 int test_cv_gaussian_blur_gray()
 {
     Image *image = CV_LOAD("tests/samples/lena.png", CV_GRAYSCALE);
-    Image *blurred = CV_GAUSSIAN_BLUR(image, NULL, 9, 2.0);
+    Image *blurred = CV_GAUSSIAN_BLUR(image, NULL, 5, 0);
     CV_SAVE(blurred, "tests/out/test_cv_gaussian_blur_gray.png");
 
     CV_IMAGE_FREE(image);
@@ -220,15 +220,13 @@ int test_cv_sharp()
 int test_cv_sobel()
 {
     Image *image = CV_LOAD("tests/samples/lena.png", CV_GRAYSCALE);
-    Image *blur = CV_GAUSSIAN_BLUR(image, NULL, 9, 2.0);
-    Image *sharp = CV_SHARPEN(blur, NULL, 1);
-    Image *sobel = CV_SOBEL(sharp, NULL, NULL, NULL);
+    Image *blur = CV_GAUSSIAN_BLUR(image, NULL, 5, 1);
+    Image *sobel = CV_SOBEL(blur, NULL);
 
     CV_SAVE(sobel, "tests/out/test_cv_sobel.png");
 
     CV_IMAGE_FREE(image);
     CV_IMAGE_FREE(blur);
-    CV_IMAGE_FREE(sharp);
     CV_IMAGE_FREE(sobel);
     return assert(true, true, "test_cv_sobel");
 }
@@ -236,14 +234,12 @@ int test_cv_sobel()
 int test_cv_canny()
 {
     Image *image = CV_LOAD("tests/samples/lena.png", CV_GRAYSCALE);
-    Image *blur = CV_GAUSSIAN_BLUR(image, NULL, 9, 1.5);
-    Image *sharp = CV_SHARPEN(blur, NULL, 1);
-    Image *canny = CV_CANNY(sharp, NULL, 0.2, 0.4);
+    Image *blur = CV_GAUSSIAN_BLUR(image, NULL, 5, 0);
+    Image *canny = CV_CANNY(blur, NULL, 0.05, 0.1);
 
     CV_SAVE(canny, "tests/out/test_cv_canny.png");
 
     CV_IMAGE_FREE(image);
-    CV_IMAGE_FREE(sharp);
     CV_IMAGE_FREE(blur);
     CV_IMAGE_FREE(canny);
     return assert(true, true, "test_cv_canny");
