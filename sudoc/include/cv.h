@@ -127,3 +127,5 @@ Matrix *CV_GET_SHARPEN_KERNEL(float sigma);
 Image *CV_SHARPEN(Image *src, Image *dst, float sigma);
 
 Image *CV_SOBEL(Image *src, Image *dst);
+
+Image *CV_CANNY(Image *src, Image *dst);

@@ -621,4 +621,84 @@ Image *CV_SOBEL(Image *src, Image *dst)
     return dst;
 }
 
+Image *CV_CANNY(Image *src, Image *dst)
+{
+    CV_CHECK_IMAGE(src);
+
+    if (dst == NULL)
+        dst = CV_IMAGE_INIT(src->c, src->h, src->w);
+    // CV_CHECK_IMAGE(dst);
+
+    // non-maximum suppression; straight forward implementation; src is the sobel image
+    // for (int c = 0; c < src->c; c++)
+    // {
+    //     for (int i = 1; i < src->h - 1; i++)
+    //     {
+    //         for (int j = 1; j < src->w - 1; j++)
+    //         {
+    //             float p = PIXEL(src, c, i, j);
+    //             float p1 = PIXEL(src, c, i - 1, j);
+    //             float p2 = PIXEL(src, c, i + 1, j);
+    //             float p3 = PIXEL(src, c, i, j - 1);
+    //             float p4 = PIXEL(src, c, i, j + 1);
+
+    //             if (p < p1 || p < p2 || p < p3 || p < p4)
+    //                 PIXEL(dst, c, i, j) = 0;
+    //             else
+    //                 PIXEL(dst, c, i, j) = p;
+    //         }
+    //     }
+    // }
+
+    // double threshold
+    // for (int c = 0; c < src->c; c++)
+    // {
+    //     for (int i = 0; i < src->h; i++)
+    //     {
+    //         for (int j = 0; j < src->w; j++)
+    //         {
+    //             float p = PIXEL(dst, c, i, j);
+    //             if (p > 0.6)
+    //                 PIXEL(dst, c, i, j) = 1;
+    //             else if (p < 0.3)
+    //                 PIXEL(dst, c, i, j) = 0;
+    //             else
+    //                 PIXEL(dst, c, i, j) = 0.5;
+    //         }
+    //     }
+    // }
+
+    // // hysteresis
+
+    // for (int c = 0; c < src->c; c++)
+    // {
+    //     for (int i = 0; i < src->h; i++)
+    //     {
+    //         for (int j = 0; j < src->w; j++)
+    //         {
+    //             float p = PIXEL(dst, c, i, j);
+    //             if (p == 0.5)
+    //             {
+    //                 if (i > 0 && j > 0 && i < dst->h - 1 && j < dst->w - 1)
+    //                 {
+    //                     if (PIXEL(dst, c, i - 1, j - 1) == 1 ||
+    //                         PIXEL(dst, c, i - 1, j) == 1 ||
+    //                         PIXEL(dst, c, i - 1, j + 1) == 1 ||
+    //                         PIXEL(dst, c, i, j - 1) == 1 ||
+    //                         PIXEL(dst, c, i, j + 1) == 1 ||
+    //                         PIXEL(dst, c, i + 1, j - 1) == 1 ||
+    //                         PIXEL(dst, c, i + 1, j) == 1 ||
+    //                         PIXEL(dst, c, i + 1, j + 1) == 1)
+    //                         PIXEL(dst, c, i, j) = 1;
+    //                     else
+    //                         PIXEL(dst, c, i, j) = 0;
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
+
+    return dst;
+}
+
 #pragma endregion Transform
