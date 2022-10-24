@@ -247,96 +247,24 @@ int test_cv_canny()
 
 int test_cv_otsu()
 {
-    Image *image = CV_LOAD("tests/samples/sudoku2.png", CV_GRAYSCALE);
-    Image *blur = CV_GAUSSIAN_BLUR(image, NULL, 9, 1.0);
-    Image *sharp = CV_SHARPEN(blur, NULL, 2);
+    Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", CV_GRAYSCALE);
+
+    Image *blur = CV_GAUSSIAN_BLUR(image, NULL, 3, 1);
+    Image *sharp = CV_SHARPEN(blur, NULL, 3);
     Image *otsu = CV_OTSU(sharp, NULL);
 
-    CV_SAVE(otsu, "tests/out/test_cv_otsu.png");
+    Image *blur_canny = CV_GAUSSIAN_BLUR(image, NULL, 3, 1);
+    Image *canny = CV_CANNY(blur_canny, NULL, 0.2, 0.25);
+
+    Image *orimg = CV_OR(otsu, canny, NULL);
+    CV_SAVE(orimg, "tests/out/test_cv_otsu.png");
 
     CV_IMAGE_FREE(image);
     CV_IMAGE_FREE(blur);
     CV_IMAGE_FREE(sharp);
     CV_IMAGE_FREE(otsu);
+    CV_IMAGE_FREE(blur_canny);
+    CV_IMAGE_FREE(canny);
+    CV_IMAGE_FREE(orimg);
     return assert(true, true, "test_cv_otsu");
 }
-
-/*
-
-
-int test_cv_gaussian_blur()
-{
-    Image *img = cv_image_from_path("tests/samples/lena.png");
-    Image *gray = cv_grayscale(img, NULL);
-    Image *blur = cv_gaussian_blur(gray, NULL, 9, 1.5);
-
-    cv_save_image(blur, "tests/out/lena_blur.png");
-
-    cv_free_image(img);
-    cv_free_image(gray);
-    cv_free_image(blur);
-
-    return test(1, 1, "test_cv_gaussian_blur");
-}
-
-int test_cv_sharp()
-{
-    Image *img = cv_image_from_path("tests/samples/lena.png");
-    Image *gray = cv_grayscale(img, NULL);
-    Image *blur = cv_gaussian_blur(gray, NULL, 9, 1.5);
-    Image *sharp = cv_sharp(blur, NULL, 3);
-
-    cv_save_image(sharp, "tests/out/lena_sharp.png");
-
-    cv_free_image(img);
-    cv_free_image(gray);
-    cv_free_image(blur);
-    cv_free_image(sharp);
-
-    return test(1, 1, "test_cv_sharp");
-}
-
-int test_cv_sobel()
-{
-    Image *img = cv_image_from_path("tests/samples/lena.png");
-    Image *gray = cv_grayscale(img, NULL);
-    Image *blur = cv_gaussian_blur(gray, NULL, 9, 3);
-    Image *sobel = cv_sobel(blur, NULL);
-
-    cv_save_image(sobel, "tests/out/lena_sobel.png");
-
-    cv_free_image(img);
-    cv_free_image(gray);
-    cv_free_image(blur);
-    cv_free_image(sobel);
-
-    return test(1, 1, "test_cv_sobel");
-}
-
-int test_cv_canny()
-{
-    Image *img = cv_image_from_path("tests/samples/sudoku.png");
-    Image *gray = cv_grayscale(img, NULL);
-    Image *canny = cv_canny(gray, NULL);
-
-    cv_save_image(canny, "tests/out/sudoku_canny.png");
-
-    cv_free_image(img);
-    cv_free_image(gray);
-    cv_free_image(canny);
-
-    return test(1, 1, "test_cv_canny");
-}
-
-int test_cv_rotate()
-{
-    Image *img = cv_image_from_path("tests/samples/lena.png");
-    Image *rotated = cv_rotate(img, NULL, -39);
-
-    cv_save_image(rotated, "tests/out/lena_rotated.png");
-    cv_free_image(img);
-    cv_free_image(rotated);
-    return test(1, 1, "test_cv_gaussian_blur");
-}
-
-*/
