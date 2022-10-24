@@ -5,3 +5,4 @@
 #include "../../sudoc/include/matrix.h"
 
 int test_nnxor();
+int test_nnxor_load();

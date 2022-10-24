@@ -28,7 +28,7 @@ Matrix *fc_bias_init(int dim1, int dim2);
 FCLayer *fc_layer_init(
     int input_size, int output_size, int batch_size,
     float (*activation_func)(float), float (*d_activation_func)(float),
-    bool load_weights, char *name);
+    char *name);
 Matrix *fc_layer_forward(FCLayer *layer, Matrix *input);
 Matrix *fc_layer_backward(FCLayer *layer, Matrix *prev_Z, Matrix *prev_deltas, float learning_rate);
 void fc_layer_print(FCLayer *layer);

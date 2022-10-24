@@ -1,7 +1,6 @@
 #pragma once
 
 #include "matrix.h"
-#include "weight_parser.h"
 #include "layer.h"
 
 struct CNN
@@ -35,3 +34,9 @@ Matrix *nn_forward(NN *network, Matrix *input);
 void nn_backward(NN *network, Matrix *input, Matrix *predictions, Matrix *labels, float learning_rate);
 float nn_train_batch(NN *network, Matrix *input, Matrix *expected, float learning_rate);
 void nn_destroy(NN *network);
+
+
+void fc_layer_save_weights(const char *filename, FCLayer *layer);
+bool fc_layer_load_weights(const char *filename, FCLayer *layer);
+void nn_save(NN *network, const char *basename);
+bool nn_load(NN *network, const char *basename);
