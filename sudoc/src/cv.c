@@ -857,14 +857,14 @@ Image *CV_OTSU(Image *src, Image *dst)
         q2 = Nf - q1;
 
         sumB += t * histogram[t];
-        float µ1 = sumB / q1;
-        float µ2 = (sum - sumB) / q2;
+        float mu1 = sumB / q1;
+        float mu2 = (sum - sumB) / q2;
 
-        float σ2b = q1 * q2 * ((µ1 - µ2) * (µ1 - µ2));
+        float sigma = q1 * q2 * ((mu1 - mu2) * (mu1 - mu2));
 
-        if (σ2b > var_max)
+        if (sigma > var_max)
         {
-            var_max = σ2b;
+            var_max = sigma;
             threshold = t;
         }
     }
@@ -906,5 +906,3 @@ Image *CV_OR(Image *src1, Image *src2, Image *dst)
 }
 
 #pragma endregion Transform
-
-// tmp
