@@ -140,3 +140,4 @@ Image *CV_HYSTERESIS_THRESHOLDING(Image *src, Image *dst, float low, float high)
 Image *CV_CANNY(Image *src, Image *dst, float low, float high);
 
 Image *CV_OTSU(Image *src, Image *dst);
+Image *CV_OR(Image *src1, Image *src2, Image *dst);

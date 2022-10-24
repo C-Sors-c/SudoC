@@ -824,13 +824,82 @@ Image *CV_OTSU(Image *src, Image *dst)
         dst = CV_IMAGE_COPY(src);
     CV_CHECK_IMAGE(dst);
 
-    int hist[256] = {0};
-    int total = src->h * src->w;
+    int histogram[256] = {0};
+    int N = src->h * src->w;
+    float Nf = (float)N;
 
-    for (int i = 0; i < total; i++)
+    for (int i = 0; i < N; i++)
     {
         float p = src->data[i] * 255.0;
-        hist[(int)p]++;
+        histogram[(int)p]++;
+    }
+
+    float sum = 0;
+    for (int i = 0; i < 256; i++)
+        sum += i * histogram[i];
+
+    float sumB = 0;
+    float q1 = 0;
+    float q2 = 0;
+
+    float var_max = 0;
+    float threshold = 0;
+
+    for (int t = 0; t < 256; t++)
+    {
+        q1 += (float)histogram[t];
+        if (q1 == 0)
+            continue;
+
+        if (q1 == N)
+            break;
+
+        q2 = Nf - q1;
+
+        sumB += t * histogram[t];
+        float µ1 = sumB / q1;
+        float µ2 = (sum - sumB) / q2;
+
+        float σ2b = q1 * q2 * ((µ1 - µ2) * (µ1 - µ2));
+
+        if (σ2b > var_max)
+        {
+            var_max = σ2b;
+            threshold = t;
+        }
+    }
+
+    for (int i = 0; i < N; i++)
+    {
+        float p = src->data[i] * 255.0;
+        if (p > threshold)
+            dst->data[i] = 0;
+        else
+            dst->data[i] = 1;
+    }
+
+    return dst;
+}
+
+Image *CV_OR(Image *src1, Image *src2, Image *dst)
+{
+    CV_CHECK_IMAGE(src1);
+    CV_CHECK_IMAGE(src2);
+    CV_CHECK_CHANNEL(src1, 1);
+    CV_CHECK_CHANNEL(src2, 1);
+
+    if (dst == NULL)
+        dst = CV_IMAGE_INIT(src1->c, src1->h, src1->w);
+    CV_CHECK_IMAGE(dst);
+
+    int N = src1->h * src1->w;
+
+    for (int i = 0; i < N; i++)
+    {
+        if (src1->data[i] == 1 || src2->data[i] == 1)
+            dst->data[i] = 1;
+        else
+            dst->data[i] = 0;
     }
 
     return dst;
