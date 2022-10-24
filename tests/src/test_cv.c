@@ -219,10 +219,10 @@ int test_cv_sharp()
 
 int test_cv_sobel()
 {
-    Image *image = CV_LOAD("tests/samples/sudoku2.png", CV_GRAYSCALE);
+    Image *image = CV_LOAD("tests/samples/lena.png", CV_GRAYSCALE);
     Image *blur = CV_GAUSSIAN_BLUR(image, NULL, 9, 2.0);
     Image *sharp = CV_SHARPEN(blur, NULL, 1);
-    Image *sobel = CV_SOBEL(sharp, NULL);
+    Image *sobel = CV_SOBEL(sharp, NULL, NULL, NULL);
 
     CV_SAVE(sobel, "tests/out/test_cv_sobel.png");
 
@@ -235,18 +235,16 @@ int test_cv_sobel()
 
 int test_cv_canny()
 {
-    Image *image = CV_LOAD("tests/samples/sudoku2.png", CV_GRAYSCALE);
-    Image *blur = CV_GAUSSIAN_BLUR(image, NULL, 9, 2.0);
+    Image *image = CV_LOAD("tests/samples/lena.png", CV_GRAYSCALE);
+    Image *blur = CV_GAUSSIAN_BLUR(image, NULL, 9, 1.5);
     Image *sharp = CV_SHARPEN(blur, NULL, 1);
-    Image *sobel = CV_SOBEL(sharp, NULL);
-    Image *canny = CV_CANNY(sobel, NULL, 0.1, 0.2);
+    Image *canny = CV_CANNY(sharp, NULL, 0.2, 0.4);
 
     CV_SAVE(canny, "tests/out/test_cv_canny.png");
 
     CV_IMAGE_FREE(image);
     CV_IMAGE_FREE(sharp);
     CV_IMAGE_FREE(blur);
-    CV_IMAGE_FREE(sobel);
     CV_IMAGE_FREE(canny);
     return assert(true, true, "test_cv_canny");
 }
