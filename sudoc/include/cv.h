@@ -131,3 +131,5 @@ Matrix *GET_SOBEL_KERNEL_Y();
 Image *CV_SOBEL(Image *src, Image *dst, Image *dst_x, Image *dst_y);
 
 Image *CV_CANNY(Image *src, Image *dst, float lower_threshold, float upper_threshold);
+
+Image *CV_OTSU(Image *src, Image *dst);

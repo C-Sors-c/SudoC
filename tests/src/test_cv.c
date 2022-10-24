@@ -249,6 +249,22 @@ int test_cv_canny()
     return assert(true, true, "test_cv_canny");
 }
 
+int test_cv_otsu()
+{
+    Image *image = CV_LOAD("tests/samples/sudoku2.png", CV_GRAYSCALE);
+    Image *blur = CV_GAUSSIAN_BLUR(image, NULL, 9, 1.0);
+    Image *sharp = CV_SHARPEN(blur, NULL, 2);
+    Image *otsu = CV_OTSU(sharp, NULL);
+
+    CV_SAVE(otsu, "tests/out/test_cv_otsu.png");
+
+    CV_IMAGE_FREE(image);
+    CV_IMAGE_FREE(blur);
+    CV_IMAGE_FREE(sharp);
+    CV_IMAGE_FREE(otsu);
+    return assert(true, true, "test_cv_otsu");
+}
+
 /*
 
 

@@ -15,6 +15,7 @@ int test_cv_gaussian_blur_gray();
 int test_cv_sharp();
 int test_cv_sobel();
 int test_cv_canny();
+int test_cv_otsu();
 // int test_cv_sharp();
 // int test_cv_sobel();
 // int test_cv_rotate();
