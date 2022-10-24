@@ -239,7 +239,7 @@ int test_cv_canny()
     Image *blur = CV_GAUSSIAN_BLUR(image, NULL, 9, 2.0);
     Image *sharp = CV_SHARPEN(blur, NULL, 1);
     Image *sobel = CV_SOBEL(sharp, NULL);
-    Image *canny = CV_CANNY(sobel, NULL);
+    Image *canny = CV_CANNY(sobel, NULL, 0.1, 0.2);
 
     CV_SAVE(canny, "tests/out/test_cv_canny.png");
 
