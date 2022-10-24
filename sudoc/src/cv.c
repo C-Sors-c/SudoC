@@ -415,7 +415,8 @@ Image *CV_RGB_TO_GRAY(Image *src, Image *dst)
             float g = PIXEL(src, 1, i, j);
             float b = PIXEL(src, 2, i, j);
 
-            PIXEL(dst, 0, i, j) = (r + g + b) / 3.0;
+            float gray = (r + g + b) / 3.0;
+            PIXEL(dst, 0, i, j) = MIN(MAX(gray, 0), 1);
         }
     }
 
@@ -482,7 +483,7 @@ Image *CV_APPLY_FILTER(Image *src, Image *dst, Matrix *kernel)
                     }
                 }
 
-                PIXEL(dst, c, i, j) = sum;
+                PIXEL(dst, c, i, j) = MIN(MAX(sum, 0), 1);
             }
         }
     }
@@ -697,6 +698,27 @@ Image *CV_CANNY(Image *src, Image *dst, float lower_threshold, float upper_thres
                 }
             }
         }
+    }
+
+    return dst;
+}
+
+Image *CV_OTSU(Image *src, Image *dst)
+{
+    CV_CHECK_IMAGE(src);
+    CV_CHECK_CHANNEL(src, 1);
+
+    if (dst == NULL)
+        dst = CV_IMAGE_COPY(src);
+    CV_CHECK_IMAGE(dst);
+
+    int hist[256] = {0};
+    int total = src->h * src->w;
+
+    for (int i = 0; i < total; i++)
+    {
+        float p = src->data[i] * 255.0;
+        hist[(int)p]++;
     }
 
     return dst;

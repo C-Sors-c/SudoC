@@ -24,6 +24,7 @@ int (*test_cv[])() = {
     test_cv_sharp,
     test_cv_sobel,
     test_cv_canny,
+    test_cv_otsu,
     // test_cv_sharp,
     // test_cv_sobel,
     // test_cv_canny,
