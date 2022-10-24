@@ -50,6 +50,7 @@ int (*tests_matrix[])() = {
 
 int (*tests_nn[])() = {
     test_nnxor,
+    test_nnxor_load,
 };
 
 int main()

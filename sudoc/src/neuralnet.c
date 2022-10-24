@@ -14,7 +14,7 @@ NN *nn_init(FCLayer **fc_layer, int num_fc_layers, ActivationLayer *output_layer
 }
 
 Matrix *nn_forward(NN *neural_network, Matrix *input)
-{   
+{
     for (int i = 0; i < neural_network->num_fc_layers; i++)
         input = fc_layer_forward(neural_network->fc_layers[i], input);
 
@@ -54,7 +54,6 @@ void nn_destroy(NN *neural_network)
 }
 
 #pragma endregion nn
-
 
 #pragma region cnn
 
@@ -103,7 +102,6 @@ void cnn_backward(CNN *neural_network, Matrix4 *input, Matrix *predictions, Matr
         deltas = fc_layer_backward(neural_network->fc_layers[i], neural_network->fc_layers[i - 1]->activations, deltas, learning_rate);
     // deltas = fc_layer_backward(neural_network->fc_layers[0], fc_input, deltas, learning_rate);
 
-
     // Matrix4 *deltas4 = matrix4_unflatten(deltas, NULL);
     // deltas4 = conv_layer_backward(neural_network->conv_layers[1], neural_network->conv_layers[0]->activations, deltas4, learning_rate);
     // deltas4 = conv_layer_backward(neural_network->conv_layers[0], neural_network->conv_layers[0]->activations, deltas4, learning_rate);
@@ -127,7 +125,7 @@ void cnn_destroy(CNN *neural_network)
     for (int i = 0; i < neural_network->num_conv_layers; i++)
         conv_layer_destroy(neural_network->conv_layers[i]);
     for (int i = 0; i < neural_network->num_fc_layers; i++)
-    activation_layer_destroy(neural_network->output_layer);
+        activation_layer_destroy(neural_network->output_layer);
 
     free(neural_network->conv_layers);
     free(neural_network->fc_layers);
@@ -135,3 +133,92 @@ void cnn_destroy(CNN *neural_network)
 }
 
 #pragma endregion cnn
+
+#pragma region load_save
+
+void fc_layer_save_weights(const char *filename, FCLayer *layer)
+{
+    FILE *fp = fopen(filename, "w");
+    if (fp == NULL)
+    {
+        err(1, "save_weight: fopen");
+    }
+
+    fprintf(fp, "%d %d\n", layer->weights->dim1, layer->weights->dim2);
+
+    // write the weight matrix
+    for (int i = 0; i < layer->weights->size - 1; i++)
+    {
+        fprintf(fp, "%f ", layer->weights->data[i]);
+    }
+    fprintf(fp, "%f\n", layer->weights->data[layer->weights->size - 1]);
+
+    // write the bias matrix
+    for (int i = 0; i < layer->biases->size - 1; i++)
+    {
+        fprintf(fp, "%f ", layer->biases->data[i]);
+    }
+    fprintf(fp, "%f\n", layer->biases->data[layer->biases->size - 1]);
+
+    fclose(fp);
+}
+
+bool fc_layer_load_weights(const char *filename, FCLayer *layer)
+{
+    FILE *fp = fopen(filename, "r");
+    if (fp == NULL)
+        return false;
+
+    int dim1, dim2;
+    fscanf(fp, "%d %d", &dim1, &dim2);
+
+    if (dim1 != layer->weights->dim1 || dim2 != layer->weights->dim2)
+    {
+        errx(1, "load_weight: weights matrix dimensions do not match");
+    }
+
+    // read the weight matrix
+    for (int i = 0; i < layer->weights->size; i++)
+    {
+        fscanf(fp, "%f", &layer->weights->data[i]);
+    }
+
+    // read the bias matrix
+    for (int i = 0; i < layer->biases->size; i++)
+    {
+        fscanf(fp, "%f", &layer->biases->data[i]);
+    }
+
+    fclose(fp);
+    return true;
+}
+
+void nn_save(NN *neural_network, const char *basename)
+{
+    // create the directory
+    mkdir(basename, 0777);
+
+
+    for (int i = 0; i < neural_network->num_fc_layers; i++)
+    {
+        char filename[256];
+        sprintf(filename, "%s/fc_%d.weights", basename, i);
+        fc_layer_save_weights(filename, neural_network->fc_layers[i]);
+    }
+}
+
+bool nn_load(NN *neural_network, const char *basename)
+{
+    for (int i = 0; i < neural_network->num_fc_layers; i++)
+    {
+        char filename[256];
+        sprintf(filename, "%s/fc_%d.weights", basename, i);
+        if (!fc_layer_load_weights(filename, neural_network->fc_layers[i]))
+            return false;
+    }
+    return true;
+}
+
+
+
+#pragma endregion load_save

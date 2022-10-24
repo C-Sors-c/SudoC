@@ -6,13 +6,12 @@ int test_nnxor()
     init_rand();
 
     int batchsize = 4;
-    bool load_weights = false;
 
     // define the layers
     FCLayer **fc_layers = malloc(sizeof(FCLayer));
-    fc_layers[0] = fc_layer_init(2, 32, batchsize, leaky_relu, d_leaky_relu, load_weights, "fc1");
-    fc_layers[1] = fc_layer_init(32, 32, batchsize, leaky_relu, d_leaky_relu, load_weights, "fc2");
-    fc_layers[2] = fc_layer_init(32, 2, batchsize, leaky_relu, d_leaky_relu, load_weights, "fc3");
+    fc_layers[0] = fc_layer_init(2, 32, batchsize, leaky_relu, d_leaky_relu, "fc0");
+    fc_layers[1] = fc_layer_init(32, 32, batchsize, leaky_relu, d_leaky_relu, "fc1");
+    fc_layers[2] = fc_layer_init(32, 2, batchsize, leaky_relu, d_leaky_relu, "fc2");
     ActivationLayer *output_layer = activation_layer_init(2, batchsize, softmax, d_softmax);
     int num_fc_layers = 3;
 
@@ -85,10 +84,58 @@ int test_nnxor()
     failed = m_get(predictions, 2, 0) > 0.9 ? 0 : 1;
     failed = m_get(predictions, 3, 1) > 0.9 ? 0 : 1;
 
+    // save weights
+    nn_save(network, "tests/out/nnxor");
+
     nn_destroy(network);
     matrix_destroy(test_input);
     matrix_destroy(test_expected);
     matrix_destroy(predictions);
 
     return assert(failed == 0, true, "test_nnxor");
+}
+
+
+int test_nnxor_load()
+{
+
+    int batchsize = 2;
+
+    // define the layers
+    FCLayer **fc_layers = malloc(sizeof(FCLayer));
+    fc_layers[0] = fc_layer_init(2, 32, batchsize, leaky_relu, d_leaky_relu, "fc0");
+    fc_layers[1] = fc_layer_init(32, 32, batchsize, leaky_relu, d_leaky_relu, "fc1");
+    fc_layers[2] = fc_layer_init(32, 2, batchsize, leaky_relu, d_leaky_relu, "fc2");
+    ActivationLayer *output_layer = activation_layer_init(2, batchsize, softmax, d_softmax);
+    int num_fc_layers = 3;
+
+    NN *network = nn_init(fc_layers, num_fc_layers, output_layer);
+
+    bool ret = nn_load(network, "tests/out/nnxor");
+
+    Matrix *test_input = matrix_init(batchsize, 2, NULL);
+    Matrix *test_expected = matrix_init(batchsize, 2, NULL);
+
+    // 1 xor 0 = 1
+    m_set(test_input, 0, 0, 1);
+    m_set(test_input, 0, 1, 0);
+    m_set(test_expected, 0, 1, 1);
+
+    // 0 xor 0 = 0
+    m_set(test_input, 1, 0, 0);
+    m_set(test_input, 1, 1, 0);
+    m_set(test_expected, 1, 0, 1);
+
+    Matrix *predictions = nn_forward(network, test_input);
+
+    int failed = 0;
+    failed = m_get(predictions, 0, 1) > 0.9 ? 0 : 1;
+    failed = m_get(predictions, 1, 0) > 0.9 ? 0 : 1;
+
+    nn_destroy(network);
+    matrix_destroy(test_input);
+    matrix_destroy(test_expected);
+    matrix_destroy(predictions);
+
+    return assert(failed == 0 && ret, true, "test_nnxor_load");
 }

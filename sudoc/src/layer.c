@@ -23,7 +23,7 @@ Matrix *fc_bias_init(int dim1, int dim2)
 FCLayer *fc_layer_init(
     int input_size, int output_size, int batch_size,
     float (*activation_func)(float), float (*d_activation_func)(float),
-    bool load_weights, char *name)
+    char *name)
 {
     FCLayer *layer = malloc(sizeof(FCLayer));
     layer->name = name;
@@ -33,17 +33,9 @@ FCLayer *fc_layer_init(
     layer->activation_func = activation_func;
     layer->d_activation_func = d_activation_func;
 
-    // initialize weights and biases
-    if (load_weights)
-    {
-        // parser for weights
-    }
-    else
-    {
-        // initialize weights and biases randomly
-        layer->weights = fc_weight_init(output_size, input_size);
-        layer->biases = fc_bias_init(1, output_size);
-    }
+    // initialize weights and biases randomly
+    layer->weights = fc_weight_init(output_size, input_size);
+    layer->biases = fc_bias_init(1, output_size);
 
     // initialize activations and deltas
     layer->activations = matrix_init(batch_size, output_size, NULL);
