@@ -21,6 +21,7 @@ typedef struct
 } Image;
 
 #define PI 3.14159265358979323846
+#define PI8 PI / 8.0
 #define CV_RGB 3
 #define CV_GRAYSCALE 1
 
@@ -38,6 +39,8 @@ typedef struct
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+
+#define NORM(x) MIN(MAX((x), 0), 1)
 
 // print info about an error
 #define ERROR_INFO                                                            \
@@ -126,4 +129,14 @@ Image *CV_GAUSSIAN_BLUR(Image *src, Image *dst, int size, float sigma);
 Matrix *CV_GET_SHARPEN_KERNEL(float sigma);
 Image *CV_SHARPEN(Image *src, Image *dst, float sigma);
 
+Matrix *CV_GET_SOBEL_KERNEL_X();
+Matrix *CV_GET_SOBEL_KERNEL_Y();
+Image *CV_SOBEL_PROCESS(Image *src, Image *dst, Image *dst_x, Image *dst_y);
 Image *CV_SOBEL(Image *src, Image *dst);
+
+float CV_ARCTAN2(Image *src, int c, int i, int j);
+Image *CV_NON_MAX_SUPPRESSION(Image *src, Image *dst, Image *dst_x, Image *dst_y);
+Image *CV_HYSTERESIS_THRESHOLDING(Image *src, Image *dst, float low, float high);
+Image *CV_CANNY(Image *src, Image *dst, float low, float high);
+
+Image *CV_OTSU(Image *src, Image *dst);
