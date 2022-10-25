@@ -318,7 +318,7 @@ int test_cv_draw()
     CV_DRAW_LINE(image, 0, 0, 500, 500, 3, CV_RGB(255, 0, 0));
     CV_DRAW_LINE(image, 0, 500, 500, 0, 5, CV_RGB(255, 0, 255));
     CV_DRAW_RECT(image, 100, 100, 200, 200, 3, CV_RGB(0, 255, 0));
-    CV_DRAW_CIRCLE(image, 250, 250, 100, 3, CV_RGB(0, 0, 255));
+    CV_DRAW_CIRCLE(image, 250, 250, 100, CV_RGB(0, 0, 255));
     CV_DRAW_DIGIT(image, 50, 50, 5, 30, CV_RGB(0, 0, 0));
 
     CV_SAVE(image, "tests/out/test_cv_draw.png");

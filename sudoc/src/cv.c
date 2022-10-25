@@ -948,6 +948,7 @@ Image *CV_AND(Image *src1, Image *src2, Image *dst)
             }
         }
     }
+    return dst;
 }
 
 Image *CV_XOR(Image *src1, Image *src2, Image *dst)
@@ -1057,7 +1058,7 @@ Image *CV_DRAW_POINT(Image *dst, int x, int y, Uint32 color)
     CV_CHECK_IMAGE(dst);
 
     if (x < 0 || x >= dst->w || y < 0 || y >= dst->h)
-        return;
+        return dst;
 
     for (int c = 0; c < dst->c; c++)
     {
@@ -1115,7 +1116,7 @@ Image *CV_DRAW_RECT(Image *dst, int x, int y, int w, int h, int width, Uint32 co
     return dst;
 }
 
-Image *CV_DRAW_CIRCLE(Image *dst, int x, int y, int r, int width, Uint32 color)
+Image *CV_DRAW_CIRCLE(Image *dst, int x, int y, int r, Uint32 color)
 {
     CV_CHECK_IMAGE(dst);
 
@@ -1160,7 +1161,10 @@ Image *CV_DRAW_DIGIT(Image *dst, int x, int y, int digit, int width, Uint32 colo
     CV_CHECK_IMAGE(dst);
 
     if (digit < 0 || digit > 9)
-        return;
+    {
+        ERROR_INFO;
+        errx(1, "CV_DRAW_DIGIT: digit must be between 0 and 9");
+    }
 
     int data[10][7] = {
         {1, 1, 1, 1, 1, 1, 0}, // 0
@@ -1174,9 +1178,6 @@ Image *CV_DRAW_DIGIT(Image *dst, int x, int y, int digit, int width, Uint32 colo
         {1, 1, 1, 1, 1, 1, 1}, // 8
         {1, 1, 1, 1, 0, 1, 1}, // 9
     };
-
-    int w = dst->w;
-    int h = dst->h;
 
     float dx = (float)width / 1.47;
     width = (int)dx;
@@ -1252,8 +1253,8 @@ int *CV_HOUGH_LINES(Image *src, int threshold, int *nlines)
     memset(accumulator, 0, sizeof(int) * w * h * 180);
 
     int max = 0;
-    int max_theta = 0;
-    int max_rho = 0;
+    // int max_theta = 0;
+    // int max_rho = 0;
 
     for (int y = 0; y < h; y++)
     {
@@ -1274,8 +1275,8 @@ int *CV_HOUGH_LINES(Image *src, int threshold, int *nlines)
                 if (accumulator[rho * 180 + theta] > max)
                 {
                     max = accumulator[rho * 180 + theta];
-                    max_theta = theta;
-                    max_rho = rho;
+                    // max_theta = theta;
+                    // max_rho = rho;
                 }
             }
         }

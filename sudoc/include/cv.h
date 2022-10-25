@@ -151,7 +151,7 @@ Uint32 CV_RGB(Uint8 r, Uint8 g, Uint8 b);
 Image *CV_DRAW_POINT(Image *dst, int x, int y, Uint32 color);
 Image *CV_DRAW_LINE(Image *dst, int x1, int y1, int x2, int y2, int width, Uint32 color);
 Image *CV_DRAW_RECT(Image *dst, int x, int y, int w, int h, int width, Uint32 color);
-Image *CV_DRAW_CIRCLE(Image *dst, int x, int y, int r, int width, Uint32 color);
+Image *CV_DRAW_CIRCLE(Image *dst, int x, int y, int r, Uint32 color);
 Image *CV_DRAW_DIGIT(Image *dst, int x, int y, int digit, int size, Uint32 color);
 
 int CV_FLOOR(float x);
