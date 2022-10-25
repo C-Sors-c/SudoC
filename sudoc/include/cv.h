@@ -146,6 +146,9 @@ Image *CV_AND(Image *src1, Image *src2, Image *dst);
 Image *CV_XOR(Image *src1, Image *src2, Image *dst);
 Image *CV_NOT(Image *src, Image *dst);
 
+Image *CV_DILATE(Image *src, Image *dst, int kernel_size);
+Image *CV_ERODE(Image *src, Image *dst, int kernel_size);
+
 Uint32 CV_RGB(Uint8 r, Uint8 g, Uint8 b);
 Image *CV_DRAW_POINT(Image *dst, int x, int y, Uint32 color);
 Image *CV_DRAW_LINE(Image *dst, int x1, int y1, int x2, int y2, int width, Uint32 color);
@@ -158,5 +161,5 @@ int CV_ROUND(float x);
 int CV_CEIL(float x);
 int CV_COMPUTE_NUMANGLE(int min_theta, int max_theta, int theta_step);
 
-int *CV_HOUGH_LINES(Image *src, int threshold, int min_line_length, int max_line_gap, int *nlines);
+int *CV_HOUGH_LINES(Image *src, int threshold, int *nlines);
 Image *CV_DRAW_HOUGH_LINES(Image *dst, int *lines, int nlines, int weight, Uint32 color);

@@ -1008,6 +1008,82 @@ Image *CV_NOT(Image *src, Image *dst)
     return dst;
 }
 
+Image *CV_DILATE(Image *src, Image *dst, int kernel_size)
+{
+    CV_CHECK_IMAGE(src);
+
+    if (dst == NULL)
+        dst = CV_IMAGE_COPY(src);
+    CV_CHECK_IMAGE(dst);
+
+    int k = kernel_size / 2;
+
+    for (int c = 0; c < src->c; c++)
+    {
+        for (int i = 0; i < src->h; i++)
+        {
+            for (int j = 0; j < src->w; j++)
+            {
+                float p = PIXEL(src, c, i, j);
+
+                if (p == 1)
+                {
+                    for (int m = -k; m <= k; m++)
+                    {
+                        for (int n = -k; n <= k; n++)
+                        {
+                            if (i + m < 0 || i + m >= src->h || j + n < 0 || j + n >= src->w)
+                                continue;
+
+                            PIXEL(dst, c, i + m, j + n) = 1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return dst;
+}
+
+Image *CV_ERODE(Image *src, Image *dst, int kernel_size)
+{
+    CV_CHECK_IMAGE(src);
+
+    if (dst == NULL)
+        dst = CV_IMAGE_COPY(src);
+    CV_CHECK_IMAGE(dst);
+
+    int k = kernel_size / 2;
+
+    for (int c = 0; c < src->c; c++)
+    {
+        for (int i = 0; i < src->h; i++)
+        {
+            for (int j = 0; j < src->w; j++)
+            {
+                float p = PIXEL(src, c, i, j);
+
+                if (p == 1)
+                {
+                    for (int m = -k; m <= k; m++)
+                    {
+                        for (int n = -k; n <= k; n++)
+                        {
+                            if (i + m < 0 || i + m >= src->h || j + n < 0 || j + n >= src->w)
+                                continue;
+
+                            PIXEL(dst, c, i + m, j + n) = 0;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return dst;
+}
+
 Uint32 CV_RGB(Uint8 r, Uint8 g, Uint8 b)
 {
     Uint32 color = 0;
@@ -1221,10 +1297,8 @@ int *CV_HOUGH_LINES(Image *src, int threshold, int *nlines)
     int w = src->w;
     int h = src->h;
 
-    int angle = 180;
-
-    int *accumulator = (int *)malloc(sizeof(int) * w * h * angle);
-    memset(accumulator, 0, sizeof(int) * w * h * angle);
+    int *accumulator = (int *)malloc(sizeof(int) * w * h * 180);
+    memset(accumulator, 0, sizeof(int) * w * h * 180);
 
     int max = 0;
     int max_theta = 0;
@@ -1237,18 +1311,18 @@ int *CV_HOUGH_LINES(Image *src, int threshold, int *nlines)
             if (PIXEL(src, 0, y, x) == 0)
                 continue;
 
-            for (int theta = 0; theta < angle; theta++)
+            for (int theta = 0; theta < 180; theta++)
             {
-                float tf = (float)theta * PI / angle;       // theta in radian
+                float tf = (float)theta * PI / 180.0;       // theta in radian
                 int rho = (int)(x * cos(tf) + y * sin(tf)); // rho in pixel
                 if (rho < 0)
                     rho = -rho;
 
-                accumulator[rho * angle + theta]++; // accumulate the votes for each rho and theta
+                accumulator[rho * 180 + theta]++; // accumulate the votes for each rho and theta
 
-                if (accumulator[rho * angle + theta] > max)
+                if (accumulator[rho * 180 + theta] > max)
                 {
-                    max = accumulator[rho * angle + theta];
+                    max = accumulator[rho * 180 + theta];
                     max_theta = theta;
                     max_rho = rho;
                 }
@@ -1256,25 +1330,30 @@ int *CV_HOUGH_LINES(Image *src, int threshold, int *nlines)
         }
     }
 
-    int len = 0;
-    for (int rho = 0; rho < w; rho++)
-        for (int theta = 0; theta < angle; theta++)
-            if (accumulator[rho * angle + theta] > threshold)
-                len++;
+    // we count the number of lines to allocate the memory
+    int nb_lines = 0;
+    for (int i = 0; i < w * h * 180; i++)
+        if (accumulator[i] >= threshold)
+            nb_lines++;
 
-    int *lines = (int *)malloc(sizeof(int) * len * 2);
-    int i = 0;
+    // we 2 integers per line (rho and theta)
+    int *lines = (int *)malloc(sizeof(int) * nb_lines * 2);
+    memset(lines, 0, sizeof(int) * nb_lines * 2);
 
-    for (int rho = 0; rho < w; rho++)
-        for (int theta = 0; theta < angle; theta++)
-            if (accumulator[rho * angle + theta] > threshold)
-            {
-                lines[i * 2] = rho;
-                lines[i * 2 + 1] = theta;
-                i++;
-            }
+    // we fill the lines array
+    int j = 0;
+    for (int i = 0; i < w * h * 180; i++)
+    {
+        if (accumulator[i] >= threshold)
+        {
+            lines[j * 2] = i / 180;     // rho
+            lines[j * 2 + 1] = i % 180; // theta
+            j++;
+        }
+    }
 
-    *nlines = len;
+    // cleanup and return
+    *nlines = nb_lines;
     free(accumulator);
     return lines;
 }

@@ -262,6 +262,38 @@ int test_cv_otsu()
     return assert(true, true, "test_cv_otsu");
 }
 
+int test_cv_dilate()
+{
+    Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", GRAYSCALE);
+    Image *blur = CV_GAUSSIAN_BLUR(image, NULL, 5, 0);
+    Image *canny = CV_CANNY(blur, NULL, 0.05, 0.1);
+    Image *dilation = CV_DILATE(canny, NULL, 3);
+
+    CV_SAVE(dilation, "tests/out/test_cv_dilation.png");
+
+    CV_IMAGE_FREE(image);
+    CV_IMAGE_FREE(blur);
+    CV_IMAGE_FREE(canny);
+    CV_IMAGE_FREE(dilation);
+    return assert(true, true, "test_cv_dilation");
+}
+
+int test_cv_erode()
+{
+    Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", GRAYSCALE);
+    Image *blur = CV_GAUSSIAN_BLUR(image, NULL, 5, 0);
+    Image *canny = CV_CANNY(blur, NULL, 0.05, 0.1);
+    Image *erosion = CV_ERODE(canny, NULL, 3);
+
+    CV_SAVE(erosion, "tests/out/test_cv_erosion.png");
+
+    CV_IMAGE_FREE(image);
+    CV_IMAGE_FREE(blur);
+    CV_IMAGE_FREE(canny);
+    CV_IMAGE_FREE(erosion);
+    return assert(true, true, "test_cv_erosion");
+}
+
 int test_cv_hough_lines()
 {
     Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", RGB);
@@ -269,11 +301,13 @@ int test_cv_hough_lines()
     Image *blur = CV_GAUSSIAN_BLUR(gray, NULL, 3, 1);
     Image *sharp = CV_SHARPEN(blur, NULL, 3);
     Image *otsu = CV_OTSU(sharp, NULL);
-    Image *canny = CV_CANNY(blur, NULL, 0.05, 0.1);
+    Image *canny = CV_CANNY(blur, NULL, 0.05, 0.15);
     Image * or = CV_OR(otsu, canny, NULL);
+    // Image *dilation = CV_DILATE(otsu, NULL, 3);
+    // Image *erosion = CV_ERODE(dilation, NULL, 5);
 
     int n = 0;
-    int *lines = CV_HOUGH_LINES(or, 500, 100, 10, &n);
+    int *lines = CV_HOUGH_LINES(or, 480, &n);
 
     CV_DRAW_HOUGH_LINES(image, lines, n, 1, CV_RGB(255, 0, 0));
     CV_SAVE(image, "tests/out/test_cv_hough_lines.png");
@@ -285,6 +319,8 @@ int test_cv_hough_lines()
     CV_IMAGE_FREE(otsu);
     CV_IMAGE_FREE(canny);
     CV_IMAGE_FREE(or);
+    // CV_IMAGE_FREE(dilation);
+    // CV_IMAGE_FREE(erosion);
 
     FREE(lines);
 

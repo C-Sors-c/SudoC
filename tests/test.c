@@ -25,8 +25,11 @@ int (*test_cv[])() = {
     test_cv_sobel,
     test_cv_canny,
     test_cv_otsu,
+    test_cv_dilate,
+    test_cv_erode,
     test_cv_hough_lines,
     test_cv_draw,
+
 };
 
 // lists of all matrix tests
