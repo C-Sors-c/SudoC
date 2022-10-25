@@ -17,3 +17,4 @@ int test_cv_sobel();
 int test_cv_canny();
 int test_cv_otsu();
 int test_cv_hough_lines();
+int test_cv_draw();

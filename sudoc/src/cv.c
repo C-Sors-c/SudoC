@@ -259,10 +259,10 @@ Image *CV_LOAD(char *path, int mode)
     Image *image = CV_IMAGE_FROM_SURFACE(surface);
     SDL_FreeSurface(surface);
 
-    if (mode == CV_RGB)
+    if (mode == RGB)
         return image;
 
-    if (mode == CV_GRAYSCALE)
+    if (mode == GRAYSCALE)
     {
         Image *gray = CV_RGB_TO_GRAY(image, NULL);
         CV_IMAGE_FREE(image);
@@ -815,14 +815,10 @@ Image *CV_CANNY(Image *src, Image *dst, float low, float high)
     return dst;
 }
 
-Image *CV_OTSU(Image *src, Image *dst)
+float CV_THRESHOLD(Image *src)
 {
     CV_CHECK_IMAGE(src);
     CV_CHECK_CHANNEL(src, 1);
-
-    if (dst == NULL)
-        dst = CV_IMAGE_COPY(src);
-    CV_CHECK_IMAGE(dst);
 
     int histogram[256] = {0};
     int N = src->h * src->w;
@@ -869,13 +865,30 @@ Image *CV_OTSU(Image *src, Image *dst)
         }
     }
 
-    for (int i = 0; i < N; i++)
+    return threshold;
+}
+
+Image *CV_OTSU(Image *src, Image *dst)
+{
+    CV_CHECK_IMAGE(src);
+    CV_CHECK_CHANNEL(src, 1);
+
+    if (dst == NULL)
+        dst = CV_IMAGE_COPY(src);
+    CV_CHECK_IMAGE(dst);
+
+    float threshold = CV_THRESHOLD(src);
+
+    for (int h = 0; h < src->h; h++)
     {
-        float p = src->data[i] * 255.0;
-        if (p > threshold)
-            dst->data[i] = 0;
-        else
-            dst->data[i] = 1;
+        for (int w = 0; w < src->w; w++)
+        {
+            float p = PIXEL(src, 0, h, w) * 255.0;
+            if (p > threshold)
+                PIXEL(dst, 0, h, w) = 0;
+            else
+                PIXEL(dst, 0, h, w) = 1;
+        }
     }
 
     return dst;
@@ -885,30 +898,141 @@ Image *CV_OR(Image *src1, Image *src2, Image *dst)
 {
     CV_CHECK_IMAGE(src1);
     CV_CHECK_IMAGE(src2);
-    CV_CHECK_CHANNEL(src1, 1);
-    CV_CHECK_CHANNEL(src2, 1);
 
     if (dst == NULL)
         dst = CV_IMAGE_INIT(src1->c, src1->h, src1->w);
     CV_CHECK_IMAGE(dst);
 
-    int N = src1->h * src1->w;
-
-    for (int i = 0; i < N; i++)
+    for (int c = 0; c < src1->c; c++)
     {
-        if (src1->data[i] == 1 || src2->data[i] == 1)
-            dst->data[i] = 1;
-        else
-            dst->data[i] = 0;
+        for (int i = 0; i < src1->h; i++)
+        {
+            for (int j = 0; j < src1->w; j++)
+            {
+                float p1 = PIXEL(src1, c, i, j);
+                float p2 = PIXEL(src2, c, i, j);
+
+                if (p1 == 1 || p2 == 1)
+                    PIXEL(dst, c, i, j) = 1;
+                else
+                    PIXEL(dst, c, i, j) = 0;
+            }
+        }
     }
 
     return dst;
 }
 
-Image *CV_LINE(Image *dst, int x1, int x2, int y1, int y2, int line_size)
+Image *CV_AND(Image *src1, Image *src2, Image *dst)
+{
+    CV_CHECK_IMAGE(src1);
+    CV_CHECK_IMAGE(src2);
+
+    if (dst == NULL)
+        dst = CV_IMAGE_INIT(src1->c, src1->h, src1->w);
+    CV_CHECK_IMAGE(dst);
+
+    for (int c = 0; c < src1->c; c++)
+    {
+        for (int i = 0; i < src1->h; i++)
+        {
+            for (int j = 0; j < src1->w; j++)
+            {
+                float p1 = PIXEL(src1, c, i, j);
+                float p2 = PIXEL(src2, c, i, j);
+
+                if (p1 == 1 && p2 == 1)
+                    PIXEL(dst, c, i, j) = 1;
+                else
+                    PIXEL(dst, c, i, j) = 0;
+            }
+        }
+    }
+}
+
+Image *CV_XOR(Image *src1, Image *src2, Image *dst)
+{
+    CV_CHECK_IMAGE(src1);
+    CV_CHECK_IMAGE(src2);
+
+    if (dst == NULL)
+        dst = CV_IMAGE_INIT(src1->c, src1->h, src1->w);
+    CV_CHECK_IMAGE(dst);
+
+    for (int c = 0; c < src1->c; c++)
+    {
+        for (int i = 0; i < src1->h; i++)
+        {
+            for (int j = 0; j < src1->w; j++)
+            {
+                float p1 = PIXEL(src1, c, i, j);
+                float p2 = PIXEL(src2, c, i, j);
+
+                if (p1 == 1 && p2 == 0)
+                    PIXEL(dst, c, i, j) = 1;
+                else if (p1 == 0 && p2 == 1)
+                    PIXEL(dst, c, i, j) = 1;
+                else
+                    PIXEL(dst, c, i, j) = 0;
+            }
+        }
+    }
+
+    return dst;
+}
+
+Image *CV_NOT(Image *src, Image *dst)
+{
+    CV_CHECK_IMAGE(src);
+
+    if (dst == NULL)
+        dst = CV_IMAGE_INIT(src->c, src->h, src->w);
+    CV_CHECK_IMAGE(dst);
+
+    for (int c = 0; c < src->c; c++)
+    {
+        for (int i = 0; i < src->h; i++)
+        {
+            for (int j = 0; j < src->w; j++)
+            {
+                float p = PIXEL(src, c, i, j);
+
+                if (p == 1)
+                    PIXEL(dst, c, i, j) = 0;
+                else
+                    PIXEL(dst, c, i, j) = 1;
+            }
+        }
+    }
+
+    return dst;
+}
+
+Uint32 CV_RGB(Uint8 r, Uint8 g, Uint8 b)
+{
+    Uint32 color = 0;
+    return color | r << 16 | g << 8 | b;
+}
+
+Image *CV_DRAW_POINT(Image *dst, int x, int y, Uint32 color)
 {
     CV_CHECK_IMAGE(dst);
-    CV_CHECK_CHANNEL(dst, 1);
+
+    if (x < 0 || x >= dst->w || y < 0 || y >= dst->h)
+        return;
+
+    for (int c = 0; c < dst->c; c++)
+    {
+        int r = (color >> (16 - c * 8)) & 0xff;
+        PIXEL(dst, c, y, x) = r / 255.0;
+    }
+
+    return dst;
+}
+
+Image *CV_DRAW_LINE(Image *dst, int x1, int y1, int x2, int y2, int width, Uint32 color)
+{
+    CV_CHECK_IMAGE(dst);
 
     int dx = abs(x2 - x1);
     int dy = abs(y2 - y1);
@@ -918,14 +1042,9 @@ Image *CV_LINE(Image *dst, int x1, int x2, int y1, int y2, int line_size)
 
     while (1)
     {
-        for (int i = -line_size; i <= line_size; i++)
-        {
-            for (int j = -line_size; j <= line_size; j++)
-            {
-                if (x1 + i >= 0 && x1 + i < dst->w && y1 + j >= 0 && y1 + j < dst->h)
-                    PIXEL(dst, 0, y1 + j, x1 + i) = 1;
-            }
-        }
+        for (int i = 0; i < width; i++)
+            for (int j = 0; j < width; j++)
+                CV_DRAW_POINT(dst, x1 + i, y1 + j, color);
 
         if (x1 == x2 && y1 == y2)
             break;
@@ -946,87 +1065,257 @@ Image *CV_LINE(Image *dst, int x1, int x2, int y1, int y2, int line_size)
     return dst;
 }
 
-// hough lines transform, has a matrix with 2 columns, the first column is the angle, the second column is the distance
-// draws the lines on the image if draw is true
-// return the images with the lines drawn
+Image *CV_DRAW_RECT(Image *dst, int x, int y, int w, int h, int width, Uint32 color)
+{
+    CV_CHECK_IMAGE(dst);
 
-Matrix *CV_HOUGH_LINES(Image *src, Image *dst)
+    CV_DRAW_LINE(dst, x, y, x + w, y, width, color);
+    CV_DRAW_LINE(dst, x + w, y, x + w, y + h, width, color);
+    CV_DRAW_LINE(dst, x + w, y + h, x, y + h, width, color);
+    CV_DRAW_LINE(dst, x, y + h, x, y, width, color);
+
+    return dst;
+}
+
+Image *CV_DRAW_CIRCLE(Image *dst, int x, int y, int r, int width, Uint32 color)
+{
+    CV_CHECK_IMAGE(dst);
+
+    int f = 1 - r;
+    int ddF_x = 1;
+    int ddF_y = -2 * r;
+    int _x = 0;
+    int _y = r;
+
+    CV_DRAW_POINT(dst, x, y + r, color);
+    CV_DRAW_POINT(dst, x, y - r, color);
+    CV_DRAW_POINT(dst, x + r, y, color);
+    CV_DRAW_POINT(dst, x - r, y, color);
+
+    while (_x < _y)
+    {
+        if (f >= 0)
+        {
+            _y--;
+            ddF_y += 2;
+            f += ddF_y;
+        }
+        _x++;
+        ddF_x += 2;
+        f += ddF_x;
+
+        CV_DRAW_POINT(dst, x + _x, y + _y, color);
+        CV_DRAW_POINT(dst, x - _x, y + _y, color);
+        CV_DRAW_POINT(dst, x + _x, y - _y, color);
+        CV_DRAW_POINT(dst, x - _x, y - _y, color);
+        CV_DRAW_POINT(dst, x + _y, y + _x, color);
+        CV_DRAW_POINT(dst, x - _y, y + _x, color);
+        CV_DRAW_POINT(dst, x + _y, y - _x, color);
+        CV_DRAW_POINT(dst, x - _y, y - _x, color);
+    }
+
+    return dst;
+}
+
+Image *CV_DRAW_DIGIT(Image *dst, int x, int y, int digit, int width, Uint32 color)
+{
+    CV_CHECK_IMAGE(dst);
+
+    if (digit < 0 || digit > 9)
+        return;
+
+    int data[10][7] = {
+        {1, 1, 1, 1, 1, 1, 0}, // 0
+        {0, 1, 1, 0, 0, 0, 0}, // 1
+        {1, 1, 0, 1, 1, 0, 1}, // 2
+        {1, 1, 1, 1, 0, 0, 1}, // 3
+        {0, 1, 1, 0, 0, 1, 1}, // 4
+        {1, 0, 1, 1, 0, 1, 1}, // 5
+        {1, 0, 1, 1, 1, 1, 1}, // 6
+        {1, 1, 1, 0, 0, 0, 0}, // 7
+        {1, 1, 1, 1, 1, 1, 1}, // 8
+        {1, 1, 1, 1, 0, 1, 1}, // 9
+    };
+
+    int w = dst->w;
+    int h = dst->h;
+
+    float dx = (float)width / 1.47;
+    width = (int)dx;
+    int bar_w = width / 2;
+
+    for (int i = 0; i < 7; i++)
+    {
+        if (data[digit][i] == 1)
+        {
+            switch (i)
+            {
+            case 0:
+                CV_DRAW_LINE(dst, x, y, x + width, y, bar_w, color);
+                break;
+            case 1:
+                CV_DRAW_LINE(dst, x + width, y, x + width, y + width, bar_w, color);
+                break;
+            case 2:
+                CV_DRAW_LINE(dst, x + width, y + width, x + width, y + width * 2, bar_w, color);
+                break;
+            case 3:
+                CV_DRAW_LINE(dst, x, y + width * 2, x + width, y + width * 2, bar_w, color);
+                break;
+            case 4:
+                CV_DRAW_LINE(dst, x, y + width, x, y + width * 2, bar_w, color);
+                break;
+            case 5:
+                CV_DRAW_LINE(dst, x, y, x, y + width, bar_w, color);
+                break;
+            case 6:
+                CV_DRAW_LINE(dst, x, y + width, x + width, y + width, bar_w, color);
+                break;
+            }
+        }
+    }
+
+    return dst;
+}
+
+int CV_FLOOR(float x)
+{
+    if (x >= 0)
+        return (int)x;
+    else
+        return (int)x - 1;
+}
+
+int CV_ROUND(float x)
+{
+    if (x >= 0)
+        return (int)(x + 0.5);
+    else
+        return (int)(x - 0.5);
+}
+
+int CV_CEIL(float x)
+{
+    if (x == (int)x)
+        return (int)x;
+    else
+        return (int)x + 1;
+}
+
+int CV_COMPUTE_NUMANGLE(int min_theta, int max_theta, int theta_step)
+{
+    int numangle = CV_FLOOR((max_theta - min_theta) / theta_step) + 1;
+    // If the distance between the first angle and the last angle is
+    // approximately equal to pi, then the last angle will be removed
+    // in order to prevent a line to be detected twice.
+    if (numangle > 1 && fabs(PI - (numangle - 1) * theta_step) < theta_step / 2)
+        --numangle;
+    return numangle;
+}
+
+int *CV_HOUGH_LINES(Image *src, int threshold, int min_line_length, int max_line_gap, int *nlines)
 {
     CV_CHECK_IMAGE(src);
     CV_CHECK_CHANNEL(src, 1);
 
-    if (dst == NULL)
-        dst = CV_IMAGE_COPY(src);
-    CV_CHECK_IMAGE(dst);
+    int w = src->w;
+    int h = src->h;
 
-    int max_dist = (int)sqrt(src->h * src->h + src->w * src->w);
-    int max_angle = 180;
-    int max_dist_angle = max_dist * max_angle; // number of possible combinations of distance and angle
+    int angle = 180;
 
-    int *accumulator = (int *)calloc(max_dist_angle, sizeof(int));
-    for (int c = 0; c < src->c; c++)
+    int *accumulator = (int *)malloc(sizeof(int) * w * h * angle);
+    memset(accumulator, 0, sizeof(int) * w * h * angle);
+
+    int max = 0;
+    int max_theta = 0;
+    int max_rho = 0;
+
+    for (int y = 0; y < h; y++)
     {
-        for (int i = 0; i < src->h; i++)
+        for (int x = 0; x < w; x++)
         {
-            for (int j = 0; j < src->w; j++)
+            if (PIXEL(src, 0, y, x) == 0)
+                continue;
+
+            for (int theta = 0; theta < angle; theta++)
             {
-                if (PIXEL(src, c, i, j) == 1)
+                float tf = (float)theta * PI / angle;
+                int rho = (int)(x * cos(tf) + y * sin(tf));
+                if (rho < 0)
+                    rho = -rho;
+
+                accumulator[rho * angle + theta]++;
+
+                if (accumulator[rho * angle + theta] > max)
                 {
-                    for (int angle = 0; angle < max_angle; angle++)
-                    {
-                        float dist = j * cos(angle * PI / 180.0) + i * sin(angle * PI / 180.0);
-                        int dist_angle = (int)(dist * max_angle + angle);
-                        accumulator[dist_angle]++;
-                    }
+                    max = accumulator[rho * angle + theta];
+                    max_theta = theta;
+                    max_rho = rho;
                 }
             }
         }
     }
-    int max = 0;
-    for (int i = 0; i < max_dist_angle; i++)
-    {
-        if (accumulator[i] > max)
-            max = accumulator[i];
-    }
 
-    int count = 0;
-    for (int i = 0; i < max_dist_angle; i++)
-    {
-        if (accumulator[i] > max / 2)
-        {
-            count++;
-        }
-    }
-    Matrix *lines = matrix_init(count, 2, NULL);
+    int len = 0;
+    for (int rho = 0; rho < h; rho++)
+        for (int theta = 0; theta < angle; theta++)
+            if (accumulator[rho * angle + theta] > threshold)
+                len++;
 
-    for (int i = 0; i < max_dist_angle; i++)
-    {
-        if (accumulator[i] > max / 2)
-        {
-            int angle = i % max_angle;
-            int dist = i / max_angle;
+    int *lines = (int *)malloc(sizeof(int) * len * 2);
+    int i = 0;
 
-            MATRIX(lines, i, 0) = angle;
-            MATRIX(lines, i, 1) = dist;
-        }
-    }
-    // draw lines
-    // for (int i = 0; i < count; i++)
-    // {
-    //     float angle = m_get(lines, i, 0);
-    //     float dist = m_get(lines, i, 1);
+    for (int rho = 0; rho < h; rho++)
+        for (int theta = 0; theta < angle; theta++)
+            if (accumulator[rho * angle + theta] > threshold)
+            {
+                lines[i * 2] = rho;
+                lines[i * 2 + 1] = theta;
+                i++;
+            }
 
-    //     float x1 = 0;
-    //     float y1 = dist / sin(angle * PI / 180.0);
-    //     float x2 = src->w;
-    //     float y2 = (dist - x2 * cos(angle * PI / 180.0));
-
-    //     dst = CV_LINE(dst, x1, x2, y1, y2, 1);
-    // }
-    printf("count: %d\n", count);
+    *nlines = len;
     free(accumulator);
-    // matrix_destroy(lines);
     return lines;
+}
+
+Image *CV_DRAW_HOUGH_LINES(Image *dst, int *lines, int nlines, int weight, Uint32 color)
+{
+    CV_CHECK_IMAGE(dst);
+
+    int w = dst->w;
+    int h = dst->h;
+
+    for (int i = 0; i < nlines; i++)
+    {
+        int rho = lines[i * 2];
+        int theta = lines[i * 2 + 1];
+
+        if (theta == 0)
+        {
+            CV_DRAW_LINE(dst, rho, 0, rho, h, weight, color);
+        }
+        else
+        {
+            float a = cos(theta * PI / 180.0);
+            float b = sin(theta * PI / 180.0);
+            float x0 = a * rho;
+            float y0 = b * rho;
+            float x1 = x0 + w * (-b);
+            float y1 = y0 + w * a;
+            float x2 = x0 - w * (-b);
+            float y2 = y0 - w * a;
+
+            int x1i = (int)x1;
+            int y1i = (int)y1;
+            int x2i = (int)x2;
+            int y2i = (int)y2;
+
+            CV_DRAW_LINE(dst, x1i, y1i, x2i, y2i, weight, color);
+        }
+    }
+
+    return dst;
 }
 
 #pragma endregion Transform
