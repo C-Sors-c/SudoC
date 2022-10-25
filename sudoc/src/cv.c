@@ -1359,4 +1359,84 @@ Image *CV_DRAW_HOUGH_LINES(Image *dst, int *lines, int nlines, int weight, Uint3
     return dst;
 }
 
+Image *CV_ROTATE(Image *src, Image *dst, float angle)
+{
+    CV_CHECK_IMAGE(src);
+
+    if (dst == NULL)
+    {
+        dst = CV_ZEROS(src->c, src->h, src->w);
+    }
+
+    float radians = angle * PI / 180.0;
+    int hwidth = src->w / 2;
+    int hheight = src->h / 2;
+    double sinma = sin(-radians);
+    double cosma = cos(-radians);
+
+    for (int x = 0; x < src->w; x++)
+    {
+        for (int y = 0; y < src->h; y++)
+        {
+
+            int xt = x - hwidth;
+            int yt = y - hheight;
+
+            int xs = (int)round((cosma * xt - sinma * yt) + hwidth);
+            int ys = (int)round((sinma * xt + cosma * yt) + hheight);
+
+            if (xs >= 0 && xs < src->w && ys >= 0 && ys < src->h)
+            {
+                for (int c = 0; c < src->c; c++)
+                {
+                    PIXEL(dst, c, y, x) = PIXEL(src, c, ys, xs);
+                }
+            }
+            else
+            {
+                for (int c = 0; c < src->c; c++)
+                {
+                    PIXEL(dst, c, y, x) = 0;
+                }
+            }
+        }
+    }
+    return dst;
+}
+
+Image *CV_RESIZE(Image *src, Image *dst, float scale)
+{
+    CV_CHECK_IMAGE(src);
+
+    if (dst == NULL)
+    {
+        dst = CV_ZEROS(src->c, src->h * scale, src->w * scale);
+    }
+
+    for (int x = 0; x < dst->w; x++)
+    {
+        for (int y = 0; y < dst->h; y++)
+        {
+            int xs = (int)(x / scale);
+            int ys = (int)(y / scale);
+
+            if (xs >= 0 && xs < src->w && ys >= 0 && ys < src->h)
+            {
+                for (int c = 0; c < src->c; c++)
+                {
+                    PIXEL(dst, c, y, x) = PIXEL(src, c, ys, xs);
+                }
+            }
+            else
+            {
+                for (int c = 0; c < src->c; c++)
+                {
+                    PIXEL(dst, c, y, x) = 0;
+                }
+            }
+        }
+    }
+    return dst;
+}
+
 #pragma endregion Transform

@@ -19,3 +19,5 @@ int test_cv_otsu();
 int test_cv_dilate();
 int test_cv_hough_lines();
 int test_cv_draw();
+int test_cv_rotate();
+int test_cv_resize();
