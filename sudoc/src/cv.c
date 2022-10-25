@@ -1046,44 +1046,6 @@ Image *CV_DILATE(Image *src, Image *dst, int kernel_size)
     return dst;
 }
 
-Image *CV_ERODE(Image *src, Image *dst, int kernel_size)
-{
-    CV_CHECK_IMAGE(src);
-
-    if (dst == NULL)
-        dst = CV_IMAGE_COPY(src);
-    CV_CHECK_IMAGE(dst);
-
-    int k = kernel_size / 2;
-
-    for (int c = 0; c < src->c; c++)
-    {
-        for (int i = 0; i < src->h; i++)
-        {
-            for (int j = 0; j < src->w; j++)
-            {
-                float p = PIXEL(src, c, i, j);
-
-                if (p == 1)
-                {
-                    for (int m = -k; m <= k; m++)
-                    {
-                        for (int n = -k; n <= k; n++)
-                        {
-                            if (i + m < 0 || i + m >= src->h || j + n < 0 || j + n >= src->w)
-                                continue;
-
-                            PIXEL(dst, c, i + m, j + n) = 0;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    return dst;
-}
-
 Uint32 CV_RGB(Uint8 r, Uint8 g, Uint8 b)
 {
     Uint32 color = 0;

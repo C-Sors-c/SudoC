@@ -278,22 +278,6 @@ int test_cv_dilate()
     return assert(true, true, "test_cv_dilation");
 }
 
-int test_cv_erode()
-{
-    Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", GRAYSCALE);
-    Image *blur = CV_GAUSSIAN_BLUR(image, NULL, 5, 0);
-    Image *canny = CV_CANNY(blur, NULL, 0.05, 0.1);
-    Image *erosion = CV_ERODE(canny, NULL, 3);
-
-    CV_SAVE(erosion, "tests/out/test_cv_erosion.png");
-
-    CV_IMAGE_FREE(image);
-    CV_IMAGE_FREE(blur);
-    CV_IMAGE_FREE(canny);
-    CV_IMAGE_FREE(erosion);
-    return assert(true, true, "test_cv_erosion");
-}
-
 int test_cv_hough_lines()
 {
     Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", RGB);

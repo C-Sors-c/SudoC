@@ -147,7 +147,6 @@ Image *CV_XOR(Image *src1, Image *src2, Image *dst);
 Image *CV_NOT(Image *src, Image *dst);
 
 Image *CV_DILATE(Image *src, Image *dst, int kernel_size);
-Image *CV_ERODE(Image *src, Image *dst, int kernel_size);
 
 Uint32 CV_RGB(Uint8 r, Uint8 g, Uint8 b);
 Image *CV_DRAW_POINT(Image *dst, int x, int y, Uint32 color);
