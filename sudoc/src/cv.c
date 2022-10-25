@@ -1213,7 +1213,7 @@ int CV_COMPUTE_NUMANGLE(int min_theta, int max_theta, int theta_step)
     return numangle;
 }
 
-int *CV_HOUGH_LINES(Image *src, int threshold, int min_line_length, int max_line_gap, int *nlines)
+int *CV_HOUGH_LINES(Image *src, int threshold, int *nlines)
 {
     CV_CHECK_IMAGE(src);
     CV_CHECK_CHANNEL(src, 1);
@@ -1239,12 +1239,12 @@ int *CV_HOUGH_LINES(Image *src, int threshold, int min_line_length, int max_line
 
             for (int theta = 0; theta < angle; theta++)
             {
-                float tf = (float)theta * PI / angle;
-                int rho = (int)(x * cos(tf) + y * sin(tf));
+                float tf = (float)theta * PI / angle;       // theta in radian
+                int rho = (int)(x * cos(tf) + y * sin(tf)); // rho in pixel
                 if (rho < 0)
                     rho = -rho;
 
-                accumulator[rho * angle + theta]++;
+                accumulator[rho * angle + theta]++; // accumulate the votes for each rho and theta
 
                 if (accumulator[rho * angle + theta] > max)
                 {
@@ -1257,7 +1257,7 @@ int *CV_HOUGH_LINES(Image *src, int threshold, int min_line_length, int max_line
     }
 
     int len = 0;
-    for (int rho = 0; rho < h; rho++)
+    for (int rho = 0; rho < w; rho++)
         for (int theta = 0; theta < angle; theta++)
             if (accumulator[rho * angle + theta] > threshold)
                 len++;
@@ -1265,7 +1265,7 @@ int *CV_HOUGH_LINES(Image *src, int threshold, int min_line_length, int max_line
     int *lines = (int *)malloc(sizeof(int) * len * 2);
     int i = 0;
 
-    for (int rho = 0; rho < h; rho++)
+    for (int rho = 0; rho < w; rho++)
         for (int theta = 0; theta < angle; theta++)
             if (accumulator[rho * angle + theta] > threshold)
             {
