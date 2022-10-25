@@ -318,7 +318,7 @@ int test_cv_draw()
     CV_DRAW_LINE(image, 0, 0, 500, 500, 3, CV_RGB(255, 0, 0));
     CV_DRAW_LINE(image, 0, 500, 500, 0, 5, CV_RGB(255, 0, 255));
     CV_DRAW_RECT(image, 100, 100, 200, 200, 3, CV_RGB(0, 255, 0));
-    CV_DRAW_CIRCLE(image, 250, 250, 100, CV_RGB(0, 0, 255));
+    CV_DRAW_CIRCLE(image, 250, 250, 100, 3, CV_RGB(0, 0, 255));
     CV_DRAW_DIGIT(image, 50, 50, 5, 30, CV_RGB(0, 0, 0));
 
     CV_SAVE(image, "tests/out/test_cv_draw.png");
@@ -349,4 +349,50 @@ int test_cv_resize()
     CV_IMAGE_FREE(image);
     CV_IMAGE_FREE(resized);
     return assert(true, true, "test_cv_resize");
+}
+
+int test_cv_zoom()
+{
+    Image *image = CV_LOAD("tests/samples/lena.png", RGB);
+    Image *zoomed = CV_ZOOM(image, NULL, 2.0);
+
+    CV_SAVE(zoomed, "tests/out/test_cv_zoom.png");
+
+    CV_IMAGE_FREE(image);
+    CV_IMAGE_FREE(zoomed);
+    return assert(true, true, "test_cv_zoom");
+}
+
+int test_cv_grid()
+{
+    Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", RGB);
+    Image *gray = CV_RGB_TO_GRAY(image, NULL);
+    Image *blur = CV_GAUSSIAN_BLUR(gray, NULL, 3, 1);
+    Image *sharp = CV_SHARPEN(blur, NULL, 3);
+    Image *otsu = CV_OTSU(sharp, NULL);
+    Image *canny = CV_CANNY(blur, NULL, 0.05, 0.15);
+    Image * or = CV_OR(otsu, canny, NULL);
+    Image *zoom = CV_ZOOM(or, NULL, 1.1);
+    int n = 0;
+
+    int *lines = CV_HOUGH_LINES(zoom, 480, &n);
+    printf("n: %d\n", n);
+    image = CV_ZOOM(image, NULL, 1.1);
+    // Image *image_copy = CV_IMAGE_COPY(image);
+    CV_DRAW_HOUGH_LINES(image, lines, n, 1, CV_RGB(255, 0, 0));
+    Image *grid = CV_GRID(image, NULL);
+
+    CV_SAVE(grid, "tests/out/test_cv_grid.png");
+
+    CV_IMAGE_FREE(image);
+    CV_IMAGE_FREE(gray);
+    CV_IMAGE_FREE(blur);
+    CV_IMAGE_FREE(sharp);
+    CV_IMAGE_FREE(otsu);
+    CV_IMAGE_FREE(canny);
+    CV_IMAGE_FREE(or);
+    CV_IMAGE_FREE(grid);
+
+    FREE(lines);
+    return assert(true, true, "test_cv_grid");
 }

@@ -21,3 +21,5 @@ int test_cv_hough_lines();
 int test_cv_draw();
 int test_cv_rotate();
 int test_cv_resize();
+int test_cv_zoom();
+int test_cv_grid();

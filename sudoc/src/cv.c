@@ -1053,7 +1053,7 @@ Uint32 CV_RGB(Uint8 r, Uint8 g, Uint8 b)
     return color | r << 16 | g << 8 | b;
 }
 
-Image *CV_DRAW_POINT(Image *dst, int x, int y, Uint32 color)
+Image *CV_DRAW_POINT(Image *dst, int x, int y, int width, Uint32 color)
 {
     CV_CHECK_IMAGE(dst);
 
@@ -1062,8 +1062,17 @@ Image *CV_DRAW_POINT(Image *dst, int x, int y, Uint32 color)
 
     for (int c = 0; c < dst->c; c++)
     {
-        int r = (color >> (16 - c * 8)) & 0xff;
-        PIXEL(dst, c, y, x) = r / 255.0;
+        for (int i = -width / 2; i <= width / 2; i++)
+        {
+            for (int j = -width / 2; j <= width / 2; j++)
+            {
+                if (x + i < 0 || x + i >= dst->w || y + j < 0 || y + j >= dst->h)
+                    continue;
+
+                int r = (color >> (16 - c * 8)) & 0xff;
+                PIXEL(dst, c, y + j, x + i) = r / 255.0;
+            }
+        }
     }
 
     return dst;
@@ -1083,7 +1092,7 @@ Image *CV_DRAW_LINE(Image *dst, int x1, int y1, int x2, int y2, int width, Uint3
     {
         for (int i = 0; i < width; i++)
             for (int j = 0; j < width; j++)
-                CV_DRAW_POINT(dst, x1 + i, y1 + j, color);
+                CV_DRAW_POINT(dst, x1 + i, y1 + j, width, color);
 
         if (x1 == x2 && y1 == y2)
             break;
@@ -1116,7 +1125,7 @@ Image *CV_DRAW_RECT(Image *dst, int x, int y, int w, int h, int width, Uint32 co
     return dst;
 }
 
-Image *CV_DRAW_CIRCLE(Image *dst, int x, int y, int r, Uint32 color)
+Image *CV_DRAW_CIRCLE(Image *dst, int x, int y, int r, int width, Uint32 color)
 {
     CV_CHECK_IMAGE(dst);
 
@@ -1126,10 +1135,10 @@ Image *CV_DRAW_CIRCLE(Image *dst, int x, int y, int r, Uint32 color)
     int _x = 0;
     int _y = r;
 
-    CV_DRAW_POINT(dst, x, y + r, color);
-    CV_DRAW_POINT(dst, x, y - r, color);
-    CV_DRAW_POINT(dst, x + r, y, color);
-    CV_DRAW_POINT(dst, x - r, y, color);
+    CV_DRAW_POINT(dst, x, y + r, width, color);
+    CV_DRAW_POINT(dst, x, y - r, width, color);
+    CV_DRAW_POINT(dst, x + r, y, width, color);
+    CV_DRAW_POINT(dst, x - r, y, width, color);
 
     while (_x < _y)
     {
@@ -1143,14 +1152,14 @@ Image *CV_DRAW_CIRCLE(Image *dst, int x, int y, int r, Uint32 color)
         ddF_x += 2;
         f += ddF_x;
 
-        CV_DRAW_POINT(dst, x + _x, y + _y, color);
-        CV_DRAW_POINT(dst, x - _x, y + _y, color);
-        CV_DRAW_POINT(dst, x + _x, y - _y, color);
-        CV_DRAW_POINT(dst, x - _x, y - _y, color);
-        CV_DRAW_POINT(dst, x + _y, y + _x, color);
-        CV_DRAW_POINT(dst, x - _y, y + _x, color);
-        CV_DRAW_POINT(dst, x + _y, y - _x, color);
-        CV_DRAW_POINT(dst, x - _y, y - _x, color);
+        CV_DRAW_POINT(dst, x - _x, y + _y, width, color);
+        CV_DRAW_POINT(dst, x + _x, y + _y, width, color);
+        CV_DRAW_POINT(dst, x + _x, y - _y, width, color);
+        CV_DRAW_POINT(dst, x - _x, y - _y, width, color);
+        CV_DRAW_POINT(dst, x + _y, y + _x, width, color);
+        CV_DRAW_POINT(dst, x - _y, y + _x, width, color);
+        CV_DRAW_POINT(dst, x + _y, y - _x, width, color);
+        CV_DRAW_POINT(dst, x - _y, y - _x, width, color);
     }
 
     return dst;
@@ -1437,6 +1446,72 @@ Image *CV_RESIZE(Image *src, Image *dst, float scale)
             }
         }
     }
+    return dst;
+}
+
+Image *CV_ZOOM(Image *src, Image *dst, float scale)
+{
+    CV_CHECK_IMAGE(src);
+
+    if (dst == NULL)
+    {
+        dst = CV_ZEROS(src->c, src->h, src->w);
+    }
+
+    // zoom and keeps previous dimensions
+
+    int hwidth = src->w / 2;
+    int hheight = src->h / 2;
+    int hwidth2 = dst->w / 2;
+    int hheight2 = dst->h / 2;
+
+    for (int x = 0; x < dst->w; x++)
+    {
+        for (int y = 0; y < dst->h; y++)
+        {
+            int xs = (int)((x - hwidth2) / scale) + hwidth;
+            int ys = (int)((y - hheight2) / scale) + hheight;
+
+            if (xs >= 0 && xs < src->w && ys >= 0 && ys < src->h)
+            {
+                for (int c = 0; c < src->c; c++)
+                {
+                    PIXEL(dst, c, y, x) = PIXEL(src, c, ys, xs);
+                }
+            }
+            else
+            {
+                for (int c = 0; c < src->c; c++)
+                {
+                    PIXEL(dst, c, y, x) = 0;
+                }
+            }
+        }
+    }
+    return dst;
+}
+
+Image *CV_GRID(Image *src, Image *dst)
+{
+    CV_CHECK_IMAGE(src);
+
+    if (dst == NULL)
+    {
+        dst = CV_IMAGE_COPY(src);
+    }
+
+    int w = src->w;
+    int h = src->h;
+
+    int x1 = (int)(w * 0.15);
+    int y1 = (int)(h * 0.15);
+    int x2 = (int)(w * 0.85);
+    int y2 = (int)(h * 0.85);
+    int rect_w = x2 - x1;
+    int rect_h = y2 - y1;
+
+    CV_DRAW_RECT(dst, x1, y1, rect_w, rect_h, 3, CV_RGB(0, 0, 255));
+
     return dst;
 }
 

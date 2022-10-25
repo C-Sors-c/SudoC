@@ -30,6 +30,8 @@ int (*test_cv[])() = {
     test_cv_draw,
     test_cv_rotate,
     test_cv_resize,
+    test_cv_zoom,
+    test_cv_grid,
 };
 
 // lists of all matrix tests
