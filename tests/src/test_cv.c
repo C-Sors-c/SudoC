@@ -4,16 +4,16 @@
 
 int test_cv_load()
 {
-    Image *image = CV_LOAD("tests/samples/lena.png", CV_RGB);
+    Image *image = CV_LOAD("tests/samples/lena.png", RGB);
     CV_IMAGE_FREE(image);
     return assert(true, true, "test_cv_load");
 }
 
 int test_cv_save()
 {
-    Image *image = CV_LOAD("tests/samples/lena.png", CV_RGB);
+    Image *image = CV_LOAD("tests/samples/lena.png", RGB);
     CV_SAVE(image, "tests/out/test_cv_save.png");
-    Image *image2 = CV_LOAD("tests/out/test_cv_save.png", CV_RGB);
+    Image *image2 = CV_LOAD("tests/out/test_cv_save.png", RGB);
 
     for (int i = 0; i < image->w * image->h * image->c; i++)
         if (image->data[i] != image2->data[i])
@@ -62,7 +62,7 @@ int test_cv_ones()
 int test_cv_load_folder()
 {
     int n;
-    Image **images = CV_LOAD_FOLDER("tests/samples", &n, CV_RGB);
+    Image **images = CV_LOAD_FOLDER("tests/samples", &n, RGB);
 
     for (int i = 0; i < n; i++)
     {
@@ -81,7 +81,7 @@ int test_cv_load_folder()
 int test_cv_matrix_from_folder()
 {
     int n;
-    Matrix4 *matrix = CV_MATRIX4_FROM_FOLDER("tests/samples/matrix", &n, CV_RGB);
+    Matrix4 *matrix = CV_MATRIX4_FROM_FOLDER("tests/samples/matrix", &n, RGB);
 
     if (n != 3)
     {
@@ -115,14 +115,14 @@ int test_cv_matrix_from_path()
 
     char *file = files[0];
 
-    Matrix4 *matrix = CV_MATRIX4_FROM_PATH(file, NULL, 0, 32, CV_RGB);
+    Matrix4 *matrix = CV_MATRIX4_FROM_PATH(file, NULL, 0, 32, RGB);
     Image *image = CV_IMAGE_FROM_MATRIX4(matrix, NULL, 0);
     CV_SAVE(image, "tests/out/test_cv_load_image_with_matrix_0.png");
 
     for (int i = 1; i < n; i++)
     {
         file = files[i];
-        matrix = CV_MATRIX4_FROM_PATH(file, matrix, i, 32, CV_RGB);
+        matrix = CV_MATRIX4_FROM_PATH(file, matrix, i, 32, RGB);
         image = CV_IMAGE_FROM_MATRIX4(matrix, image, i);
 
         char path[100];
@@ -154,7 +154,7 @@ int test_cv_list_files()
 
 int test_cv_rgb_to_gray()
 {
-    Image *image = CV_LOAD("tests/samples/lena.png", CV_GRAYSCALE);
+    Image *image = CV_LOAD("tests/samples/lena.png", GRAYSCALE);
     CV_SAVE(image, "tests/out/test_cv_rgb_to_gray.png");
 
     CV_IMAGE_FREE(image);
@@ -185,7 +185,7 @@ int test_cv_get_gaussian_kernel()
 
 int test_cv_gaussian_blur()
 {
-    Image *image = CV_LOAD("tests/samples/lena.png", CV_RGB);
+    Image *image = CV_LOAD("tests/samples/lena.png", RGB);
     Image *blurred = CV_GAUSSIAN_BLUR(image, NULL, 5, 0);
     CV_SAVE(blurred, "tests/out/test_cv_gaussian_blur.png");
 
@@ -196,7 +196,7 @@ int test_cv_gaussian_blur()
 
 int test_cv_gaussian_blur_gray()
 {
-    Image *image = CV_LOAD("tests/samples/lena.png", CV_GRAYSCALE);
+    Image *image = CV_LOAD("tests/samples/lena.png", GRAYSCALE);
     Image *blurred = CV_GAUSSIAN_BLUR(image, NULL, 5, 0);
     CV_SAVE(blurred, "tests/out/test_cv_gaussian_blur_gray.png");
 
@@ -207,7 +207,7 @@ int test_cv_gaussian_blur_gray()
 
 int test_cv_sharp()
 {
-    Image *image = CV_LOAD("tests/samples/lena.png", CV_RGB);
+    Image *image = CV_LOAD("tests/samples/lena.png", RGB);
     Image *sharped = CV_SHARPEN(image, NULL, 1);
 
     CV_SAVE(sharped, "tests/out/test_cv_sharp.png");
@@ -219,7 +219,7 @@ int test_cv_sharp()
 
 int test_cv_sobel()
 {
-    Image *image = CV_LOAD("tests/samples/lena.png", CV_GRAYSCALE);
+    Image *image = CV_LOAD("tests/samples/lena.png", GRAYSCALE);
     Image *blur = CV_GAUSSIAN_BLUR(image, NULL, 5, 1);
     Image *sobel = CV_SOBEL(blur, NULL);
 
@@ -233,7 +233,7 @@ int test_cv_sobel()
 
 int test_cv_canny()
 {
-    Image *image = CV_LOAD("tests/samples/lena.png", CV_GRAYSCALE);
+    Image *image = CV_LOAD("tests/samples/lena.png", GRAYSCALE);
     Image *blur = CV_GAUSSIAN_BLUR(image, NULL, 5, 0);
     Image *canny = CV_CANNY(blur, NULL, 0.05, 0.1);
 
@@ -247,24 +247,82 @@ int test_cv_canny()
 
 int test_cv_otsu()
 {
-    Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", CV_GRAYSCALE);
+    Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", GRAYSCALE);
 
     Image *blur = CV_GAUSSIAN_BLUR(image, NULL, 3, 1);
     Image *sharp = CV_SHARPEN(blur, NULL, 3);
     Image *otsu = CV_OTSU(sharp, NULL);
 
-    Image *blur_canny = CV_GAUSSIAN_BLUR(image, NULL, 3, 1);
-    Image *canny = CV_CANNY(blur_canny, NULL, 0.2, 0.25);
-
-    Image *orimg = CV_OR(otsu, canny, NULL);
-    CV_SAVE(orimg, "tests/out/test_cv_otsu.png");
+    CV_SAVE(otsu, "tests/out/test_cv_otsu.png");
 
     CV_IMAGE_FREE(image);
     CV_IMAGE_FREE(blur);
     CV_IMAGE_FREE(sharp);
     CV_IMAGE_FREE(otsu);
-    CV_IMAGE_FREE(blur_canny);
-    CV_IMAGE_FREE(canny);
-    CV_IMAGE_FREE(orimg);
     return assert(true, true, "test_cv_otsu");
+}
+
+int test_cv_dilate()
+{
+    Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", GRAYSCALE);
+    Image *blur = CV_GAUSSIAN_BLUR(image, NULL, 5, 0);
+    Image *canny = CV_CANNY(blur, NULL, 0.05, 0.1);
+    Image *dilation = CV_DILATE(canny, NULL, 3);
+
+    CV_SAVE(dilation, "tests/out/test_cv_dilation.png");
+
+    CV_IMAGE_FREE(image);
+    CV_IMAGE_FREE(blur);
+    CV_IMAGE_FREE(canny);
+    CV_IMAGE_FREE(dilation);
+    return assert(true, true, "test_cv_dilation");
+}
+
+int test_cv_hough_lines()
+{
+    Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", RGB);
+    Image *gray = CV_RGB_TO_GRAY(image, NULL);
+    Image *blur = CV_GAUSSIAN_BLUR(gray, NULL, 3, 1);
+    Image *sharp = CV_SHARPEN(blur, NULL, 3);
+    Image *otsu = CV_OTSU(sharp, NULL);
+    Image *canny = CV_CANNY(blur, NULL, 0.05, 0.15);
+    Image * or = CV_OR(otsu, canny, NULL);
+    // Image *dilation = CV_DILATE(otsu, NULL, 3);
+    // Image *erosion = CV_ERODE(dilation, NULL, 5);
+
+    int n = 0;
+    int *lines = CV_HOUGH_LINES(or, 480, &n);
+
+    CV_DRAW_HOUGH_LINES(image, lines, n, 1, CV_RGB(255, 0, 0));
+    CV_SAVE(image, "tests/out/test_cv_hough_lines.png");
+
+    CV_IMAGE_FREE(image);
+    CV_IMAGE_FREE(gray);
+    CV_IMAGE_FREE(blur);
+    CV_IMAGE_FREE(sharp);
+    CV_IMAGE_FREE(otsu);
+    CV_IMAGE_FREE(canny);
+    CV_IMAGE_FREE(or);
+    // CV_IMAGE_FREE(dilation);
+    // CV_IMAGE_FREE(erosion);
+
+    FREE(lines);
+
+    return assert(true, true, "test_cv_hough_lines");
+}
+
+int test_cv_draw()
+{
+    Image *image = CV_ONES(3, 500, 500);
+
+    CV_DRAW_LINE(image, 0, 0, 500, 500, 3, CV_RGB(255, 0, 0));
+    CV_DRAW_LINE(image, 0, 500, 500, 0, 5, CV_RGB(255, 0, 255));
+    CV_DRAW_RECT(image, 100, 100, 200, 200, 3, CV_RGB(0, 255, 0));
+    CV_DRAW_CIRCLE(image, 250, 250, 100, 3, CV_RGB(0, 0, 255));
+    CV_DRAW_DIGIT(image, 50, 50, 5, 30, CV_RGB(0, 0, 0));
+
+    CV_SAVE(image, "tests/out/test_cv_draw.png");
+    CV_IMAGE_FREE(image);
+
+    return assert(true, true, "test_cv_draw");
 }

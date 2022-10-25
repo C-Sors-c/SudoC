@@ -22,8 +22,8 @@ typedef struct
 
 #define PI 3.14159265358979323846
 #define PI8 PI / 8.0
-#define CV_RGB 3
-#define CV_GRAYSCALE 1
+#define RGB 3
+#define GRAYSCALE 1
 
 #define FREE(ptr)     \
     do                \
@@ -139,5 +139,26 @@ Image *CV_NON_MAX_SUPPRESSION(Image *src, Image *dst, Image *dst_x, Image *dst_y
 Image *CV_HYSTERESIS_THRESHOLDING(Image *src, Image *dst, float low, float high);
 Image *CV_CANNY(Image *src, Image *dst, float low, float high);
 
+float CV_THRESHOLD(Image *src);
 Image *CV_OTSU(Image *src, Image *dst);
 Image *CV_OR(Image *src1, Image *src2, Image *dst);
+Image *CV_AND(Image *src1, Image *src2, Image *dst);
+Image *CV_XOR(Image *src1, Image *src2, Image *dst);
+Image *CV_NOT(Image *src, Image *dst);
+
+Image *CV_DILATE(Image *src, Image *dst, int kernel_size);
+
+Uint32 CV_RGB(Uint8 r, Uint8 g, Uint8 b);
+Image *CV_DRAW_POINT(Image *dst, int x, int y, Uint32 color);
+Image *CV_DRAW_LINE(Image *dst, int x1, int y1, int x2, int y2, int width, Uint32 color);
+Image *CV_DRAW_RECT(Image *dst, int x, int y, int w, int h, int width, Uint32 color);
+Image *CV_DRAW_CIRCLE(Image *dst, int x, int y, int r, int width, Uint32 color);
+Image *CV_DRAW_DIGIT(Image *dst, int x, int y, int digit, int size, Uint32 color);
+
+int CV_FLOOR(float x);
+int CV_ROUND(float x);
+int CV_CEIL(float x);
+int CV_COMPUTE_NUMANGLE(int min_theta, int max_theta, int theta_step);
+
+int *CV_HOUGH_LINES(Image *src, int threshold, int *nlines);
+Image *CV_DRAW_HOUGH_LINES(Image *dst, int *lines, int nlines, int weight, Uint32 color);
