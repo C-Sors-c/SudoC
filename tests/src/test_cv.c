@@ -266,11 +266,14 @@ int test_cv_hough_lines()
 {
     Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", RGB);
     Image *gray = CV_RGB_TO_GRAY(image, NULL);
-    Image *blur = CV_GAUSSIAN_BLUR(gray, NULL, 9, 1);
-    Image *canny = CV_CANNY(gray, NULL, 0, 0.25);
+    Image *blur = CV_GAUSSIAN_BLUR(gray, NULL, 3, 1);
+    Image *sharp = CV_SHARPEN(blur, NULL, 3);
+    Image *otsu = CV_OTSU(sharp, NULL);
+    Image *canny = CV_CANNY(blur, NULL, 0.05, 0.1);
+    Image * or = CV_OR(otsu, canny, NULL);
 
     int n = 0;
-    int *lines = CV_HOUGH_LINES(canny, 450, 100, 10, &n);
+    int *lines = CV_HOUGH_LINES(or, 500, 100, 10, &n);
 
     CV_DRAW_HOUGH_LINES(image, lines, n, 1, CV_RGB(255, 0, 0));
     CV_SAVE(image, "tests/out/test_cv_hough_lines.png");
@@ -278,7 +281,11 @@ int test_cv_hough_lines()
     CV_IMAGE_FREE(image);
     CV_IMAGE_FREE(gray);
     CV_IMAGE_FREE(blur);
+    CV_IMAGE_FREE(sharp);
+    CV_IMAGE_FREE(otsu);
     CV_IMAGE_FREE(canny);
+    CV_IMAGE_FREE(or);
+
     FREE(lines);
 
     return assert(true, true, "test_cv_hough_lines");
