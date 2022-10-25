@@ -162,3 +162,6 @@ int CV_COMPUTE_NUMANGLE(int min_theta, int max_theta, int theta_step);
 
 int *CV_HOUGH_LINES(Image *src, int threshold, int *nlines);
 Image *CV_DRAW_HOUGH_LINES(Image *dst, int *lines, int nlines, int weight, Uint32 color);
+
+Image *CV_ROTATE(Image *src, Image *dst, float angle);
+Image *CV_RESIZE(Image *src, Image *dst, float scale);

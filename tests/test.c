@@ -28,7 +28,8 @@ int (*test_cv[])() = {
     test_cv_dilate,
     test_cv_hough_lines,
     test_cv_draw,
-
+    test_cv_rotate,
+    test_cv_resize,
 };
 
 // lists of all matrix tests

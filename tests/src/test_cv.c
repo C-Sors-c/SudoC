@@ -326,3 +326,27 @@ int test_cv_draw()
 
     return assert(true, true, "test_cv_draw");
 }
+
+int test_cv_rotate()
+{
+    Image *image = CV_LOAD("tests/samples/lena.png", RGB);
+    Image *rotated = CV_ROTATE(image, NULL, 45.0);
+
+    CV_SAVE(rotated, "tests/out/test_cv_rotate.png");
+
+    CV_IMAGE_FREE(image);
+    CV_IMAGE_FREE(rotated);
+    return assert(true, true, "test_cv_rotate");
+}
+
+int test_cv_resize()
+{
+    Image *image = CV_LOAD("tests/samples/lena.png", RGB);
+    Image *resized = CV_RESIZE(image, NULL, 0.5);
+
+    CV_SAVE(resized, "tests/out/test_cv_resize.png");
+
+    CV_IMAGE_FREE(image);
+    CV_IMAGE_FREE(resized);
+    return assert(true, true, "test_cv_resize");
+}
