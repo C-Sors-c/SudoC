@@ -1381,53 +1381,24 @@ int *CV_SIMPLIFY_HOUGH_LINES(int *lines, int nlines, int threshold, int *nsimpli
             }
         }
     }
-    // print simplified lines
-    // for (int i = 0; i < j; i++)
-    // {
-    //     printf("rho: %d, theta: %d\n", simplified[i * 2], simplified[i * 2 + 1]);
-    // }
 
-    // remove all lines that are not parallel or perpendicular to other lines
     int *simplified2 = (int *)malloc(sizeof(int) * j * 2);
     memset(simplified2, 0, sizeof(int) * j * 2);
 
     int k = 0;
     for (int i = 0; i < j; i++)
     {
-        int rho = simplified[i * 2];
         int theta = simplified[i * 2 + 1];
-
-        int found = 0;
-        for (int l = 0; l < j; l++)
+        if ((theta >= 0 && theta <= 10) || (theta >= 175 && theta <= 185) || (theta >= 85 && theta <= 95))
         {
-            if (i == l)
-                continue;
-
-            int rho2 = simplified[l * 2];
-            int theta2 = simplified[l * 2 + 1];
-
-            if (abs(theta - theta2) < 10 || abs(theta - theta2) > 170)
-            {
-                found = 1;
-                break;
-            }
-        }
-
-        if (!found)
-        {
-            simplified2[k * 2] = rho;
-            simplified2[k * 2 + 1] = theta;
+            simplified2[k * 2] = simplified[i * 2];
+            simplified2[k * 2 + 1] = simplified[i * 2 + 1];
             k++;
         }
     }
 
-    *nsimplified = k;
-    // print simplified lines
-    for (int i = 0; i < k; i++)
-    {
-        printf("rho: %d, theta: %d\n", simplified2[i * 2], simplified2[i * 2 + 1]);
-    }
     free(simplified);
+    *nsimplified = k;
     return simplified2;
 }
 
