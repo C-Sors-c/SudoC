@@ -311,6 +311,42 @@ int test_cv_hough_lines()
     return assert(true, true, "test_cv_hough_lines");
 }
 
+int test_cv_simplify_hough_lines()
+{
+    Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", RGB);
+    Image *gray = CV_RGB_TO_GRAY(image, NULL);
+    Image *blur = CV_GAUSSIAN_BLUR(gray, NULL, 3, 1);
+    Image *sharp = CV_SHARPEN(blur, NULL, 3);
+    Image *otsu = CV_OTSU(sharp, NULL);
+    Image *canny = CV_CANNY(blur, NULL, 0.05, 0.15);
+    Image * or = CV_OR(otsu, canny, NULL);
+    Image *zoom = CV_ZOOM(or, NULL, 1.01);
+    Image *img_copy = CV_ZOOM(image, NULL, 1.01);
+    int n = 0;
+    int n2 = 0;
+    int *lines = CV_HOUGH_LINES(or, 480, &n);
+    int *simplified = CV_SIMPLIFY_HOUGH_LINES(lines, n, 25, &n2);
+    CV_DRAW_HOUGH_LINES(img_copy, simplified, n2, 2, CV_RGB(255, 0, 0));
+    printf("n: %d\n", n);
+    printf("n2: %d\n", n2);
+    CV_SAVE(img_copy, "tests/out/test_cv_simplified_hough_lines.png");
+
+    CV_IMAGE_FREE(image);
+    CV_IMAGE_FREE(gray);
+    CV_IMAGE_FREE(blur);
+    CV_IMAGE_FREE(sharp);
+    CV_IMAGE_FREE(otsu);
+    CV_IMAGE_FREE(canny);
+    CV_IMAGE_FREE(or);
+    CV_IMAGE_FREE(zoom);
+    CV_IMAGE_FREE(img_copy);
+
+    FREE(lines);
+    FREE(simplified);
+
+    return assert(true, true, "test_cv_simplify_hough_lines");
+}
+
 int test_cv_draw()
 {
     Image *image = CV_ONES(3, 500, 500);
@@ -361,38 +397,4 @@ int test_cv_zoom()
     CV_IMAGE_FREE(image);
     CV_IMAGE_FREE(zoomed);
     return assert(true, true, "test_cv_zoom");
-}
-
-int test_cv_grid()
-{
-    Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", RGB);
-    Image *gray = CV_RGB_TO_GRAY(image, NULL);
-    Image *blur = CV_GAUSSIAN_BLUR(gray, NULL, 3, 1);
-    Image *sharp = CV_SHARPEN(blur, NULL, 3);
-    Image *otsu = CV_OTSU(sharp, NULL);
-    Image *canny = CV_CANNY(blur, NULL, 0.05, 0.15);
-    Image * or = CV_OR(otsu, canny, NULL);
-    Image *zoom = CV_ZOOM(or, NULL, 1.1);
-    int n = 0;
-
-    int *lines = CV_HOUGH_LINES(zoom, 480, &n);
-    printf("n: %d\n", n);
-    image = CV_ZOOM(image, NULL, 1.1);
-    // Image *image_copy = CV_IMAGE_COPY(image);
-    CV_DRAW_HOUGH_LINES(image, lines, n, 1, CV_RGB(255, 0, 0));
-    Image *grid = CV_GRID(image, NULL);
-
-    CV_SAVE(grid, "tests/out/test_cv_grid.png");
-
-    CV_IMAGE_FREE(image);
-    CV_IMAGE_FREE(gray);
-    CV_IMAGE_FREE(blur);
-    CV_IMAGE_FREE(sharp);
-    CV_IMAGE_FREE(otsu);
-    CV_IMAGE_FREE(canny);
-    CV_IMAGE_FREE(or);
-    CV_IMAGE_FREE(grid);
-
-    FREE(lines);
-    return assert(true, true, "test_cv_grid");
 }

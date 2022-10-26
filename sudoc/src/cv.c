@@ -1330,6 +1330,107 @@ int *CV_HOUGH_LINES(Image *src, int threshold, int *nlines)
     return lines;
 }
 
+int *CV_SIMPLIFY_HOUGH_LINES(int *lines, int nlines, int threshold, int *nsimplified)
+{
+    int *simplified = (int *)malloc(sizeof(int) * nlines * 2);
+    memset(simplified, 0, sizeof(int) * nlines * 2);
+
+    int j = 0;
+    for (int i = 0; i < nlines; i++)
+    {
+        int rho = lines[i * 2];
+        int theta = lines[i * 2 + 1];
+
+        int found = 0;
+        for (int k = 0; k < j; k++)
+        {
+            int rho2 = simplified[k * 2];
+            int theta2 = simplified[k * 2 + 1];
+
+            if (abs(rho - rho2) < threshold && abs(theta - theta2) < threshold)
+            {
+                found = 1;
+                break;
+            }
+        }
+
+        if (!found)
+        {
+            simplified[j * 2] = rho;
+            simplified[j * 2 + 1] = theta;
+            j++;
+        }
+    }
+
+    *nsimplified = j;
+
+    // sort lines by theta
+    for (int i = 0; i < j; i++)
+    {
+        for (int k = i + 1; k < j; k++)
+        {
+            if (simplified[i * 2 + 1] > simplified[k * 2 + 1])
+            {
+                int tmp = simplified[i * 2];
+                simplified[i * 2] = simplified[k * 2];
+                simplified[k * 2] = tmp;
+
+                tmp = simplified[i * 2 + 1];
+                simplified[i * 2 + 1] = simplified[k * 2 + 1];
+                simplified[k * 2 + 1] = tmp;
+            }
+        }
+    }
+    // print simplified lines
+    // for (int i = 0; i < j; i++)
+    // {
+    //     printf("rho: %d, theta: %d\n", simplified[i * 2], simplified[i * 2 + 1]);
+    // }
+
+    // remove all lines that are not parallel or perpendicular to other lines
+    int *simplified2 = (int *)malloc(sizeof(int) * j * 2);
+    memset(simplified2, 0, sizeof(int) * j * 2);
+
+    int k = 0;
+    for (int i = 0; i < j; i++)
+    {
+        int rho = simplified[i * 2];
+        int theta = simplified[i * 2 + 1];
+
+        int found = 0;
+        for (int l = 0; l < j; l++)
+        {
+            if (i == l)
+                continue;
+
+            int rho2 = simplified[l * 2];
+            int theta2 = simplified[l * 2 + 1];
+
+            if (abs(theta - theta2) < 10 || abs(theta - theta2) > 170)
+            {
+                found = 1;
+                break;
+            }
+        }
+
+        if (!found)
+        {
+            simplified2[k * 2] = rho;
+            simplified2[k * 2 + 1] = theta;
+            k++;
+        }
+    }
+
+    *nsimplified = k;
+    // print simplified lines
+    for (int i = 0; i < k; i++)
+    {
+        printf("rho: %d, theta: %d\n", simplified2[i * 2], simplified2[i * 2 + 1]);
+    }
+    free(simplified);
+    return simplified2;
+}
+
 Image *CV_DRAW_HOUGH_LINES(Image *dst, int *lines, int nlines, int weight, Uint32 color)
 {
     CV_CHECK_IMAGE(dst);
