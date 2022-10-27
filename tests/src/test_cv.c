@@ -313,36 +313,60 @@ int test_cv_hough_lines()
 
 int test_cv_simplify_hough_lines()
 {
+    float angle = 45;
+
     Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", RGB);
-    Image *gray = CV_RGB_TO_GRAY(image, NULL);
+    Image *z1 = CV_ZOOM(image, NULL, 0.6, 0xffffff);
+    Image *r1 = CV_ROTATE(z1, NULL, angle, 0xffffff);
+
+    Image *gray = CV_RGB_TO_GRAY(r1, NULL);
     Image *blur = CV_GAUSSIAN_BLUR(gray, NULL, 3, 1);
-    Image *sharp = CV_SHARPEN(blur, NULL, 3);
-    Image *otsu = CV_OTSU(sharp, NULL);
-    Image *canny = CV_CANNY(blur, NULL, 0.05, 0.15);
-    Image * or = CV_OR(otsu, canny, NULL);
-    Image *zoom = CV_ZOOM(or, NULL, 1.01);
-    Image *img_copy = CV_ZOOM(image, NULL, 1.01);
+    Image *canny = CV_CANNY(blur, NULL, 0.3, 0.4);
+
+    // pass 1
     int n = 0;
     int n2 = 0;
-    int *lines = CV_HOUGH_LINES(or, 480, &n);
-    int *simplified = CV_SIMPLIFY_HOUGH_LINES(lines, n, 25, &n2);
-    CV_DRAW_HOUGH_LINES(img_copy, simplified, n2, 2, CV_RGB(255, 0, 0));
+    int *lines = CV_HOUGH_LINES(canny, 300, &n);
+    int *simplified = CV_SIMPLIFY_HOUGH_LINES(lines, n, 30, &n2);
+    float orientation = CV_HOUGH_LINES_ORIENTATION(simplified, n2);
+    printf("orientation: %f\n", orientation);
     printf("n: %d\n", n);
     printf("n2: %d\n", n2);
-    CV_SAVE(img_copy, "tests/out/test_cv_simplified_hough_lines.png");
+
+    // pass 2
+    Image *copy = CV_IMAGE_COPY(image);
+    CV_ZOOM(copy, z1, 0.6, 0xffffff);
+    CV_ROTATE(z1, r1, angle, 0xffffff);
+    CV_ROTATE(r1, z1, -orientation, 0xffffff); // apply guessed orientation
+    Image *dst = CV_ZOOM(z1, NULL, 1.666666666667, 0xffffff);
+
+    CV_RGB_TO_GRAY(dst, gray);
+    CV_GAUSSIAN_BLUR(gray, blur, 5, 1);
+    Image *sharp = CV_SHARPEN(blur, NULL, 5);
+    Image *otsu = CV_OTSU(sharp, NULL);
+
+    int n3 = 0;
+    int n4 = 0;
+    int n5 = 0;
+    int *lines2 = CV_HOUGH_LINES(otsu, 400, &n3);
+    int *simplified2 = CV_SIMPLIFY_HOUGH_LINES(lines2, n3, 30, &n4);
+    int *clean_lines = CV_REMOVE_DIAGONALS(simplified2, n4, &n5);
+    CV_DRAW_HOUGH_LINES(dst, clean_lines, n5, 2, CV_RGB(255, 0, 0));
+
+    CV_SAVE(dst, "tests/out/test_cv_simplified_hough_lines.png");
 
     CV_IMAGE_FREE(image);
+    CV_IMAGE_FREE(z1);
+    CV_IMAGE_FREE(r1);
     CV_IMAGE_FREE(gray);
     CV_IMAGE_FREE(blur);
-    CV_IMAGE_FREE(sharp);
-    CV_IMAGE_FREE(otsu);
     CV_IMAGE_FREE(canny);
-    CV_IMAGE_FREE(or);
-    CV_IMAGE_FREE(zoom);
-    CV_IMAGE_FREE(img_copy);
+    CV_IMAGE_FREE(dst);
 
     FREE(lines);
     FREE(simplified);
+    FREE(lines2);
+    FREE(simplified2);
 
     return assert(true, true, "test_cv_simplify_hough_lines");
 }
@@ -366,7 +390,7 @@ int test_cv_draw()
 int test_cv_rotate()
 {
     Image *image = CV_LOAD("tests/samples/lena.png", RGB);
-    Image *rotated = CV_ROTATE(image, NULL, 45.0);
+    Image *rotated = CV_ROTATE(image, NULL, 45.0, 0x000000);
 
     CV_SAVE(rotated, "tests/out/test_cv_rotate.png");
 
@@ -390,7 +414,7 @@ int test_cv_resize()
 int test_cv_zoom()
 {
     Image *image = CV_LOAD("tests/samples/lena.png", RGB);
-    Image *zoomed = CV_ZOOM(image, NULL, 2.0);
+    Image *zoomed = CV_ZOOM(image, NULL, 2.0, 0x000000);
 
     CV_SAVE(zoomed, "tests/out/test_cv_zoom.png");
 

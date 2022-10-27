@@ -1273,8 +1273,6 @@ int *CV_HOUGH_LINES(Image *src, int threshold, int *nlines)
     memset(accumulator, 0, sizeof(int) * w * h * 180);
 
     int max = 0;
-    // int max_theta = 0;
-    // int max_rho = 0;
 
     for (int y = 0; y < h; y++)
     {
@@ -1295,8 +1293,6 @@ int *CV_HOUGH_LINES(Image *src, int threshold, int *nlines)
                 if (accumulator[rho * 180 + theta] > max)
                 {
                     max = accumulator[rho * 180 + theta];
-                    // max_theta = theta;
-                    // max_rho = rho;
                 }
             }
         }
@@ -1364,42 +1360,41 @@ int *CV_SIMPLIFY_HOUGH_LINES(int *lines, int nlines, int threshold, int *nsimpli
 
     *nsimplified = j;
 
-    // sort lines by theta
-    for (int i = 0; i < j; i++)
-    {
-        for (int k = i + 1; k < j; k++)
-        {
-            if (simplified[i * 2 + 1] > simplified[k * 2 + 1])
-            {
-                int tmp = simplified[i * 2];
-                simplified[i * 2] = simplified[k * 2];
-                simplified[k * 2] = tmp;
+    // print the simplified lines
+    // for (int i = 0; i < j; i++)
+    // {
+    //     int rho = simplified[i * 2];
+    //     int theta = simplified[i * 2 + 1];
+    //     printf("rho = %d, theta = %d\n", rho, theta);
+    // }
 
-                tmp = simplified[i * 2 + 1];
-                simplified[i * 2 + 1] = simplified[k * 2 + 1];
-                simplified[k * 2 + 1] = tmp;
-            }
+    return simplified;
+}
+
+int *CV_REMOVE_DIAGONALS(int *lines, int nlines, int *nsimplified)
+{
+    int *filtered = (int *)malloc(sizeof(int) * nlines * 2);
+    memset(filtered, 0, sizeof(int) * nlines * 2);
+
+    int j = 0;
+    for (int i = 0; i < nlines; i++)
+    {
+        int rho = lines[i * 2];
+        int theta = lines[i * 2 + 1];
+
+        if ((23 < theta && theta < 67) || (113 < theta && theta < 157))
+            continue;
+        else
+        {
+            filtered[j * 2] = rho;
+            filtered[j * 2 + 1] = theta;
+            j++;
         }
     }
 
-    int *simplified2 = (int *)malloc(sizeof(int) * j * 2);
-    memset(simplified2, 0, sizeof(int) * j * 2);
+    *nsimplified = j;
 
-    int k = 0;
-    for (int i = 0; i < j; i++)
-    {
-        int theta = simplified[i * 2 + 1];
-        if ((theta >= 0 && theta <= 10) || (theta >= 175 && theta <= 185) || (theta >= 85 && theta <= 95))
-        {
-            simplified2[k * 2] = simplified[i * 2];
-            simplified2[k * 2 + 1] = simplified[i * 2 + 1];
-            k++;
-        }
-    }
-
-    free(simplified);
-    *nsimplified = k;
-    return simplified2;
+    return filtered;
 }
 
 Image *CV_DRAW_HOUGH_LINES(Image *dst, int *lines, int nlines, int weight, Uint32 color)
@@ -1441,7 +1436,34 @@ Image *CV_DRAW_HOUGH_LINES(Image *dst, int *lines, int nlines, int weight, Uint3
     return dst;
 }
 
-Image *CV_ROTATE(Image *src, Image *dst, float angle)
+float CV_HOUGH_LINES_ORIENTATION(int *lines, int nlines)
+{
+    int *histo = (int *)malloc(sizeof(int) * 180);
+    memset(histo, 0, sizeof(int) * 180);
+
+    for (int i = 0; i < nlines; i++)
+    {
+        int theta = lines[i * 2 + 1];
+        histo[theta]++;
+    }
+
+    int max = 0;
+    int max_theta = 0;
+    for (int i = 0; i < 180; i++)
+    {
+        if (histo[i] > max)
+        {
+            max = histo[i];
+            max_theta = i;
+        }
+    }
+
+    free(histo);
+
+    return max_theta;
+}
+
+Image *CV_ROTATE(Image *src, Image *dst, float angle, Uint32 background)
 {
     CV_CHECK_IMAGE(src);
 
@@ -1478,7 +1500,8 @@ Image *CV_ROTATE(Image *src, Image *dst, float angle)
             {
                 for (int c = 0; c < src->c; c++)
                 {
-                    PIXEL(dst, c, y, x) = 0;
+                    int r = (background >> (16 - c * 8)) & 0xff;
+                    PIXEL(dst, c, y, x) = r / 255.0;
                 }
             }
         }
@@ -1521,7 +1544,7 @@ Image *CV_RESIZE(Image *src, Image *dst, float scale)
     return dst;
 }
 
-Image *CV_ZOOM(Image *src, Image *dst, float scale)
+Image *CV_ZOOM(Image *src, Image *dst, float scale, Uint32 background)
 {
     CV_CHECK_IMAGE(src);
 
@@ -1555,7 +1578,8 @@ Image *CV_ZOOM(Image *src, Image *dst, float scale)
             {
                 for (int c = 0; c < src->c; c++)
                 {
-                    PIXEL(dst, c, y, x) = 0;
+                    int r = (background >> (16 - c * 8)) & 0xff;
+                    PIXEL(dst, c, y, x) = r / 255.0;
                 }
             }
         }
