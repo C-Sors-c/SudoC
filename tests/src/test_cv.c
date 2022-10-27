@@ -313,15 +313,15 @@ int test_cv_hough_lines()
 
 int test_cv_simplify_hough_lines()
 {
-    float angle = 45;
+    float angle = 0;
 
-    Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", RGB);
+    Image *image = CV_LOAD("tests/samples/sudoku2.png", RGB);
     Image *z1 = CV_ZOOM(image, NULL, 0.6, 0xffffff);
     Image *r1 = CV_ROTATE(z1, NULL, angle, 0xffffff);
 
     Image *gray = CV_RGB_TO_GRAY(r1, NULL);
     Image *blur = CV_GAUSSIAN_BLUR(gray, NULL, 3, 1);
-    Image *canny = CV_CANNY(blur, NULL, 0.3, 0.4);
+    Image *canny = CV_CANNY(blur, NULL, 0.3, 0.5);
 
     // pass 1
     int n = 0;
@@ -341,15 +341,15 @@ int test_cv_simplify_hough_lines()
     Image *dst = CV_ZOOM(z1, NULL, 1.666666666667, 0xffffff);
 
     CV_RGB_TO_GRAY(dst, gray);
-    CV_GAUSSIAN_BLUR(gray, blur, 5, 1);
+    CV_GAUSSIAN_BLUR(gray, blur, 9, 1);
     Image *sharp = CV_SHARPEN(blur, NULL, 5);
     Image *otsu = CV_OTSU(sharp, NULL);
 
     int n3 = 0;
     int n4 = 0;
     int n5 = 0;
-    int *lines2 = CV_HOUGH_LINES(otsu, 400, &n3);
-    int *simplified2 = CV_SIMPLIFY_HOUGH_LINES(lines2, n3, 30, &n4);
+    int *lines2 = CV_HOUGH_LINES(otsu, 300, &n3);
+    int *simplified2 = CV_SIMPLIFY_HOUGH_LINES(lines2, n3, 33, &n4);
     int *clean_lines = CV_REMOVE_DIAGONALS(simplified2, n4, &n5);
     CV_DRAW_HOUGH_LINES(dst, clean_lines, n5, 2, CV_RGB(255, 0, 0));
 
