@@ -198,7 +198,6 @@ void nn_save(NN *neural_network, const char *basename)
     // create the directory
     mkdir(basename, 0777);
 
-
     for (int i = 0; i < neural_network->num_fc_layers; i++)
     {
         char filename[256];
@@ -218,7 +217,5 @@ bool nn_load(NN *neural_network, const char *basename)
     }
     return true;
 }
-
-
 
 #pragma endregion load_save
