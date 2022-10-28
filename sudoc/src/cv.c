@@ -551,9 +551,9 @@ Matrix *CV_GET_SHARPEN_KERNEL(float sigma)
         for (int j = 0; j < 3; j++)
         {
             if (i == 1 && j == 1)
-                MATRIX(kernel, i, j) = 4 * sigma;
+                MATRIX(kernel, i, j) = 4.0 * sigma;
             else if (i == 1 || j == 1)
-                MATRIX(kernel, i, j) = -1 * sigma;
+                MATRIX(kernel, i, j) = -1.0 * sigma;
             else
                 MATRIX(kernel, i, j) = 0;
         }
@@ -865,7 +865,7 @@ float CV_THRESHOLD(Image *src)
         }
     }
 
-    return threshold;
+    return threshold / 255.0;
 }
 
 Image *CV_OTSU(Image *src, Image *dst)
@@ -883,13 +883,64 @@ Image *CV_OTSU(Image *src, Image *dst)
     {
         for (int w = 0; w < src->w; w++)
         {
-            float p = PIXEL(src, 0, h, w) * 255.0;
+            float p = PIXEL(src, 0, h, w);
             if (p > threshold)
-                PIXEL(dst, 0, h, w) = 0;
-            else
                 PIXEL(dst, 0, h, w) = 1;
+            else
+                PIXEL(dst, 0, h, w) = 0;
         }
     }
+
+    return dst;
+}
+
+Image *CV_ADAPTIVE_THRESHOLD(Image *src, Image *dst, int block_size, float otsu_weight, float c)
+{
+    CV_CHECK_IMAGE(src);
+    CV_CHECK_CHANNEL(src, 1);
+
+    if (dst == NULL)
+        dst = CV_IMAGE_COPY(src);
+    CV_CHECK_IMAGE(dst);
+
+    if (block_size % 2 == 0)
+        block_size++;
+
+    if (otsu_weight < 0)
+        otsu_weight = 0;
+    else if (otsu_weight > 1)
+        otsu_weight = 1;
+
+    float otsu = CV_THRESHOLD(src);
+
+    float gaussian_weight = 1.0 - otsu_weight;
+
+    Matrix *kernel = CV_GET_GAUSSIAN_KERNEL(block_size, 1);
+
+    Image *mean = CV_APPLY_FILTER(src, NULL, kernel);
+    Image *var = CV_APPLY_FILTER(src, NULL, kernel);
+
+    for (int h = 0; h < src->h; h++)
+    {
+        for (int w = 0; w < src->w; w++)
+        {
+            float p = PIXEL(src, 0, h, w);
+            float m = PIXEL(mean, 0, h, w);
+            float v = PIXEL(var, 0, h, w);
+
+            float local_threshold = otsu_weight * otsu + gaussian_weight * (m - c * sqrt(v));
+            float threshold = (local_threshold * gaussian_weight) + (otsu * otsu_weight);
+
+            if (p > threshold)
+                PIXEL(dst, 0, h, w) = 1;
+            else
+                PIXEL(dst, 0, h, w) = 0;
+        }
+    }
+
+    matrix_destroy(kernel);
+    CV_IMAGE_FREE(mean);
+    CV_IMAGE_FREE(var);
 
     return dst;
 }
@@ -1009,38 +1060,76 @@ Image *CV_NOT(Image *src, Image *dst)
     return dst;
 }
 
-Image *CV_DILATE(Image *src, Image *dst, int kernel_size)
+Image *CV_DILATION(Image *src, Image *dst, int k)
 {
     CV_CHECK_IMAGE(src);
+    CV_CHECK_CHANNEL(src, 1);
 
     if (dst == NULL)
         dst = CV_IMAGE_COPY(src);
     CV_CHECK_IMAGE(dst);
 
-    int k = kernel_size / 2;
+    int r = k / 2;
 
-    for (int c = 0; c < src->c; c++)
+    for (int h = 0; h < src->h; h++)
     {
-        for (int i = 0; i < src->h; i++)
+        for (int w = 0; w < src->w; w++)
         {
-            for (int j = 0; j < src->w; j++)
+            float max = 0;
+
+            for (int i = -r; i <= r; i++)
             {
-                float p = PIXEL(src, c, i, j);
-
-                if (p == 1)
+                for (int j = -r; j <= r; j++)
                 {
-                    for (int m = -k; m <= k; m++)
-                    {
-                        for (int n = -k; n <= k; n++)
-                        {
-                            if (i + m < 0 || i + m >= src->h || j + n < 0 || j + n >= src->w)
-                                continue;
+                    if (h + i < 0 || h + i >= src->h || w + j < 0 || w + j >= src->w)
+                        continue;
 
-                            PIXEL(dst, c, i + m, j + n) = 1;
-                        }
-                    }
+                    float p = PIXEL(src, 0, h + i, w + j);
+
+                    if (p > max)
+                        max = p;
                 }
             }
+
+            PIXEL(dst, 0, h, w) = max;
+        }
+    }
+
+    return dst;
+}
+
+Image *CV_EROSION(Image *src, Image *dst, int k)
+{
+    CV_CHECK_IMAGE(src);
+    CV_CHECK_CHANNEL(src, 1);
+
+    if (dst == NULL)
+        dst = CV_IMAGE_COPY(src);
+    CV_CHECK_IMAGE(dst);
+
+    int r = k / 2;
+
+    for (int h = 0; h < src->h; h++)
+    {
+        for (int w = 0; w < src->w; w++)
+        {
+            float min = 1;
+
+            for (int i = -r; i <= r; i++)
+            {
+                for (int j = -r; j <= r; j++)
+                {
+                    if (h + i < 0 || h + i >= src->h || w + j < 0 || w + j >= src->w)
+                        continue;
+
+                    float p = PIXEL(src, 0, h + i, w + j);
+
+                    if (p < min)
+                        min = p;
+                }
+            }
+
+            PIXEL(dst, 0, h, w) = min;
         }
     }
 

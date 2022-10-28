@@ -23,3 +23,4 @@ int test_cv_draw();
 int test_cv_rotate();
 int test_cv_resize();
 int test_cv_zoom();
+int test_cv_adaptive_threshold();

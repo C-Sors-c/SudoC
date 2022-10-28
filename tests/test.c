@@ -27,11 +27,12 @@ int (*test_cv[])() = {
     // test_cv_otsu,
     // test_cv_dilate,
     // test_cv_hough_lines,
-    test_cv_simplify_hough_lines,
+    // test_cv_simplify_hough_lines,
     // test_cv_draw,
     // test_cv_rotate,
     // test_cv_resize,
     // test_cv_zoom,
+    test_cv_adaptive_threshold,
 };
 
 // lists of all matrix tests

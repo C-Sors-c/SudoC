@@ -139,6 +139,7 @@ Image *CV_NON_MAX_SUPPRESSION(Image *src, Image *dst, Image *dst_x, Image *dst_y
 Image *CV_HYSTERESIS_THRESHOLDING(Image *src, Image *dst, float low, float high);
 Image *CV_CANNY(Image *src, Image *dst, float low, float high);
 
+Image *CV_ADAPTIVE_THRESHOLD(Image *src, Image *dst, int block_size, float otsu_weight, float c);
 float CV_THRESHOLD(Image *src);
 Image *CV_OTSU(Image *src, Image *dst);
 Image *CV_OR(Image *src1, Image *src2, Image *dst);
@@ -146,7 +147,8 @@ Image *CV_AND(Image *src1, Image *src2, Image *dst);
 Image *CV_XOR(Image *src1, Image *src2, Image *dst);
 Image *CV_NOT(Image *src, Image *dst);
 
-Image *CV_DILATE(Image *src, Image *dst, int kernel_size);
+Image *CV_DILATION(Image *src, Image *dst, int kernel_size);
+Image *CV_EROSION(Image *src, Image *dst, int kernel_size);
 
 Uint32 CV_RGB(Uint8 r, Uint8 g, Uint8 b);
 Image *CV_DRAW_POINT(Image *dst, int x, int y, int width, Uint32 color);

@@ -264,17 +264,17 @@ int test_cv_otsu()
 
 int test_cv_dilate()
 {
-    Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", GRAYSCALE);
-    Image *blur = CV_GAUSSIAN_BLUR(image, NULL, 5, 0);
-    Image *canny = CV_CANNY(blur, NULL, 0.05, 0.1);
-    Image *dilation = CV_DILATE(canny, NULL, 3);
+    // Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", GRAYSCALE);
+    // Image *blur = CV_GAUSSIAN_BLUR(image, NULL, 5, 0);
+    // Image *canny = CV_CANNY(blur, NULL, 0.05, 0.1);
+    // Image *dilation = CV_DILATION(canny, NULL, 3);
 
-    CV_SAVE(dilation, "tests/out/test_cv_dilation.png");
+    // CV_SAVE(dilation, "tests/out/test_cv_dilation.png");
 
-    CV_IMAGE_FREE(image);
-    CV_IMAGE_FREE(blur);
-    CV_IMAGE_FREE(canny);
-    CV_IMAGE_FREE(dilation);
+    // CV_IMAGE_FREE(image);
+    // CV_IMAGE_FREE(blur);
+    // CV_IMAGE_FREE(canny);
+    // CV_IMAGE_FREE(dilation);
     return assert(true, true, "test_cv_dilation");
 }
 
@@ -421,4 +421,37 @@ int test_cv_zoom()
     CV_IMAGE_FREE(image);
     CV_IMAGE_FREE(zoomed);
     return assert(true, true, "test_cv_zoom");
+}
+
+int test_cv_adaptive_threshold()
+{
+    char *img1 = "tests/samples/sudoku1.jpeg";
+    char *img2 = "tests/samples/sudoku2.png";
+    char *img3 = "tests/samples/sudoku.png";
+    char *img4 = "tests/samples/sudoku1.png";
+
+    Image *image = CV_LOAD(img4, RGB);
+    Image *gray = CV_RGB_TO_GRAY(image, NULL);
+
+    int k = 5;
+    Image *blur = CV_GAUSSIAN_BLUR(gray, NULL, k, 1);
+    Image *sharp = CV_SHARPEN(blur, NULL, k * 2);
+    Image *threshold = CV_ADAPTIVE_THRESHOLD(sharp, NULL, k, 0.5, 0.5);
+
+    Image *not = CV_NOT(threshold, NULL);
+    Image *dilated = CV_DILATION(not, NULL, 3);
+    Image *eroded = CV_EROSION(dilated, NULL, 3);
+
+    CV_SAVE(eroded, "tests/out/test_cv_adaptive_threshold.png");
+
+    CV_IMAGE_FREE(image);
+    CV_IMAGE_FREE(gray);
+    CV_IMAGE_FREE(blur);
+    CV_IMAGE_FREE(sharp);
+    CV_IMAGE_FREE(threshold);
+    CV_IMAGE_FREE(not );
+    CV_IMAGE_FREE(dilated);
+    CV_IMAGE_FREE(eroded);
+
+    return assert(true, true, "test_cv_adaptive_threshold");
 }
