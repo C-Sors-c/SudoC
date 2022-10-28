@@ -280,20 +280,24 @@ int test_cv_dilate()
 
 int test_cv_hough_lines()
 {
-    Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", RGB);
+    Image *image = CV_LOAD("tests/samples/hough.png", RGB);
     Image *gray = CV_RGB_TO_GRAY(image, NULL);
     Image *blur = CV_GAUSSIAN_BLUR(gray, NULL, 3, 1);
     Image *sharp = CV_SHARPEN(blur, NULL, 3);
     Image *otsu = CV_OTSU(sharp, NULL);
     Image *canny = CV_CANNY(blur, NULL, 0.05, 0.15);
-    Image * or = CV_OR(otsu, canny, NULL);
-    // Image *dilation = CV_DILATE(otsu, NULL, 3);
-    // Image *erosion = CV_ERODE(dilation, NULL, 5);
+
+    Image *not = CV_NOT(otsu, NULL);
+    Image * or = CV_OR(not, canny, NULL);
 
     int n = 0;
-    int *lines = CV_HOUGH_LINES(or, 480, &n);
+    int *lines = CV_HOUGH_LINES(or, 100, &n);
 
-    CV_DRAW_HOUGH_LINES(image, lines, n, 1, CV_RGB(255, 0, 0));
+    int n2;
+    int *simplified = CV_SIMPLIFY_HOUGH_LINES(lines, n, 50, &n2);
+
+    CV_DRAW_HOUGH_LINES(image, simplified, n2, 1, CV_RGB(255, 0, 0));
+
     CV_SAVE(image, "tests/out/test_cv_hough_lines.png");
 
     CV_IMAGE_FREE(image);
@@ -303,10 +307,12 @@ int test_cv_hough_lines()
     CV_IMAGE_FREE(otsu);
     CV_IMAGE_FREE(canny);
     CV_IMAGE_FREE(or);
+    CV_IMAGE_FREE(not );
     // CV_IMAGE_FREE(dilation);
     // CV_IMAGE_FREE(erosion);
 
     FREE(lines);
+    FREE(simplified);
 
     return assert(true, true, "test_cv_hough_lines");
 }

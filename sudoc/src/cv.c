@@ -1369,8 +1369,8 @@ int *CV_HOUGH_LINES(Image *src, int threshold, int *nlines)
     int w = src->w;
     int h = src->h;
 
-    int *accumulator = (int *)malloc(sizeof(int) * w * h * 180);
-    memset(accumulator, 0, sizeof(int) * w * h * 180);
+    int *accumulator = (int *)malloc(sizeof(int) * w * h * 360);
+    memset(accumulator, 0, sizeof(int) * w * h * 360);
 
     int max = 0;
 
@@ -1381,7 +1381,7 @@ int *CV_HOUGH_LINES(Image *src, int threshold, int *nlines)
             if (PIXEL(src, 0, y, x) == 0)
                 continue;
 
-            for (int theta = 0; theta < 180; theta++)
+            for (int theta = 0; theta < 360; theta++)
             {
                 float tf = (float)theta * PI / 180.0;       // theta in radian
                 int rho = (int)(x * cos(tf) + y * sin(tf)); // rho in pixel
@@ -1394,13 +1394,18 @@ int *CV_HOUGH_LINES(Image *src, int threshold, int *nlines)
                 {
                     max = accumulator[rho * 180 + theta];
                 }
+
+                if (accumulator[rho * 180 + theta] > 200)
+                {
+                    accumulator[rho * 180 + theta] = -1;
+                }
             }
         }
     }
 
     // we count the number of lines to allocate the memory
     int nb_lines = 0;
-    for (int i = 0; i < w * h * 180; i++)
+    for (int i = 0; i < w * h * 360; i++)
         if (accumulator[i] >= threshold)
             nb_lines++;
 
@@ -1410,7 +1415,7 @@ int *CV_HOUGH_LINES(Image *src, int threshold, int *nlines)
 
     // we fill the lines array
     int j = 0;
-    for (int i = 0; i < w * h * 180; i++)
+    for (int i = 0; i < w * h * 360; i++)
     {
         if (accumulator[i] >= threshold)
         {
