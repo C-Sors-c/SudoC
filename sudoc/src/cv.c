@@ -1555,6 +1555,14 @@ float CV_HOUGH_LINES_ORIENTATION(int *lines, int nlines)
     return max_theta;
 }
 
+// return coords oh the largest blob using flood fill
+int *CV_FIND_LARGEST_CONTOUR(Image *src, int *nrects)
+{
+    *nrects = 0;
+
+    return NULL;
+}
+
 int *CV_GRID_INTERSECTION(Image *src, int *lines, int nlines, int *nintersection)
 {
     CV_CHECK_IMAGE(src);

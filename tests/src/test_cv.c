@@ -507,6 +507,18 @@ int test_cv_save_boxes()
 
     Image *processed = CV_IMAGE_COPY(eroded);
 
+    int nn = 0;
+    int *coords = CV_FIND_LARGEST_CONTOUR(processed, &nn);
+
+    printf("coords: %d\n", nn);
+
+    for (int i = 0; i < nn / 2; i++)
+    {
+        printf("i: %d, x: %d, y: %d\n", i, coords[i * 2], coords[i * 2 + 1]);
+
+        // CV_DRAW_RECT(copy, x, y, w, h, 2, CV_RGB(0, 0, 255));
+    }
+
     int n = 0, n2 = 0, n3 = 0, n4 = 0, n5 = 0;
 
     int *lines = CV_HOUGH_LINES(processed, 200, &n);
@@ -541,7 +553,7 @@ int test_cv_save_boxes()
         int rw = x2 - x1;
         int rh = y2 - y1;
 
-        CV_DRAW_RECT(image, x1, y1, rw, rh, 1, CV_RGB(255, 0, 0));
+        // CV_DRAW_RECT(image, x1, y1, rw, rh, 1, CV_RGB(255, 0, 0));
     }
 
     CV_SAVE(image, "tests/out/test_cv_save_boxes.png");

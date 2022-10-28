@@ -166,6 +166,9 @@ int *CV_HOUGH_LINES(Image *src, int threshold, int *nlines);
 int *CV_SIMPLIFY_HOUGH_LINES(int *lines, int nlines, int threshold, int *nsimplified);
 Image *CV_DRAW_HOUGH_LINES(Image *dst, int *lines, int nlines, int weight, Uint32 color);
 float CV_HOUGH_LINES_ORIENTATION(int *lines, int nlines);
+
+int *CV_FIND_LARGEST_CONTOUR(Image *src, int *nrects);
+
 int *CV_REMOVE_DIAGONALS(int *lines, int nlines, int *nsimplified);
 int *CV_GRID_INTERSECTION(Image *src, int *lines, int nlines, int *nintersection);
 int *CV_SORT_INTERSECTIONS(int *intersections, int nintersections);
