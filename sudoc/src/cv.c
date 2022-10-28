@@ -62,6 +62,27 @@ Image *CV_IMAGE_COPY(Image *image)
     return copy;
 }
 
+Image *CV_IMAGE_COPY_PART(Image *image, int xstart, int ystart, int xend, int yend)
+{
+    CV_CHECK_IMAGE(image);
+    Image *copy = CV_IMAGE_INIT(image->c, yend - ystart, xend - xstart);
+
+    for (int c = 0; c < image->c; c++)
+    {
+        for (int i = ystart; i < yend; i++)
+        {
+            for (int j = xstart; j < xend; j++)
+            {
+                int index = c * image->h * image->w + i * image->w + j;
+                int index_copy = c * copy->h * copy->w + (i - ystart) * copy->w + (j - xstart);
+                copy->data[index_copy] = image->data[index];
+            }
+        }
+    }
+
+    return copy;
+}
+
 void CV_IMAGE_SHOW(Image *image, char *title)
 {
     CV_CHECK_IMAGE(image);
@@ -868,6 +889,44 @@ float CV_THRESHOLD(Image *src)
     return threshold;
 }
 
+Image *CV_ADAPTIVE_THRESHOLD(Image *src, Image *dst, int block_size, float c)
+{
+    CV_CHECK_IMAGE(src);
+    CV_CHECK_CHANNEL(src, 1);
+
+    if (dst == NULL)
+        dst = CV_IMAGE_COPY(src);
+    CV_CHECK_IMAGE(dst);
+
+    Matrix *kernel = CV_GET_GAUSSIAN_KERNEL(block_size, 1.0);
+
+    Image *mean = CV_APPLY_FILTER(src, NULL, kernel);
+    Image *var = CV_APPLY_FILTER(src, NULL, kernel);
+
+    for (int h = 0; h < src->h; h++)
+    {
+        for (int w = 0; w < src->w; w++)
+        {
+            float p = PIXEL(src, 0, h, w);
+            float m = PIXEL(mean, 0, h, w);
+            float v = PIXEL(var, 0, h, w);
+
+            float threshold = m + c * sqrt(v - m * m);
+
+            if (p > threshold)
+                PIXEL(dst, 0, h, w) = 0;
+            else
+                PIXEL(dst, 0, h, w) = 1;
+        }
+    }
+
+    matrix_destroy(kernel);
+    CV_IMAGE_FREE(mean);
+    CV_IMAGE_FREE(var);
+
+    return dst;
+}
+
 Image *CV_OTSU(Image *src, Image *dst)
 {
     CV_CHECK_IMAGE(src);
@@ -1250,17 +1309,6 @@ int CV_CEIL(float x)
         return (int)x + 1;
 }
 
-int CV_COMPUTE_NUMANGLE(int min_theta, int max_theta, int theta_step)
-{
-    int numangle = CV_FLOOR((max_theta - min_theta) / theta_step) + 1;
-    // If the distance between the first angle and the last angle is
-    // approximately equal to pi, then the last angle will be removed
-    // in order to prevent a line to be detected twice.
-    if (numangle > 1 && fabs(PI - (numangle - 1) * theta_step) < theta_step / 2)
-        --numangle;
-    return numangle;
-}
-
 int *CV_HOUGH_LINES(Image *src, int threshold, int *nlines)
 {
     CV_CHECK_IMAGE(src);
@@ -1360,14 +1408,6 @@ int *CV_SIMPLIFY_HOUGH_LINES(int *lines, int nlines, int threshold, int *nsimpli
 
     *nsimplified = j;
 
-    // print the simplified lines
-    // for (int i = 0; i < j; i++)
-    // {
-    //     int rho = simplified[i * 2];
-    //     int theta = simplified[i * 2 + 1];
-    //     printf("rho = %d, theta = %d\n", rho, theta);
-    // }
-
     return simplified;
 }
 
@@ -1461,6 +1501,116 @@ float CV_HOUGH_LINES_ORIENTATION(int *lines, int nlines)
     free(histo);
 
     return max_theta;
+}
+
+int *CV_GRID_INTERSECTION(Image *src, int *lines, int nlines, int *nintersection)
+{
+    CV_CHECK_IMAGE(src);
+
+    int w = src->w;
+    int h = src->h;
+
+    int *intersection = (int *)malloc(sizeof(int) * nlines * nlines * 2);
+    memset(intersection, 0, sizeof(int) * nlines * nlines * 2);
+
+    int j = 0;
+    for (int i = 0; i < nlines; i++)
+    {
+        int rho1 = lines[i * 2];
+        int theta1 = lines[i * 2 + 1];
+
+        for (int k = i + 1; k < nlines; k++)
+        {
+            int rho2 = lines[k * 2];
+            int theta2 = lines[k * 2 + 1];
+
+            float a = cos(theta1 * PI / 180.0);
+            float b = sin(theta1 * PI / 180.0);
+            float c = cos(theta2 * PI / 180.0);
+            float d = sin(theta2 * PI / 180.0);
+
+            float det = a * d - b * c;
+            if (det == 0)
+                continue;
+
+            float x = (d * rho1 - b * rho2) / det;
+            float y = (-c * rho1 + a * rho2) / det;
+
+            if (x < 0 || x > w || y < 0 || y > h)
+                continue;
+
+            intersection[j * 2] = (int)x;
+            intersection[j * 2 + 1] = (int)y;
+            j++;
+        }
+    }
+
+    *nintersection = j;
+
+    return intersection;
+}
+// sort intersections by x value
+int *CV_SORT_INTERSECTIONS(int *intersections, int nintersections)
+{
+    int *sorted = (int *)malloc(sizeof(int) * nintersections * 2);
+    memset(sorted, 0, sizeof(int) * nintersections * 2);
+
+    for (int i = 0; i < nintersections; i++)
+    {
+        int x = intersections[i * 2];
+        int y = intersections[i * 2 + 1];
+
+        int j = 0;
+        for (j = 0; j < i; j++)
+        {
+            int x2 = sorted[j * 2];
+            int y2 = sorted[j * 2 + 1];
+
+            if (y < y2)
+                break;
+        }
+
+        for (int k = i; k > j; k--)
+        {
+            sorted[k * 2] = sorted[(k - 1) * 2];
+            sorted[k * 2 + 1] = sorted[(k - 1) * 2 + 1];
+        }
+
+        sorted[j * 2] = x;
+        sorted[j * 2 + 1] = y;
+    }
+
+    return sorted;
+}
+
+int *CV_GRID_BOXES(int *intersections, int nintersections, int *nboxes)
+{
+    int *boxes = (int *)malloc(sizeof(int) * nintersections * 4);
+    memset(boxes, 0, sizeof(int) * nintersections * 4);
+
+    int snbi = sqrt(nintersections);
+
+    int j = 0;
+    for (int i = 0; i < nintersections - snbi; i++)
+    {
+        if ((i + 1) % snbi == 0)
+            continue;
+
+        int x1 = intersections[i * 2];
+        int y1 = intersections[i * 2 + 1];
+        int x4 = intersections[i * 2 + snbi * 2 + 2];
+        int y4 = intersections[i * 2 + snbi * 2 + 3];
+
+        boxes[j * 4] = x1;
+        boxes[j * 4 + 1] = y1;
+        boxes[j * 4 + 2] = x4;
+        boxes[j * 4 + 3] = y4;
+        j++;
+    }
+
+    *nboxes = j;
+
+    return boxes;
 }
 
 Image *CV_ROTATE(Image *src, Image *dst, float angle, Uint32 background)
@@ -1587,28 +1737,6 @@ Image *CV_ZOOM(Image *src, Image *dst, float scale, Uint32 background)
     return dst;
 }
 
-Image *CV_GRID(Image *src, Image *dst)
-{
-    CV_CHECK_IMAGE(src);
-
-    if (dst == NULL)
-    {
-        dst = CV_IMAGE_COPY(src);
-    }
-
-    int w = src->w;
-    int h = src->h;
-
-    int x1 = (int)(w * 0.15);
-    int y1 = (int)(h * 0.15);
-    int x2 = (int)(w * 0.85);
-    int y2 = (int)(h * 0.85);
-    int rect_w = x2 - x1;
-    int rect_h = y2 - y1;
-
-    CV_DRAW_RECT(dst, x1, y1, rect_w, rect_h, 3, CV_RGB(0, 0, 255));
-
-    return dst;
-}
+// given a list of intersections points, extract the bouding boxes of the grid and return the list of corners
 
 #pragma endregion Transform

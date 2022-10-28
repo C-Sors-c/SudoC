@@ -11,6 +11,7 @@ EXEC_SOLVER := solver
 
 BUILD_DIR := build
 TEST_DATA_DIR := ./tests/out
+TEST_BOX_DIR := ./tests/out/box
 
 SRC :=	${wildcard ./sudoc/src/*.c} ./sudoc/main.c
 
@@ -47,11 +48,13 @@ run: build clean-sudoc
 
 test: build-test
 	@mkdir -p ${TEST_DATA_DIR}
+	@mkdir -p ${TEST_BOX_DIR}
 	@./${BUILD_DIR}/${EXEC_TEST}
 
 # test with valgrind
 tv: build-test
 	@mkdir -p ${TEST_DATA_DIR}
+	@mkdir -p ${TEST_BOX_DIR}
 	@valgrind --leak-check=full --show-leak-kinds=all ./${BUILD_DIR}/${EXEC_TEST}
 
 # CLEAN
