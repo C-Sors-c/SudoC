@@ -1555,12 +1555,197 @@ float CV_HOUGH_LINES_ORIENTATION(int *lines, int nlines)
     return max_theta;
 }
 
-// return coords oh the largest blob using flood fill
 int *CV_FIND_LARGEST_CONTOUR(Image *src, int *nrects)
 {
-    *nrects = 0;
+    CV_CHECK_IMAGE(src);
+    CV_CHECK_CHANNEL(src, 1);
 
-    return NULL;
+    Image *p = CV_IMAGE_COPY(src);
+
+    int w = p->w;
+    int h = p->h;
+
+    int *contours = (int *)malloc(sizeof(int) * w * h * 2);
+    memset(contours, 0, sizeof(int) * w * h * 2);
+
+    int *visited = (int *)malloc(sizeof(int) * w * h * 2);
+    memset(visited, 0, sizeof(int) * w * h * 2);
+
+    int *max_contours;
+
+    int ncontours = 0;
+    int max_contour = 0;
+
+    int min_x = 0;
+    int min_y = 0;
+    int max_x = 0;
+    int max_y = 0;
+
+    int P1_x, P1_y, P2_x, P2_y, P3_x, P3_y, P4_x, P4_y = 0;
+
+    int max_area = 0;
+
+    for (int y = 0; y < h; y++)
+    {
+        for (int x = 0; x < w; x++)
+        {
+            if (PIXEL(p, 0, y, x) == 0)
+                continue;
+
+            if (visited[y * w + x])
+                continue;
+
+            int *stack = (int *)malloc(sizeof(int) * w * h * 2);
+            memset(stack, 0, sizeof(int) * w * h * 2);
+
+            int nstack = 0;
+
+            stack[nstack * 2] = x;
+            stack[nstack * 2 + 1] = y;
+            nstack++;
+
+            int xmin = x;
+            int xmax = x;
+            int ymin = y;
+            int ymax = y;
+
+            while (nstack > 0)
+            {
+                int x = stack[(nstack - 1) * 2];
+                int y = stack[(nstack - 1) * 2 + 1];
+                nstack--;
+
+                if (visited[y * w + x])
+                    continue;
+
+                visited[y * w + x] = 1;
+
+                contours[ncontours * 2] = x;
+                contours[ncontours * 2 + 1] = y;
+                ncontours++;
+
+                if (x < xmin)
+                    xmin = x;
+                if (x > xmax)
+                    xmax = x;
+                if (y < ymin)
+                    ymin = y;
+                if (y > ymax)
+                    ymax = y;
+
+                if (x > 0 && PIXEL(p, 0, y, x - 1) == 1 && !visited[y * w + x - 1])
+                {
+                    stack[nstack * 2] = x - 1;
+                    stack[nstack * 2 + 1] = y;
+                    nstack++;
+                }
+
+                if (x < w - 1 && PIXEL(p, 0, y, x + 1) == 1 && !visited[y * w + x + 1])
+                {
+                    stack[nstack * 2] = x + 1;
+                    stack[nstack * 2 + 1] = y;
+                    nstack++;
+                }
+
+                if (y > 0 && PIXEL(p, 0, y - 1, x) == 1 && !visited[(y - 1) * w + x])
+                {
+                    stack[nstack * 2] = x;
+                    stack[nstack * 2 + 1] = y - 1;
+                    nstack++;
+                }
+
+                if (y < h - 1 && PIXEL(p, 0, y + 1, x) == 1 && !visited[(y + 1) * w + x])
+                {
+                    stack[nstack * 2] = x;
+                    stack[nstack * 2 + 1] = y + 1;
+                    nstack++;
+                }
+            }
+
+            free(stack);
+
+            int p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, p4_x, p4_y = 0;
+
+            for (int i = 0; i < ncontours; i++)
+            {
+                int x = contours[i * 2];
+                int y = contours[i * 2 + 1];
+
+                // P1
+                if (x == xmin)
+                {
+                    p1_x = x;
+                    p1_y = y;
+                }
+
+                // P2
+                else if (y == ymin)
+                {
+                    p2_x = x;
+                    p2_y = y;
+                }
+
+                // P3
+                else if (x == xmax)
+                {
+                    p3_x = x;
+                    p3_y = y;
+                }
+
+                // P4
+                else if (y == ymax)
+                {
+                    p4_x = x;
+                    p4_y = y;
+                }
+            }
+
+            // compute area from unsorted points
+            int area = abs((p1_x * (p2_y - p3_y) + p2_x * (p3_y - p1_y) + p3_x * (p1_y - p2_y)) / 2);
+
+            if (ncontours > max_contour)
+            {
+                max_contour = ncontours;
+                max_area = area;
+
+                min_x = xmin;
+                min_y = ymin;
+                max_x = xmax;
+                max_y = ymax;
+
+                P1_x = p1_x;
+                P1_y = p1_y;
+                P2_x = p2_x;
+                P2_y = p2_y;
+                P3_x = p3_x;
+                P3_y = p3_y;
+                P4_x = p4_x;
+                P4_y = p4_y;
+
+                max_contours = (int *)malloc(sizeof(int) * max_contour * 2);
+                memcpy(max_contours, contours, sizeof(int) * max_contour * 2);
+            }
+
+            ncontours = 0;
+        }
+    }
+
+    free(visited);
+    free(contours);
+
+    CV_IMAGE_FREE(p);
+
+    printf("min_x: %d, min_y: %d, max_x: %d, max_y: %d\n", min_x, min_y, max_x, max_y);
+
+    printf("P1(%d, %d)\n", P1_x, P1_y);
+    printf("P2(%d, %d)\n", P2_x, P2_y);
+    printf("P3(%d, %d)\n", P3_x, P3_y);
+    printf("P4(%d, %d)\n", P4_x, P4_y);
+
+    printf("max_contour: %d, max_area: %d\n", max_contour, max_area);
+
+    *nrects = max_contour;
+    return max_contours;
 }
 
 int *CV_GRID_INTERSECTION(Image *src, int *lines, int nlines, int *nintersection)

@@ -492,7 +492,7 @@ int test_cv_boxes()
 
 int test_cv_save_boxes()
 {
-    Image *image = CV_LOAD("tests/samples/sudoku.png", RGB);
+    Image *image = CV_LOAD("tests/samples/sudoku2.png", RGB);
     Image *copy = CV_IMAGE_COPY(image);
     Image *gray = CV_RGB_TO_GRAY(image, NULL);
 
@@ -506,18 +506,6 @@ int test_cv_save_boxes()
     Image *eroded = CV_EROSION(dilated, NULL, 3);
 
     Image *processed = CV_IMAGE_COPY(eroded);
-
-    int nn = 0;
-    int *coords = CV_FIND_LARGEST_CONTOUR(processed, &nn);
-
-    printf("coords: %d\n", nn);
-
-    for (int i = 0; i < nn / 2; i++)
-    {
-        printf("i: %d, x: %d, y: %d\n", i, coords[i * 2], coords[i * 2 + 1]);
-
-        // CV_DRAW_RECT(copy, x, y, w, h, 2, CV_RGB(0, 0, 255));
-    }
 
     int n = 0, n2 = 0, n3 = 0, n4 = 0, n5 = 0;
 
@@ -577,6 +565,55 @@ int test_cv_save_boxes()
     FREE(sorted_intersections);
 
     return assert(true, true, "test_cv_boxes");
+}
+
+int test_cv_find_countours()
+{
+    Image *image = CV_LOAD("tests/samples/sudoku2.png", RGB);
+    Image *gray = CV_RGB_TO_GRAY(image, NULL);
+
+    int k = 5;
+    Image *blur = CV_GAUSSIAN_BLUR(gray, NULL, k, 1);
+    Image *sharp = CV_SHARPEN(blur, NULL, k * 2);
+    Image *threshold = CV_ADAPTIVE_THRESHOLD(sharp, NULL, k, 0.5, 0.5);
+
+    Image *not = CV_NOT(threshold, NULL);
+    Image *dilated = CV_DILATION(not, NULL, 3);
+    Image *eroded = CV_EROSION(dilated, NULL, 3);
+
+    Image *processed = CV_IMAGE_COPY(eroded);
+
+    int nn = 0;
+    int *coords = CV_FIND_LARGEST_CONTOUR(processed, &nn);
+
+    printf("coords: %d\n", nn);
+
+    for (int i = 0; i < nn; i++)
+    {
+        int x = coords[i * 2];
+        int y = coords[i * 2 + 1];
+        CV_DRAW_POINT(image, x, y, 2, CV_RGB(255, 0, 0));
+    }
+
+    // CV_DRAW_POINT(image, 44, 418, 9, CV_RGB(255, 0, 255));
+    // CV_DRAW_POINT(image, 64, 13, 9, CV_RGB(255, 0, 255));
+    // CV_DRAW_POINT(image, 482, 279, 9, CV_RGB(255, 0, 255));
+    // CV_DRAW_POINT(image, 291, 444, 9, CV_RGB(255, 0, 255));
+    CV_SAVE(image, "tests/out/test_cv_find_countours.png");
+
+    CV_IMAGE_FREE(image);
+    CV_IMAGE_FREE(gray);
+    CV_IMAGE_FREE(blur);
+    CV_IMAGE_FREE(sharp);
+    CV_IMAGE_FREE(threshold);
+    CV_IMAGE_FREE(not );
+    CV_IMAGE_FREE(dilated);
+    CV_IMAGE_FREE(eroded);
+    CV_IMAGE_FREE(processed);
+
+    FREE(coords);
+
+    return assert(true, true, "test_cv_find_countours");
 }
 
 int test_cv_draw()
