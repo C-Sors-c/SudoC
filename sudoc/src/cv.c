@@ -75,7 +75,7 @@ Image *CV_IMAGE_COPY_PART(Image *image, int xstart, int ystart, int xend, int ye
             {
                 int index = c * image->h * image->w + i * image->w + j;
                 int index_copy = c * copy->h * copy->w + (i - ystart) * copy->w + (j - xstart);
-                copy->data[index_copy] = image->data[index];
+                PIXEL(copy, c, i - ystart, j - xstart) = PIXEL(image, c, i, j);
             }
         }
     }
@@ -889,44 +889,6 @@ float CV_THRESHOLD(Image *src)
     return threshold / 255.0;
 }
 
-Image *CV_ADAPTIVE_THRESHOLD(Image *src, Image *dst, int block_size, float c)
-{
-    CV_CHECK_IMAGE(src);
-    CV_CHECK_CHANNEL(src, 1);
-
-    if (dst == NULL)
-        dst = CV_IMAGE_COPY(src);
-    CV_CHECK_IMAGE(dst);
-
-    Matrix *kernel = CV_GET_GAUSSIAN_KERNEL(block_size, 1.0);
-
-    Image *mean = CV_APPLY_FILTER(src, NULL, kernel);
-    Image *var = CV_APPLY_FILTER(src, NULL, kernel);
-
-    for (int h = 0; h < src->h; h++)
-    {
-        for (int w = 0; w < src->w; w++)
-        {
-            float p = PIXEL(src, 0, h, w);
-            float m = PIXEL(mean, 0, h, w);
-            float v = PIXEL(var, 0, h, w);
-
-            float threshold = m + c * sqrt(v - m * m);
-
-            if (p > threshold)
-                PIXEL(dst, 0, h, w) = 0;
-            else
-                PIXEL(dst, 0, h, w) = 1;
-        }
-    }
-
-    matrix_destroy(kernel);
-    CV_IMAGE_FREE(mean);
-    CV_IMAGE_FREE(var);
-
-    return dst;
-}
-
 Image *CV_OTSU(Image *src, Image *dst)
 {
     CV_CHECK_IMAGE(src);
@@ -987,6 +949,7 @@ Image *CV_ADAPTIVE_THRESHOLD(Image *src, Image *dst, int block_size, float otsu_
             float m = PIXEL(mean, 0, h, w);
             float v = PIXEL(var, 0, h, w);
 
+            // float threshold = m + c * sqrt(v - m * m);
             float local_threshold = otsu_weight * otsu + gaussian_weight * (m - c * sqrt(v));
             float threshold = (local_threshold * gaussian_weight) + (otsu * otsu_weight);
 

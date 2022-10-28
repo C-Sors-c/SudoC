@@ -142,7 +142,6 @@ Image *CV_CANNY(Image *src, Image *dst, float low, float high);
 
 Image *CV_ADAPTIVE_THRESHOLD(Image *src, Image *dst, int block_size, float otsu_weight, float c);
 float CV_THRESHOLD(Image *src);
-Image *CV_ADAPTIVE_THRESHOLD(Image *src, Image *dst, int block_size, float c);
 Image *CV_OTSU(Image *src, Image *dst);
 Image *CV_OR(Image *src1, Image *src2, Image *dst);
 Image *CV_AND(Image *src1, Image *src2, Image *dst);
