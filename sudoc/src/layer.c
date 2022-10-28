@@ -197,11 +197,11 @@ Matrix4 *conv_layer_forward(ConvLayer *layer, Matrix4 *input)
 }
 
 // backward pass
-Matrix4 *conv_layer_backward(ConvLayer *layer, Matrix4 *previous_activations, Matrix4 *previous_deltas, float learning_rate)
-{
-    // TODO: implement and test
-    return NULL;
-}
+// Matrix4 *conv_layer_backward(ConvLayer *layer, Matrix4 *previous_activations, Matrix4 *previous_deltas, float learning_rate)
+// {
+//     // TODO: implement and test
+//     return NULL;
+// }
 
 // print layer info
 void conv_layer_print(ConvLayer *layer)
