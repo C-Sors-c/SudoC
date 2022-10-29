@@ -722,7 +722,7 @@
 //     return assert(true, true, "test_cv_adaptive_threshold");
 // }
 
-// -------------- TEST S1 --------------
+// -------------- TEST S1 ---------------
 
 int test_s1_cv_gaussian_blur()
 {
