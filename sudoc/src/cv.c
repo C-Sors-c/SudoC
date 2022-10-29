@@ -604,21 +604,31 @@ Image *CV_SOBEL_PROCESS(Image *src, Image *dst, Image *dst_x, Image *dst_y)
 {
     CV_CHECK_IMAGE(src);
 
-    // check if dst_x and dst_y are NULL
-    int null_x = dst_x == NULL;
-    int null_y = dst_y == NULL;
-
     if (dst == NULL)
         dst = CV_IMAGE_INIT(src->c, src->h, src->w);
 
     Matrix *kernel_x = CV_GET_SOBEL_KERNEL_X();
     Matrix *kernel_y = CV_GET_SOBEL_KERNEL_Y();
 
-    if (null_x)
-        dst_x = CV_APPLY_FILTER(src, NULL, kernel_x);
+    // check if dst_x and dst_y are NULL
+    int null_x;
+    int null_y;
 
-    if (null_y)
+    if (dst_x == NULL)
+    {
+        null_x = 1;
+        dst_x = CV_APPLY_FILTER(src, NULL, kernel_x);
+    }
+    else
+        null_x = 0;
+
+    if (dst_y == NULL)
+    {
+        null_y = 1;
         dst_y = CV_APPLY_FILTER(src, NULL, kernel_y);
+    }
+    else
+        null_y = 0;
 
     for (int c = 0; c < src->c; c++)
     {
@@ -653,17 +663,9 @@ Image *CV_SOBEL(Image *src, Image *dst)
     if (dst == NULL)
         dst = CV_IMAGE_INIT(src->c, src->h, src->w);
 
-    dst = CV_SOBEL_PROCESS(src, dst, NULL, NULL);
+    CV_SOBEL_PROCESS(src, dst, NULL, NULL);
 
     return dst;
-}
-
-float CV_ARCTAN2(Image *src, int c, int i, int j)
-{
-    float x = PIXEL(src, c, i, j);
-    float y = PIXEL(src, c, i + 1, j + 1);
-
-    return atan2(y, x);
 }
 
 Image *CV_NON_MAX_SUPPRESSION(Image *src, Image *dst, Image *dst_x, Image *dst_y)
@@ -671,8 +673,8 @@ Image *CV_NON_MAX_SUPPRESSION(Image *src, Image *dst, Image *dst_x, Image *dst_y
     CV_CHECK_IMAGE(src);
 
     // check if dst_x and dst_y are NULL
-    int null_x = dst_x == NULL;
-    int null_y = dst_y == NULL;
+    bool null_x = dst_x == NULL;
+    bool null_y = dst_y == NULL;
 
     if (dst == NULL)
         dst = CV_IMAGE_INIT(src->c, src->h, src->w);
@@ -685,11 +687,11 @@ Image *CV_NON_MAX_SUPPRESSION(Image *src, Image *dst, Image *dst_x, Image *dst_y
 
     for (int c = 0; c < src->c; c++)
     {
-        for (int i = 0; i < src->h; i++)
+        for (int i = 1; i < src->h - 1; i++)
         {
-            for (int j = 0; j < src->w; j++)
+            for (int j = 1; j < src->w - 1; j++)
             {
-                float angle = CV_ARCTAN2(dst_y, c, i, j);
+                float angle = atan2(PIXEL(dst_y, c, i, j), PIXEL(dst_x, c, i, j));
                 float mag = PIXEL(src, c, i, j);
 
                 if (angle < 0)
@@ -746,12 +748,10 @@ Image *CV_NON_MAX_SUPPRESSION(Image *src, Image *dst, Image *dst_x, Image *dst_y
 Image *CV_HYSTERESIS_THRESHOLDING(Image *src, Image *dst, float low, float high)
 {
     CV_CHECK_IMAGE(src);
+    CV_CHECK_CHANNEL(src, 1);
 
     if (dst == NULL)
-        dst = CV_IMAGE_INIT(src->c, src->h, src->w);
-
-    CV_CHECK_CHANNEL(src, 1);
-    CV_CHECK_CHANNEL(dst, 1);
+        dst = CV_IMAGE_INIT(1, src->h, src->w);
 
     for (int c = 0; c < src->c; c++)
     {
@@ -767,14 +767,14 @@ Image *CV_HYSTERESIS_THRESHOLDING(Image *src, Image *dst, float low, float high)
                     PIXEL(dst, c, i, j) = 0;
                 else
                 {
-                    float p1 = PIXEL(src, c, i - 1, j);
-                    float p2 = PIXEL(src, c, i + 1, j);
-                    float p3 = PIXEL(src, c, i, j - 1);
-                    float p4 = PIXEL(src, c, i, j + 1);
-
-                    if (p1 > high || p2 > high || p3 > high || p4 > high)
-                        PIXEL(dst, c, i, j) = 1;
-                    else
+                    // this is a weak pixel
+                    // check if it is connected to a strong pixel
+                    int done = 0;
+                    for (int i2 = i - 1; i2 <= i + 1 && !done; i2++)
+                        for (int j2 = j - 1; j2 <= j + 1 && !done; j2++)
+                            if ((done = PIXEL(dst, c, i2, j2) > high))
+                                PIXEL(dst, c, i, j) = 1;
+                    if (!done)
                         PIXEL(dst, c, i, j) = 0;
                 }
             }
@@ -789,7 +789,7 @@ Image *CV_CANNY(Image *src, Image *dst, float low, float high)
     CV_CHECK_IMAGE(src);
 
     if (dst == NULL)
-        dst = CV_IMAGE_INIT(src->c, src->h, src->w);
+        dst = CV_ZEROS(1, src->h, src->w);
     CV_CHECK_IMAGE(dst);
 
     CV_CHECK_CHANNEL(src, 1);
@@ -801,16 +801,16 @@ Image *CV_CANNY(Image *src, Image *dst, float low, float high)
     Image *dst_x = CV_APPLY_FILTER(src, NULL, kernel_x);
     Image *dst_y = CV_APPLY_FILTER(src, NULL, kernel_y);
 
+    matrix_destroy(kernel_x);
+    matrix_destroy(kernel_y);
+
     CV_SOBEL_PROCESS(src, dst, dst_x, dst_y);
 
     Image *non_max = CV_NON_MAX_SUPPRESSION(dst, NULL, dst_x, dst_y);
-    dst = CV_HYSTERESIS_THRESHOLDING(non_max, dst, low, high);
-
-    matrix_destroy(kernel_x);
-    matrix_destroy(kernel_y);
+    CV_HYSTERESIS_THRESHOLDING(non_max, dst, low, high);
+    CV_IMAGE_FREE(non_max);
     CV_IMAGE_FREE(dst_x);
     CV_IMAGE_FREE(dst_y);
-    CV_IMAGE_FREE(non_max);
 
     return dst;
 }
@@ -1241,17 +1241,6 @@ int CV_CEIL(float x)
         return (int)x + 1;
 }
 
-int CV_COMPUTE_NUMANGLE(int min_theta, int max_theta, int theta_step)
-{
-    int numangle = CV_FLOOR((max_theta - min_theta) / theta_step) + 1;
-    // If the distance between the first angle and the last angle is
-    // approximately equal to pi, then the last angle will be removed
-    // in order to prevent a line to be detected twice.
-    if (numangle > 1 && fabs(PI - (numangle - 1) * theta_step) < theta_step / 2)
-        --numangle;
-    return numangle;
-}
-
 int *CV_HOUGH_LINES(Image *src, int threshold, int *nlines)
 {
     CV_CHECK_IMAGE(src);
@@ -1348,12 +1337,7 @@ Image *CV_DRAW_HOUGH_LINES(Image *dst, int *lines, int nlines, int weight, Uint3
             float x2 = x0 - w * (-b);
             float y2 = y0 - w * a;
 
-            int x1i = (int)x1;
-            int y1i = (int)y1;
-            int x2i = (int)x2;
-            int y2i = (int)y2;
-
-            CV_DRAW_LINE(dst, x1i, y1i, x2i, y2i, weight, color);
+            CV_DRAW_LINE(dst, x1, y1, x2, y2, weight, color);
         }
     }
 
