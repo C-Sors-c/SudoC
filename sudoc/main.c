@@ -155,21 +155,5 @@ int main(int argc, char **argv)
             nn_destroy(network);
         }
     }
-
-    if (strcmp(argv[1], "solver") == 0)
-    {
-        if (strcmp(argv[2], "solve") == 0)
-        {
-
-            if (argc != 4)
-                errx(EXIT_FAILURE, "Usage: solver solve filename");
-
-            int grid[N][N];
-            load_grid(argv[3], grid);
-            SolveSudoku(grid);
-            save_grid(argv[3], grid);
-        }
-    }
-
     return EXIT_SUCCESS;
 }
