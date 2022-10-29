@@ -29,3 +29,12 @@ int test_cv_resize();
 int test_cv_zoom();
 int test_cv_adaptive_threshold();
 int test_cv_find_countours();
+
+// test s1
+int test_s1_cv_gaussian_blur();
+int test_s1_cv_sobel();
+int test_s1_cv_canny();
+int test_s1_cv_adaptive_threshold();
+int test_s1_cv_hough_lines();
+int test_s1_cv_rotate(int angle);
+int test_s1_cv_save_boxes();

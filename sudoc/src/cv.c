@@ -73,8 +73,6 @@ Image *CV_IMAGE_COPY_PART(Image *image, int xstart, int ystart, int xend, int ye
         {
             for (int j = xstart; j < xend; j++)
             {
-                int index = c * image->h * image->w + i * image->w + j;
-                int index_copy = c * copy->h * copy->w + (i - ystart) * copy->w + (j - xstart);
                 PIXEL(copy, c, i - ystart, j - xstart) = PIXEL(image, c, i, j);
             }
         }
@@ -1485,7 +1483,6 @@ Image *CV_DRAW_HOUGH_LINES(Image *dst, int *lines, int nlines, int weight, Uint3
 {
     CV_CHECK_IMAGE(dst);
 
-    int w = dst->w;
     int h = dst->h;
 
     for (int i = 0; i < nlines; i++)
@@ -1812,7 +1809,6 @@ int *CV_SORT_INTERSECTIONS(int *intersections, int nintersections)
         int j = 0;
         for (j = 0; j < i; j++)
         {
-            int x2 = sorted[j * 2];
             int y2 = sorted[j * 2 + 1];
 
             if (y < y2)
