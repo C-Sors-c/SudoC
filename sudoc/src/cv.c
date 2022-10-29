@@ -1372,10 +1372,6 @@ int *CV_HOUGH_LINES(Image *src, int threshold, int *nlines)
     int *accumulator = (int *)malloc(sizeof(int) * w * h * 180);
     memset(accumulator, 0, sizeof(int) * w * h * 180);
 
-    int max = 0;
-    // int max_theta = 0;
-    // int max_rho = 0;
-
     for (int y = 0; y < h; y++)
     {
         for (int x = 0; x < w; x++)
@@ -1385,19 +1381,12 @@ int *CV_HOUGH_LINES(Image *src, int threshold, int *nlines)
 
             for (int theta = 0; theta < 180; theta++)
             {
-                float tf = (float)theta * PI / 180.0;       // theta in radian
+                double tf = (double)theta * PI / 180;       // theta in radian
                 int rho = (int)(x * cos(tf) + y * sin(tf)); // rho in pixel
                 if (rho < 0)
                     rho = -rho;
 
-                accumulator[rho * 180 + theta]++; // accumulate the votes for each rho and theta
-
-                if (accumulator[rho * 180 + theta] > max)
-                {
-                    max = accumulator[rho * 180 + theta];
-                    // max_theta = theta;
-                    // max_rho = rho;
-                }
+                accumulator[rho * 180 + theta]++;
             }
         }
     }
@@ -1510,14 +1499,14 @@ Image *CV_DRAW_HOUGH_LINES(Image *dst, int *lines, int nlines, int weight, Uint3
         }
         else
         {
-            float a = cos(theta * PI / 180.0);
-            float b = sin(theta * PI / 180.0);
-            float x0 = a * rho;
-            float y0 = b * rho;
-            float x1 = x0 + w * (-b);
-            float y1 = y0 + w * a;
-            float x2 = x0 - w * (-b);
-            float y2 = y0 - w * a;
+            double a = cos(theta * PI / 180.0);
+            double b = sin(theta * PI / 180.0);
+            double x0 = a * rho;
+            double y0 = b * rho;
+            double x1 = x0 + 2000 * (-b);
+            double y1 = y0 + 2000 * a;
+            double x2 = x0 - 2000 * (-b);
+            double y2 = y0 - 2000 * a;
 
             int x1i = (int)x1;
             int y1i = (int)y1;

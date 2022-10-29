@@ -575,19 +575,13 @@ int test_cv_save_boxes()
 
 int test_cv_find_countours()
 {
-    Image *image = CV_LOAD("tests/samples/sudoku.png", RGB);
+    Image *image = CV_LOAD("tests/samples/sudoku12.png", RGB);
     Image *gray = CV_RGB_TO_GRAY(image, NULL);
 
     int k = 5;
     Image *blur = CV_GAUSSIAN_BLUR(gray, NULL, k, 1);
     Image *sharp = CV_SHARPEN(blur, NULL, k * 2);
     Image *threshold = CV_ADAPTIVE_THRESHOLD(sharp, NULL, k, 0.5, 0.5);
-    int nlines = 0;
-    int *lines = CV_HOUGH_LINES(threshold, 300, &nlines);
-    int nsimplified = 0;
-    int *simplified = CV_SIMPLIFY_HOUGH_LINES(lines, nlines, 30, &nsimplified);
-    float orientation = CV_HOUGH_LINES_ORIENTATION(simplified, nsimplified);
-    Image *draw = CV_DRAW_HOUGH_LINES(image, simplified, nsimplified, 2, CV_RGB(255, 0, 0));
 
     Image *not = CV_NOT(threshold, NULL);
     Image *dilated = CV_DILATION(threshold, NULL, 3);
@@ -595,8 +589,23 @@ int test_cv_find_countours()
 
     Image *processed = CV_IMAGE_COPY(eroded);
 
+    int nlines = 0;
+    int *lines = CV_HOUGH_LINES(processed, 400, &nlines);
+    int nsimplified = 0;
+    int *simplified = CV_SIMPLIFY_HOUGH_LINES(lines, nlines, 30, &nsimplified);
+    float orientation = CV_HOUGH_LINES_ORIENTATION(simplified, nsimplified);
+    Image *draw = CV_DRAW_HOUGH_LINES(image, simplified, nsimplified, 2, CV_RGB(255, 0, 0));
+
     int nn = 0;
     int *coords = CV_FIND_LARGEST_CONTOUR(processed, &nn);
+
+    for (int i = 0; i < nsimplified; i++)
+    {
+        int rho = simplified[i * 2];
+        int theta = simplified[i * 2 + 1];
+
+        printf("rho: %d, theta: %d\n", rho, theta);
+    }
 
     printf("coords: %d\n", nn);
 
@@ -607,10 +616,6 @@ int test_cv_find_countours()
         CV_DRAW_POINT(image, x, y, 2, CV_RGB(0, 0, 255));
     }
 
-    // CV_DRAW_POINT(image, 44, 418, 9, CV_RGB(255, 0, 255));
-    // CV_DRAW_POINT(image, 64, 13, 9, CV_RGB(255, 0, 255));
-    // CV_DRAW_POINT(image, 482, 279, 9, CV_RGB(255, 0, 255));
-    // CV_DRAW_POINT(image, 291, 444, 9, CV_RGB(255, 0, 255));
     CV_SAVE(image, "tests/out/test_cv_find_countours.png");
 
     // CV_IMAGE_FREE(image);
