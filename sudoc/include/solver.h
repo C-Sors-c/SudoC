@@ -1,7 +1,10 @@
 #pragma once
+
 #include <stdio.h>
 #include <stdbool.h>
 #include <err.h>
+#include "grid_parser.h"
+
 #define N 9
 #define UNASSIGNED 0
 
