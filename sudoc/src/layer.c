@@ -197,11 +197,11 @@ Matrix4 *conv_layer_forward(ConvLayer *layer, Matrix4 *input)
 }
 
 // backward pass
-Matrix4 *conv_layer_backward(ConvLayer *layer, Matrix4 *previous_activations, Matrix4 *previous_deltas, float learning_rate)
-{
-    // TODO: implement and test
-    return NULL;
-}
+// Matrix4 *conv_layer_backward(ConvLayer *layer, Matrix4 *previous_activations, Matrix4 *previous_deltas, float learning_rate)
+// {
+//     // TODO: implement and test
+//     return NULL;
+// }
 
 // print layer info
 void conv_layer_print(ConvLayer *layer)
@@ -262,15 +262,33 @@ float d_leaky_relu(float x)
 Matrix *softmax(Matrix *m1)
 {
     Matrix *dst = matrix_init(m1->dim1, m1->dim2, NULL);
+    Matrix *m1norm = matrix_copy(m1, NULL);
 
+    // max normalized m1
     for (int i = 0; i < m1->dim1; i++)
     {
-        float sum = 0;
+        float max = m1->data[i * m1->dim2];
         for (int j = 0; j < m1->dim2; j++)
-            sum += exp(m1->data[i * m1->dim2 + j]);
+        {
+            if (m1->data[i * m1->dim2 + j] > max)
+                max = m1->data[i * m1->dim2 + j];
+        }
         for (int j = 0; j < m1->dim2; j++)
-            dst->data[i * m1->dim2 + j] = exp(m1->data[i * m1->dim2 + j]) / sum;
+        {
+            m1norm->data[i * m1->dim2 + j] -= max;
+        }
     }
+
+    for (int i = 0; i < m1norm->dim1; i++)
+    {
+        float sum = 0;
+        for (int j = 0; j < m1norm->dim2; j++)
+            sum += exp(m1norm->data[i * m1norm->dim2 + j]);
+        for (int j = 0; j < m1norm->dim2; j++)
+            dst->data[i * m1norm->dim2 + j] = exp(m1norm->data[i * m1norm->dim2 + j]) / sum;
+    }
+
+    matrix_destroy(m1norm);
     return dst;
 }
 
