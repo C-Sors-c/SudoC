@@ -280,7 +280,7 @@ int test_cv_dilate()
 
 int test_cv_hough_lines()
 {
-    Image *image = CV_LOAD("tests/samples/hough.png", RGB);
+    Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", RGB);
     Image *gray = CV_RGB_TO_GRAY(image, NULL);
     Image *blur = CV_GAUSSIAN_BLUR(gray, NULL, 3, 1);
     Image *sharp = CV_SHARPEN(blur, NULL, 3);
@@ -291,12 +291,12 @@ int test_cv_hough_lines()
     Image * or = CV_OR(not, canny, NULL);
 
     int n = 0;
-    int *lines = CV_HOUGH_LINES(or, 100, &n);
+    int *lines = CV_HOUGH_LINES(or, 300, &n);
 
     int n2;
-    int *simplified = CV_SIMPLIFY_HOUGH_LINES(lines, n, 50, &n2);
+    int *simplified = CV_SIMPLIFY_HOUGH_LINES(lines, n, 30, &n2);
 
-    CV_DRAW_HOUGH_LINES(image, simplified, n2, 1, CV_RGB(255, 0, 0));
+    CV_DRAW_HOUGH_LINES(image, simplified, n2, 2, CV_RGB(255, 0, 0));
 
     CV_SAVE(image, "tests/out/test_cv_hough_lines.png");
 
@@ -575,16 +575,22 @@ int test_cv_save_boxes()
 
 int test_cv_find_countours()
 {
-    Image *image = CV_LOAD("tests/samples/sudoku2.png", RGB);
+    Image *image = CV_LOAD("tests/samples/sudoku.png", RGB);
     Image *gray = CV_RGB_TO_GRAY(image, NULL);
 
     int k = 5;
     Image *blur = CV_GAUSSIAN_BLUR(gray, NULL, k, 1);
     Image *sharp = CV_SHARPEN(blur, NULL, k * 2);
     Image *threshold = CV_ADAPTIVE_THRESHOLD(sharp, NULL, k, 0.5, 0.5);
+    int nlines = 0;
+    int *lines = CV_HOUGH_LINES(threshold, 300, &nlines);
+    int nsimplified = 0;
+    int *simplified = CV_SIMPLIFY_HOUGH_LINES(lines, nlines, 30, &nsimplified);
+    float orientation = CV_HOUGH_LINES_ORIENTATION(simplified, nsimplified);
+    Image *draw = CV_DRAW_HOUGH_LINES(image, simplified, nsimplified, 2, CV_RGB(255, 0, 0));
 
     Image *not = CV_NOT(threshold, NULL);
-    Image *dilated = CV_DILATION(not, NULL, 3);
+    Image *dilated = CV_DILATION(threshold, NULL, 3);
     Image *eroded = CV_EROSION(dilated, NULL, 3);
 
     Image *processed = CV_IMAGE_COPY(eroded);
@@ -598,7 +604,7 @@ int test_cv_find_countours()
     {
         int x = coords[i * 2];
         int y = coords[i * 2 + 1];
-        CV_DRAW_POINT(image, x, y, 2, CV_RGB(255, 0, 0));
+        CV_DRAW_POINT(image, x, y, 2, CV_RGB(0, 0, 255));
     }
 
     // CV_DRAW_POINT(image, 44, 418, 9, CV_RGB(255, 0, 255));
@@ -607,17 +613,21 @@ int test_cv_find_countours()
     // CV_DRAW_POINT(image, 291, 444, 9, CV_RGB(255, 0, 255));
     CV_SAVE(image, "tests/out/test_cv_find_countours.png");
 
-    CV_IMAGE_FREE(image);
-    CV_IMAGE_FREE(gray);
-    CV_IMAGE_FREE(blur);
-    CV_IMAGE_FREE(sharp);
-    CV_IMAGE_FREE(threshold);
-    CV_IMAGE_FREE(not );
-    CV_IMAGE_FREE(dilated);
-    CV_IMAGE_FREE(eroded);
-    CV_IMAGE_FREE(processed);
+    // CV_IMAGE_FREE(image);
+    // CV_IMAGE_FREE(gray);
+    // CV_IMAGE_FREE(blur);
+    // CV_IMAGE_FREE(sharp);
+    // CV_IMAGE_FREE(threshold);
+    // CV_IMAGE_FREE(not );
+    // CV_IMAGE_FREE(dilated);
+    // CV_IMAGE_FREE(eroded);
+    // CV_IMAGE_FREE(processed);
+    // CV_IMAGE_FREE(rotated);
+    // CV_IMAGE_FREE(draw);
 
-    FREE(coords);
+    // FREE(coords);
+    // FREE(lines);
+    // FREE(simplified);
 
     return assert(true, true, "test_cv_find_countours");
 }

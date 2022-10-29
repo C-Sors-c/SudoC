@@ -906,9 +906,9 @@ Image *CV_OTSU(Image *src, Image *dst)
         {
             float p = PIXEL(src, 0, h, w);
             if (p > threshold)
-                PIXEL(dst, 0, h, w) = 1;
-            else
                 PIXEL(dst, 0, h, w) = 0;
+            else
+                PIXEL(dst, 0, h, w) = 1;
         }
     }
 
@@ -954,9 +954,9 @@ Image *CV_ADAPTIVE_THRESHOLD(Image *src, Image *dst, int block_size, float otsu_
             float threshold = (local_threshold * gaussian_weight) + (otsu * otsu_weight);
 
             if (p > threshold)
-                PIXEL(dst, 0, h, w) = 1;
-            else
                 PIXEL(dst, 0, h, w) = 0;
+            else
+                PIXEL(dst, 0, h, w) = 1;
         }
     }
 
@@ -1369,10 +1369,12 @@ int *CV_HOUGH_LINES(Image *src, int threshold, int *nlines)
     int w = src->w;
     int h = src->h;
 
-    int *accumulator = (int *)malloc(sizeof(int) * w * h * 360);
-    memset(accumulator, 0, sizeof(int) * w * h * 360);
+    int *accumulator = (int *)malloc(sizeof(int) * w * h * 180);
+    memset(accumulator, 0, sizeof(int) * w * h * 180);
 
     int max = 0;
+    // int max_theta = 0;
+    // int max_rho = 0;
 
     for (int y = 0; y < h; y++)
     {
@@ -1381,7 +1383,7 @@ int *CV_HOUGH_LINES(Image *src, int threshold, int *nlines)
             if (PIXEL(src, 0, y, x) == 0)
                 continue;
 
-            for (int theta = 0; theta < 360; theta++)
+            for (int theta = 0; theta < 180; theta++)
             {
                 float tf = (float)theta * PI / 180.0;       // theta in radian
                 int rho = (int)(x * cos(tf) + y * sin(tf)); // rho in pixel
@@ -1393,11 +1395,8 @@ int *CV_HOUGH_LINES(Image *src, int threshold, int *nlines)
                 if (accumulator[rho * 180 + theta] > max)
                 {
                     max = accumulator[rho * 180 + theta];
-                }
-
-                if (accumulator[rho * 180 + theta] > 200)
-                {
-                    accumulator[rho * 180 + theta] = -1;
+                    // max_theta = theta;
+                    // max_rho = rho;
                 }
             }
         }
@@ -1405,7 +1404,7 @@ int *CV_HOUGH_LINES(Image *src, int threshold, int *nlines)
 
     // we count the number of lines to allocate the memory
     int nb_lines = 0;
-    for (int i = 0; i < w * h * 360; i++)
+    for (int i = 0; i < w * h * 180; i++)
         if (accumulator[i] >= threshold)
             nb_lines++;
 
@@ -1415,7 +1414,7 @@ int *CV_HOUGH_LINES(Image *src, int threshold, int *nlines)
 
     // we fill the lines array
     int j = 0;
-    for (int i = 0; i < w * h * 360; i++)
+    for (int i = 0; i < w * h * 180; i++)
     {
         if (accumulator[i] >= threshold)
         {
@@ -1430,7 +1429,6 @@ int *CV_HOUGH_LINES(Image *src, int threshold, int *nlines)
     free(accumulator);
     return lines;
 }
-
 int *CV_SIMPLIFY_HOUGH_LINES(int *lines, int nlines, int threshold, int *nsimplified)
 {
     int *simplified = (int *)malloc(sizeof(int) * nlines * 2);
@@ -1706,9 +1704,11 @@ int *CV_FIND_LARGEST_CONTOUR(Image *src, int *nrects)
             }
 
             // compute area from unsorted points
-            int area = abs((p1_x * (p2_y - p3_y) + p2_x * (p3_y - p1_y) + p3_x * (p1_y - p2_y)) / 2);
+            int width = (p3_x - p1_x);
+            int height = (p4_y - p2_y);
+            int area = abs(width * height);
 
-            if (ncontours > max_contour)
+            if (ncontours > max_contour && area > max_area)
             {
                 max_contour = ncontours;
                 max_area = area;
@@ -1749,8 +1749,18 @@ int *CV_FIND_LARGEST_CONTOUR(Image *src, int *nrects)
 
     printf("max_contour: %d, max_area: %d\n", max_contour, max_area);
 
-    *nrects = max_contour;
-    return max_contours;
+    *nrects = 4;
+    int *rects = (int *)malloc(sizeof(int) * 8);
+    rects[0] = P1_x;
+    rects[1] = P1_y;
+    rects[2] = P2_x;
+    rects[3] = P2_y;
+    rects[4] = P3_x;
+    rects[5] = P3_y;
+    rects[6] = P4_x;
+    rects[7] = P4_y;
+
+    return rects;
 }
 
 int *CV_GRID_INTERSECTION(Image *src, int *lines, int nlines, int *nintersection)
@@ -1986,7 +1996,5 @@ Image *CV_ZOOM(Image *src, Image *dst, float scale, Uint32 background)
     }
     return dst;
 }
-
-// given a list of intersections points, extract the bouding boxes of the grid and return the list of corners
 
 #pragma endregion Transform
