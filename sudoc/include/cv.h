@@ -134,7 +134,6 @@ Matrix *CV_GET_SOBEL_KERNEL_Y();
 Image *CV_SOBEL_PROCESS(Image *src, Image *dst, Image *dst_x, Image *dst_y);
 Image *CV_SOBEL(Image *src, Image *dst);
 
-float CV_ARCTAN2(Image *src, int c, int i, int j);
 Image *CV_NON_MAX_SUPPRESSION(Image *src, Image *dst, Image *dst_x, Image *dst_y);
 Image *CV_HYSTERESIS_THRESHOLDING(Image *src, Image *dst, float low, float high);
 Image *CV_CANNY(Image *src, Image *dst, float low, float high);
@@ -158,7 +157,6 @@ Image *CV_DRAW_DIGIT(Image *dst, int x, int y, int digit, int size, Uint32 color
 int CV_FLOOR(float x);
 int CV_ROUND(float x);
 int CV_CEIL(float x);
-int CV_COMPUTE_NUMANGLE(int min_theta, int max_theta, int theta_step);
 
 int *CV_HOUGH_LINES(Image *src, int threshold, int *nlines);
 Image *CV_DRAW_HOUGH_LINES(Image *dst, int *lines, int nlines, int weight, Uint32 color);

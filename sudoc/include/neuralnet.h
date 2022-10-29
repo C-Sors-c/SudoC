@@ -37,7 +37,6 @@ void nn_backward(NN *network, Matrix *input, Matrix *predictions, Matrix *labels
 float nn_train_batch(NN *network, Matrix *input, Matrix *expected, float learning_rate);
 void nn_destroy(NN *network);
 
-
 void fc_layer_save_weights(const char *filename, FCLayer *layer);
 bool fc_layer_load_weights(const char *filename, FCLayer *layer);
 void nn_save(NN *network, const char *basename);
