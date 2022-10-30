@@ -871,7 +871,7 @@ int test_s1_cv_save_boxes()
         box = CV_IMAGE_COPY_PART(image, x1, y1, x2, y2);
 
         char path[100];
-        sprintf(path, "tests/out/box/test_cv_save_boxes_%d.png", i);
+        sprintf(path, "./out/box/test_cv_save_boxes_%d.png", i);
         CV_SAVE(box, path);
     }
 

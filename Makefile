@@ -12,6 +12,7 @@ EXEC_SOLVER := solver
 
 BUILD_DIR := build
 DATA_DIR := out
+BOX_DIR := out/box
 TEST_DATA_DIR := ./tests/out
 TEST_BOX_DIR := ./tests/out/box
 
@@ -34,6 +35,8 @@ all: build build-solver build-test clean-main clean-test
 # BUILD
 build: ${OBJ}
 	@mkdir -p ${BUILD_DIR}
+	@mkdir -p ${DATA_DIR}
+	@mkdir -p ${BOX_DIR}
 	@${CC} -o ${BUILD_DIR}/${EXEC} $^ ${LDFLAGS} ${LDLIBS}
 
 build-test: ${TEST_OBJ}
@@ -75,6 +78,7 @@ clean-test-data:
 	${RM} -rf ${TEST_DATA_DIR}
 
 clean-data:
+	${RM} -rf ${BOX_DIR}
 	${RM} -rf ${DATA_DIR}
 
 clean: clean-main clean-test clean-solver clean-data clean-test-data
