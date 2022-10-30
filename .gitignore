@@ -61,3 +61,6 @@ build
 # tests data folder
 tests/data
 tests/out
+
+# out folder
+out

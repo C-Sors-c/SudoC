@@ -42,14 +42,6 @@ int test_nnxor()
     m_set(input, 3, 1, 1);
     m_set(expected, 3, 0, 1);
 
-    for (int i = 0; i < 10000; i++)
-    {
-        nn_train_batch(network, input, expected, 0.001);
-    }
-
-    matrix_destroy(input);
-    matrix_destroy(expected);
-
     // test the network with different inputs
     // (to make sure there is no issue with batch order)
 
@@ -76,25 +68,54 @@ int test_nnxor()
     m_set(test_input, 3, 1, 1);
     m_set(test_expected, 3, 1, 1);
 
-    Matrix *predictions = nn_forward(network, test_input);
+    // train the network
+    int correct = 0;
+    float accuracy = 0;
+    float min_accuracy = 0.95;
+    int epoch = 10000;
+    float learning_rate = 0.001;
 
-    int failed = 0;
-    failed = m_get(predictions, 0, 1) > 0.9 ? 0 : 1;
-    failed = m_get(predictions, 1, 0) > 0.9 ? 0 : 1;
-    failed = m_get(predictions, 2, 0) > 0.9 ? 0 : 1;
-    failed = m_get(predictions, 3, 1) > 0.9 ? 0 : 1;
+    for (int i = 0; i < epoch && correct != 4; i++)
+    {
+        nn_train_batch(network, input, expected, learning_rate);
+        Matrix *predictions = nn_forward(network, test_input);
+
+        correct = 0;
+        accuracy = 0;
+
+        float p1 = m_get(predictions, 0, 1);
+        float p2 = m_get(predictions, 1, 0);
+        float p3 = m_get(predictions, 2, 0);
+        float p4 = m_get(predictions, 3, 1);
+
+        float tests[4] = {p1, p2, p3, p4};
+        float sum = 0;
+
+        for (int j = 0; j < 4; j++)
+            if (tests[j] > min_accuracy)
+            {
+                correct++;
+                sum += tests[j];
+            }
+
+        accuracy = (p1 + p2 + p3 + p4) / 4.0;
+        matrix_destroy(predictions);
+
+        // printf("Accuracy: %f, Correct: %d, Sum: %f, Iteration: %d\n", accuracy, correct, sum, i);
+    }
 
     // save weights
     nn_save(network, "tests/out/nnxor");
 
     nn_destroy(network);
+    matrix_destroy(input);
+    matrix_destroy(expected);
     matrix_destroy(test_input);
     matrix_destroy(test_expected);
-    matrix_destroy(predictions);
 
-    return assert(failed == 0, true, "test_nnxor");
+    // printf("Accuracy: %f, Correct: %d\n", accuracy, correct);
+    return assert(accuracy > min_accuracy, true, "test_nnxor");
 }
-
 
 int test_nnxor_load()
 {
@@ -113,6 +134,11 @@ int test_nnxor_load()
 
     bool ret = nn_load(network, "tests/out/nnxor");
 
+    if (!ret)
+    {
+        return assert(ret, true, "test_nnxor_load: failed to load network");
+    }
+
     Matrix *test_input = matrix_init(batchsize, 2, NULL);
     Matrix *test_expected = matrix_init(batchsize, 2, NULL);
 
@@ -129,13 +155,20 @@ int test_nnxor_load()
     Matrix *predictions = nn_forward(network, test_input);
 
     int failed = 0;
-    failed = m_get(predictions, 0, 1) > 0.9 ? 0 : 1;
-    failed = m_get(predictions, 1, 0) > 0.9 ? 0 : 1;
+
+    float p1 = m_get(predictions, 0, 1);
+    float p2 = m_get(predictions, 1, 0);
+
+    if (p1 < 0.95)
+        failed++;
+
+    if (p2 < 0.95)
+        failed++;
 
     nn_destroy(network);
     matrix_destroy(test_input);
     matrix_destroy(test_expected);
     matrix_destroy(predictions);
 
-    return assert(failed == 0 && ret, true, "test_nnxor_load");
+    return assert(failed, 0, "test_nnxor_load");
 }

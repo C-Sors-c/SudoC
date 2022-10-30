@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "solver.h"
 
 void load_grid(char *filename, int res[][9]);
 

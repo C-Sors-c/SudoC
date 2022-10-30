@@ -1,4 +1,3 @@
-#include "../include/solver.h"
 #include "../include/grid_parser.h"
 
 void load_grid(char *filename, int res[][9])
@@ -19,17 +18,25 @@ void load_grid(char *filename, int res[][9])
     {
 
         ch = fgetc(ptr);
-        if (ch == ' ' || ch == '\n')
+        if (ch == ' ' || ch == '\n' || ch == '\r')
+        {
             continue;
+        }
         if (ch == '.')
-            ch = '0';
-        res[row][col] = ch - 48;
-        col += 1;
+        {
+            res[row][col] = 0;
+        }
+        else
+        {
+            res[row][col] = ch - '0';
+        }
+        col++;
         if (col == 9)
         {
-            row += 1;
             col = 0;
+            row++;
         }
+
     }
     fclose(ptr);
 }
