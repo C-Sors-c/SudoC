@@ -15,7 +15,7 @@ DATA_DIR := out
 TEST_DATA_DIR := ./tests/out
 TEST_BOX_DIR := ./tests/out/box
 
-SRC :=	${wildcard ./sudoc/src/*.c} ./sudoc/main.c
+SRC :=	${wildcard ./sudoc/src/*.c} ${wildcard ./tests/src/*.c} ./sudoc/main.c
 
 SOLVER_SRC := ${wildcard ./sudoc/src/*.c} ./sudoc/solver.c
 

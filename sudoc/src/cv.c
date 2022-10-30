@@ -1565,7 +1565,8 @@ int *CV_FIND_LARGEST_CONTOUR(Image *src, int *nrects)
     int max_x = 0;
     int max_y = 0;
 
-    int P1_x, P1_y, P2_x, P2_y, P3_x, P3_y, P4_x, P4_y = 0;
+    int P1_x = 0, P1_y = 0, P2_x = 0, P2_y = 0, P3_x = 0, P3_y = 0,
+        P4_x = 0, P4_y = 0;
 
     int max_area = 0;
 
@@ -1648,7 +1649,8 @@ int *CV_FIND_LARGEST_CONTOUR(Image *src, int *nrects)
 
             free(stack);
 
-            int p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, p4_x, p4_y = 0;
+            int p1_x = 0, p1_y = 0, p2_x = 0, p2_y = 0, p3_x = 0, p3_y = 0,
+                p4_x = 0, p4_y = 0;
 
             for (int i = 0; i < ncontours; i++)
             {

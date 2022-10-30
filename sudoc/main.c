@@ -2,6 +2,7 @@
 #include "include/cv.h"
 #include "include/solver.h"
 #include "include/neuralnet.h"
+#include "../tests/include/test_cv.h"
 
 int main(int argc, char **argv)
 {
@@ -12,8 +13,39 @@ int main(int argc, char **argv)
 
     if (strcmp(argv[1], "cv") == 0)
     {
-        if (strcmp(argv[2], "") == 0)
+        if (strcmp(argv[2], "gaussian") == 0)
         {
+            test_s1_cv_gaussian_blur();
+        }
+        else if (strcmp(argv[2], "sobel") == 0)
+        {
+            test_s1_cv_sobel();
+        }
+        else if (strcmp(argv[2], "canny") == 0)
+        {
+            test_s1_cv_canny();
+        }
+        else if (strcmp(argv[2], "threshold") == 0)
+        {
+            test_s1_cv_adaptive_threshold();
+        }
+        else if (strcmp(argv[2], "houghlines") == 0)
+        {
+            test_s1_cv_hough_lines();
+        }
+        else if (strcmp(argv[2], "rotate") == 0)
+        {
+            if (argc < 4)
+                errx(EXIT_FAILURE, "Usage: cv rotate rotation-angle");
+            test_s1_cv_rotate(atoi(argv[3]));
+        }
+        else if (strcmp(argv[2], "boxes") == 0)
+        {
+            test_s1_cv_save_boxes();
+        }
+        else
+        {
+            errx(EXIT_FAILURE, "Unknown demo name");
         }
     }
 
@@ -137,7 +169,7 @@ int main(int argc, char **argv)
                 m_set(input, 0, 1, (float)b);
 
                 Matrix *output = nn_forward(network, input);
-                
+
                 printf("Raw output: %f, %f\n", m_get(output, 0, 0), m_get(output, 0, 1));
 
                 // get the maximum arg
