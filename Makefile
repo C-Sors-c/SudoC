@@ -44,6 +44,8 @@ build-solver: ${SOLVER_OBJ}
 	@mkdir -p ${BUILD_DIR}
 	@${CC} -o ${BUILD_DIR}/${EXEC_SOLVER} $^ ${LDFLAGS} ${LDLIBS}
 
+build-s1: build build-solver
+
 # RUN
 run: build clean-main
 	@./${BUILD_DIR}/${EXEC}

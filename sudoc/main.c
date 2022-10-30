@@ -49,7 +49,7 @@ int main(int argc, char **argv)
         }
     }
 
-    if (strcmp(argv[1], "nn") == 0)
+    else if (strcmp(argv[1], "nn") == 0)
     {
         if (strcmp(argv[2], "train-xor") == 0)
         {
@@ -186,6 +186,11 @@ int main(int argc, char **argv)
             matrix_destroy(input);
             nn_destroy(network);
         }
+        else
+        {
+            errx(EXIT_FAILURE, "Unknown demo name");
+        }
     }
+
     return EXIT_SUCCESS;
 }
