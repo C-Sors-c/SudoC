@@ -754,13 +754,14 @@ int test_s1_cv_canny()
 {
     Image *image = CV_LOAD("tests/samples/sudoku1.png", GRAYSCALE);
     Image *blur = CV_GAUSSIAN_BLUR(image, NULL, 5, 1);
-    Image *canny = CV_CANNY(blur, NULL, 0.3, 0.4);
-
-    CV_IMAGE_SHOW(canny, "test_s1_cv_canny");
+    Image *canny = CV_CANNY(blur, NULL, 0.05, 0.06);
+    Image *zoom = CV_ZOOM(canny, NULL, 1.01, 0xffffff);
+    CV_IMAGE_SHOW(zoom, "test_s1_cv_canny");
 
     CV_IMAGE_FREE(image);
     CV_IMAGE_FREE(blur);
     CV_IMAGE_FREE(canny);
+    CV_IMAGE_FREE(zoom);
     return assert(true, true, "test_cv_canny");
 }
 
@@ -791,7 +792,7 @@ int test_s1_cv_adaptive_threshold()
 int test_s1_cv_hough_lines()
 {
 
-    Image *image = CV_LOAD("tests/samples/sudoku.png", RGB);
+    Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", RGB);
 
     Image *gray = CV_RGB_TO_GRAY(image, NULL);
     int k = 5;
@@ -803,14 +804,10 @@ int test_s1_cv_hough_lines()
 
     int n1 = 0;
     int n2 = 0;
-    int n3 = 0;
     int *lines = CV_HOUGH_LINES(z1, 300, &n1);
     int *simplified = CV_SIMPLIFY_HOUGH_LINES(lines, n1, 30, &n2);
-    int *clean_lines = CV_REMOVE_DIAGONALS(simplified, n2, &n3);
-
     Image *z2 = CV_ZOOM(image, NULL, 1.05, 0xffffff);
-
-    CV_DRAW_HOUGH_LINES(z2, clean_lines, n3, 2, CV_RGB(255, 0, 0));
+    CV_DRAW_HOUGH_LINES(z2, simplified, n2, 2, CV_RGB(255, 0, 0));
 
     CV_IMAGE_SHOW(z2, "test_s1_cv_hough_lines");
 
@@ -825,7 +822,6 @@ int test_s1_cv_hough_lines()
 
     FREE(lines);
     FREE(simplified);
-    FREE(clean_lines);
 
     return assert(true, true, "test_s1_cv_hough_lines");
 }

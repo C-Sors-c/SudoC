@@ -37,37 +37,36 @@ int (*test_cv[])() = {
     // test_cv_resize,
     // test_cv_zoom,
     // test_cv_adaptive_threshold,
-    // test_s1_cv_gaussian_blur,
-    // test_s1_cv_sobel,
-    // test_s1_cv_canny,
-    // test_s1_cv_adaptive_threshold,
-    // test_s1_cv_hough_lines,
-    // test_s1_cv_rotate(45),
+    test_s1_cv_gaussian_blur,
+    test_s1_cv_sobel,
+    test_s1_cv_canny,
+    test_s1_cv_adaptive_threshold,
+    test_s1_cv_hough_lines,
     test_s1_cv_save_boxes,
 };
 
 // lists of all matrix tests
 int (*tests_matrix[])() = {
-    // test_matrix_add,
-    // test_matrix_subtract,
-    // test_matrix_multiply,
-    // test_matrix_multiply_scalar,
-    // test_matrix_transpose,
-    // test_matrix_map_function,
-    // test_matrix4_init,
-    // test_matrix4_add,
-    // test_matrix4_subtract,
-    // test_matrix4_multiply_scalar,
-    // test_matrix4_transpose,
-    // test_matrix4_map_function,
-    // test_matrix4_convolve,
-    // test_matrix4_add_bias,
-    // test_matrix4_sum_rows,
+    test_matrix_add,
+    test_matrix_subtract,
+    test_matrix_multiply,
+    test_matrix_multiply_scalar,
+    test_matrix_transpose,
+    test_matrix_map_function,
+    test_matrix4_init,
+    test_matrix4_add,
+    test_matrix4_subtract,
+    test_matrix4_multiply_scalar,
+    test_matrix4_transpose,
+    test_matrix4_map_function,
+    test_matrix4_convolve,
+    test_matrix4_add_bias,
+    test_matrix4_sum_rows,
 };
 
 int (*tests_nn[])() = {
-    // test_nnxor,
-    // test_nnxor_load,
+    test_nnxor,
+    test_nnxor_load,
 };
 
 int main()
@@ -102,7 +101,7 @@ int main()
     for (int i = 0; i < test_cv_count; i++)
         failed += test_cv[i]();
 
-    // failed += test_s1_cv_rotate(-35);
+    failed += test_s1_cv_rotate(-35);
     printf("\n");
 
     // stop timer
