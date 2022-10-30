@@ -62,6 +62,25 @@ Image *CV_IMAGE_COPY(Image *image)
     return copy;
 }
 
+Image *CV_IMAGE_COPY_PART(Image *image, int xstart, int ystart, int xend, int yend)
+{
+    CV_CHECK_IMAGE(image);
+    Image *copy = CV_IMAGE_INIT(image->c, yend - ystart, xend - xstart);
+
+    for (int c = 0; c < image->c; c++)
+    {
+        for (int i = ystart; i < yend; i++)
+        {
+            for (int j = xstart; j < xend; j++)
+            {
+                PIXEL(copy, c, i - ystart, j - xstart) = PIXEL(image, c, i, j);
+            }
+        }
+    }
+
+    return copy;
+}
+
 void CV_IMAGE_SHOW(Image *image, char *title)
 {
     CV_CHECK_IMAGE(image);
@@ -551,9 +570,9 @@ Matrix *CV_GET_SHARPEN_KERNEL(float sigma)
         for (int j = 0; j < 3; j++)
         {
             if (i == 1 && j == 1)
-                MATRIX(kernel, i, j) = 4 * sigma;
+                MATRIX(kernel, i, j) = 4.0 * sigma;
             else if (i == 1 || j == 1)
-                MATRIX(kernel, i, j) = -1 * sigma;
+                MATRIX(kernel, i, j) = -1.0 * sigma;
             else
                 MATRIX(kernel, i, j) = 0;
         }
@@ -865,7 +884,7 @@ float CV_THRESHOLD(Image *src)
         }
     }
 
-    return threshold;
+    return threshold / 255.0;
 }
 
 Image *CV_OTSU(Image *src, Image *dst)
@@ -883,13 +902,65 @@ Image *CV_OTSU(Image *src, Image *dst)
     {
         for (int w = 0; w < src->w; w++)
         {
-            float p = PIXEL(src, 0, h, w) * 255.0;
+            float p = PIXEL(src, 0, h, w);
             if (p > threshold)
                 PIXEL(dst, 0, h, w) = 0;
             else
                 PIXEL(dst, 0, h, w) = 1;
         }
     }
+
+    return dst;
+}
+
+Image *CV_ADAPTIVE_THRESHOLD(Image *src, Image *dst, int block_size, float otsu_weight, float c)
+{
+    CV_CHECK_IMAGE(src);
+    CV_CHECK_CHANNEL(src, 1);
+
+    if (dst == NULL)
+        dst = CV_IMAGE_COPY(src);
+    CV_CHECK_IMAGE(dst);
+
+    if (block_size % 2 == 0)
+        block_size++;
+
+    if (otsu_weight < 0)
+        otsu_weight = 0;
+    else if (otsu_weight > 1)
+        otsu_weight = 1;
+
+    float otsu = CV_THRESHOLD(src);
+
+    float gaussian_weight = 1.0 - otsu_weight;
+
+    Matrix *kernel = CV_GET_GAUSSIAN_KERNEL(block_size, 1);
+
+    Image *mean = CV_APPLY_FILTER(src, NULL, kernel);
+    Image *var = CV_APPLY_FILTER(src, NULL, kernel);
+
+    for (int h = 0; h < src->h; h++)
+    {
+        for (int w = 0; w < src->w; w++)
+        {
+            float p = PIXEL(src, 0, h, w);
+            float m = PIXEL(mean, 0, h, w);
+            float v = PIXEL(var, 0, h, w);
+
+            // float threshold = m + c * sqrt(v - m * m);
+            float local_threshold = otsu_weight * otsu + gaussian_weight * (m - c * sqrt(v));
+            float threshold = (local_threshold * gaussian_weight) + (otsu * otsu_weight);
+
+            if (p > threshold)
+                PIXEL(dst, 0, h, w) = 0;
+            else
+                PIXEL(dst, 0, h, w) = 1;
+        }
+    }
+
+    matrix_destroy(kernel);
+    CV_IMAGE_FREE(mean);
+    CV_IMAGE_FREE(var);
 
     return dst;
 }
@@ -1009,38 +1080,76 @@ Image *CV_NOT(Image *src, Image *dst)
     return dst;
 }
 
-Image *CV_DILATE(Image *src, Image *dst, int kernel_size)
+Image *CV_DILATION(Image *src, Image *dst, int k)
 {
     CV_CHECK_IMAGE(src);
+    CV_CHECK_CHANNEL(src, 1);
 
     if (dst == NULL)
         dst = CV_IMAGE_COPY(src);
     CV_CHECK_IMAGE(dst);
 
-    int k = kernel_size / 2;
+    int r = k / 2;
 
-    for (int c = 0; c < src->c; c++)
+    for (int h = 0; h < src->h; h++)
     {
-        for (int i = 0; i < src->h; i++)
+        for (int w = 0; w < src->w; w++)
         {
-            for (int j = 0; j < src->w; j++)
+            float max = 0;
+
+            for (int i = -r; i <= r; i++)
             {
-                float p = PIXEL(src, c, i, j);
-
-                if (p == 1)
+                for (int j = -r; j <= r; j++)
                 {
-                    for (int m = -k; m <= k; m++)
-                    {
-                        for (int n = -k; n <= k; n++)
-                        {
-                            if (i + m < 0 || i + m >= src->h || j + n < 0 || j + n >= src->w)
-                                continue;
+                    if (h + i < 0 || h + i >= src->h || w + j < 0 || w + j >= src->w)
+                        continue;
 
-                            PIXEL(dst, c, i + m, j + n) = 1;
-                        }
-                    }
+                    float p = PIXEL(src, 0, h + i, w + j);
+
+                    if (p > max)
+                        max = p;
                 }
             }
+
+            PIXEL(dst, 0, h, w) = max;
+        }
+    }
+
+    return dst;
+}
+
+Image *CV_EROSION(Image *src, Image *dst, int k)
+{
+    CV_CHECK_IMAGE(src);
+    CV_CHECK_CHANNEL(src, 1);
+
+    if (dst == NULL)
+        dst = CV_IMAGE_COPY(src);
+    CV_CHECK_IMAGE(dst);
+
+    int r = k / 2;
+
+    for (int h = 0; h < src->h; h++)
+    {
+        for (int w = 0; w < src->w; w++)
+        {
+            float min = 1;
+
+            for (int i = -r; i <= r; i++)
+            {
+                for (int j = -r; j <= r; j++)
+                {
+                    if (h + i < 0 || h + i >= src->h || w + j < 0 || w + j >= src->w)
+                        continue;
+
+                    float p = PIXEL(src, 0, h + i, w + j);
+
+                    if (p < min)
+                        min = p;
+                }
+            }
+
+            PIXEL(dst, 0, h, w) = min;
         }
     }
 
@@ -1053,7 +1162,7 @@ Uint32 CV_RGB(Uint8 r, Uint8 g, Uint8 b)
     return color | r << 16 | g << 8 | b;
 }
 
-Image *CV_DRAW_POINT(Image *dst, int x, int y, Uint32 color)
+Image *CV_DRAW_POINT(Image *dst, int x, int y, int width, Uint32 color)
 {
     CV_CHECK_IMAGE(dst);
 
@@ -1062,8 +1171,17 @@ Image *CV_DRAW_POINT(Image *dst, int x, int y, Uint32 color)
 
     for (int c = 0; c < dst->c; c++)
     {
-        int r = (color >> (16 - c * 8)) & 0xff;
-        PIXEL(dst, c, y, x) = r / 255.0;
+        for (int i = -width / 2; i <= width / 2; i++)
+        {
+            for (int j = -width / 2; j <= width / 2; j++)
+            {
+                if (x + i < 0 || x + i >= dst->w || y + j < 0 || y + j >= dst->h)
+                    continue;
+
+                int r = (color >> (16 - c * 8)) & 0xff;
+                PIXEL(dst, c, y + j, x + i) = r / 255.0;
+            }
+        }
     }
 
     return dst;
@@ -1083,7 +1201,7 @@ Image *CV_DRAW_LINE(Image *dst, int x1, int y1, int x2, int y2, int width, Uint3
     {
         for (int i = 0; i < width; i++)
             for (int j = 0; j < width; j++)
-                CV_DRAW_POINT(dst, x1 + i, y1 + j, color);
+                CV_DRAW_POINT(dst, x1 + i, y1 + j, width, color);
 
         if (x1 == x2 && y1 == y2)
             break;
@@ -1116,7 +1234,7 @@ Image *CV_DRAW_RECT(Image *dst, int x, int y, int w, int h, int width, Uint32 co
     return dst;
 }
 
-Image *CV_DRAW_CIRCLE(Image *dst, int x, int y, int r, Uint32 color)
+Image *CV_DRAW_CIRCLE(Image *dst, int x, int y, int r, int width, Uint32 color)
 {
     CV_CHECK_IMAGE(dst);
 
@@ -1126,10 +1244,10 @@ Image *CV_DRAW_CIRCLE(Image *dst, int x, int y, int r, Uint32 color)
     int _x = 0;
     int _y = r;
 
-    CV_DRAW_POINT(dst, x, y + r, color);
-    CV_DRAW_POINT(dst, x, y - r, color);
-    CV_DRAW_POINT(dst, x + r, y, color);
-    CV_DRAW_POINT(dst, x - r, y, color);
+    CV_DRAW_POINT(dst, x, y + r, width, color);
+    CV_DRAW_POINT(dst, x, y - r, width, color);
+    CV_DRAW_POINT(dst, x + r, y, width, color);
+    CV_DRAW_POINT(dst, x - r, y, width, color);
 
     while (_x < _y)
     {
@@ -1143,14 +1261,14 @@ Image *CV_DRAW_CIRCLE(Image *dst, int x, int y, int r, Uint32 color)
         ddF_x += 2;
         f += ddF_x;
 
-        CV_DRAW_POINT(dst, x + _x, y + _y, color);
-        CV_DRAW_POINT(dst, x - _x, y + _y, color);
-        CV_DRAW_POINT(dst, x + _x, y - _y, color);
-        CV_DRAW_POINT(dst, x - _x, y - _y, color);
-        CV_DRAW_POINT(dst, x + _y, y + _x, color);
-        CV_DRAW_POINT(dst, x - _y, y + _x, color);
-        CV_DRAW_POINT(dst, x + _y, y - _x, color);
-        CV_DRAW_POINT(dst, x - _y, y - _x, color);
+        CV_DRAW_POINT(dst, x - _x, y + _y, width, color);
+        CV_DRAW_POINT(dst, x + _x, y + _y, width, color);
+        CV_DRAW_POINT(dst, x + _x, y - _y, width, color);
+        CV_DRAW_POINT(dst, x - _x, y - _y, width, color);
+        CV_DRAW_POINT(dst, x + _y, y + _x, width, color);
+        CV_DRAW_POINT(dst, x - _y, y + _x, width, color);
+        CV_DRAW_POINT(dst, x + _y, y - _x, width, color);
+        CV_DRAW_POINT(dst, x - _y, y - _x, width, color);
     }
 
     return dst;
@@ -1252,10 +1370,6 @@ int *CV_HOUGH_LINES(Image *src, int threshold, int *nlines)
     int *accumulator = (int *)malloc(sizeof(int) * w * h * 180);
     memset(accumulator, 0, sizeof(int) * w * h * 180);
 
-    int max = 0;
-    // int max_theta = 0;
-    // int max_rho = 0;
-
     for (int y = 0; y < h; y++)
     {
         for (int x = 0; x < w; x++)
@@ -1265,19 +1379,12 @@ int *CV_HOUGH_LINES(Image *src, int threshold, int *nlines)
 
             for (int theta = 0; theta < 180; theta++)
             {
-                float tf = (float)theta * PI / 180.0;       // theta in radian
+                double tf = (double)theta * PI / 180;       // theta in radian
                 int rho = (int)(x * cos(tf) + y * sin(tf)); // rho in pixel
                 if (rho < 0)
                     rho = -rho;
 
-                accumulator[rho * 180 + theta]++; // accumulate the votes for each rho and theta
-
-                if (accumulator[rho * 180 + theta] > max)
-                {
-                    max = accumulator[rho * 180 + theta];
-                    // max_theta = theta;
-                    // max_rho = rho;
-                }
+                accumulator[rho * 180 + theta]++;
             }
         }
     }
@@ -1309,12 +1416,73 @@ int *CV_HOUGH_LINES(Image *src, int threshold, int *nlines)
     free(accumulator);
     return lines;
 }
+int *CV_SIMPLIFY_HOUGH_LINES(int *lines, int nlines, int threshold, int *nsimplified)
+{
+    int *simplified = (int *)malloc(sizeof(int) * nlines * 2);
+    memset(simplified, 0, sizeof(int) * nlines * 2);
+
+    int j = 0;
+    for (int i = 0; i < nlines; i++)
+    {
+        int rho = lines[i * 2];
+        int theta = lines[i * 2 + 1];
+
+        int found = 0;
+        for (int k = 0; k < j; k++)
+        {
+            int rho2 = simplified[k * 2];
+            int theta2 = simplified[k * 2 + 1];
+
+            if (abs(rho - rho2) < threshold && abs(theta - theta2) < threshold)
+            {
+                found = 1;
+                break;
+            }
+        }
+
+        if (!found)
+        {
+            simplified[j * 2] = rho;
+            simplified[j * 2 + 1] = theta;
+            j++;
+        }
+    }
+
+    *nsimplified = j;
+
+    return simplified;
+}
+
+int *CV_REMOVE_DIAGONALS(int *lines, int nlines, int *nsimplified)
+{
+    int *filtered = (int *)malloc(sizeof(int) * nlines * 2);
+    memset(filtered, 0, sizeof(int) * nlines * 2);
+
+    int j = 0;
+    for (int i = 0; i < nlines; i++)
+    {
+        int rho = lines[i * 2];
+        int theta = lines[i * 2 + 1];
+
+        if ((23 < theta && theta < 67) || (113 < theta && theta < 157))
+            continue;
+        else
+        {
+            filtered[j * 2] = rho;
+            filtered[j * 2 + 1] = theta;
+            j++;
+        }
+    }
+
+    *nsimplified = j;
+
+    return filtered;
+}
 
 Image *CV_DRAW_HOUGH_LINES(Image *dst, int *lines, int nlines, int weight, Uint32 color)
 {
     CV_CHECK_IMAGE(dst);
 
-    int w = dst->w;
     int h = dst->h;
 
     for (int i = 0; i < nlines; i++)
@@ -1328,14 +1496,14 @@ Image *CV_DRAW_HOUGH_LINES(Image *dst, int *lines, int nlines, int weight, Uint3
         }
         else
         {
-            float a = cos(theta * PI / 180.0);
-            float b = sin(theta * PI / 180.0);
-            float x0 = a * rho;
-            float y0 = b * rho;
-            float x1 = x0 + w * (-b);
-            float y1 = y0 + w * a;
-            float x2 = x0 - w * (-b);
-            float y2 = y0 - w * a;
+            double a = cos(theta * PI / 180.0);
+            double b = sin(theta * PI / 180.0);
+            double x0 = a * rho;
+            double y0 = b * rho;
+            double x1 = x0 + 2000 * (-b);
+            double y1 = y0 + 2000 * a;
+            double x2 = x0 - 2000 * (-b);
+            double y2 = y0 - 2000 * a;
 
             CV_DRAW_LINE(dst, x1, y1, x2, y2, weight, color);
         }
@@ -1344,7 +1512,348 @@ Image *CV_DRAW_HOUGH_LINES(Image *dst, int *lines, int nlines, int weight, Uint3
     return dst;
 }
 
-Image *CV_ROTATE(Image *src, Image *dst, float angle)
+float CV_HOUGH_LINES_ORIENTATION(int *lines, int nlines)
+{
+    int *histo = (int *)malloc(sizeof(int) * 180);
+    memset(histo, 0, sizeof(int) * 180);
+
+    for (int i = 0; i < nlines; i++)
+    {
+        int theta = lines[i * 2 + 1];
+        histo[theta]++;
+    }
+
+    int max = 0;
+    int max_theta = 0;
+    for (int i = 0; i < 180; i++)
+    {
+        if (histo[i] > max)
+        {
+            max = histo[i];
+            max_theta = i;
+        }
+    }
+
+    free(histo);
+
+    return max_theta;
+}
+
+int *CV_FIND_LARGEST_CONTOUR(Image *src, int *nrects)
+{
+    CV_CHECK_IMAGE(src);
+    CV_CHECK_CHANNEL(src, 1);
+
+    Image *p = CV_IMAGE_COPY(src);
+
+    int w = p->w;
+    int h = p->h;
+
+    int *contours = (int *)malloc(sizeof(int) * w * h * 2);
+    memset(contours, 0, sizeof(int) * w * h * 2);
+
+    int *visited = (int *)malloc(sizeof(int) * w * h * 2);
+    memset(visited, 0, sizeof(int) * w * h * 2);
+
+    int *max_contours;
+
+    int ncontours = 0;
+    int max_contour = 0;
+
+    int min_x = 0;
+    int min_y = 0;
+    int max_x = 0;
+    int max_y = 0;
+
+    int P1_x, P1_y, P2_x, P2_y, P3_x, P3_y, P4_x, P4_y = 0;
+
+    int max_area = 0;
+
+    for (int y = 0; y < h; y++)
+    {
+        for (int x = 0; x < w; x++)
+        {
+            if (PIXEL(p, 0, y, x) == 0)
+                continue;
+
+            if (visited[y * w + x])
+                continue;
+
+            int *stack = (int *)malloc(sizeof(int) * w * h * 2);
+            memset(stack, 0, sizeof(int) * w * h * 2);
+
+            int nstack = 0;
+
+            stack[nstack * 2] = x;
+            stack[nstack * 2 + 1] = y;
+            nstack++;
+
+            int xmin = x;
+            int xmax = x;
+            int ymin = y;
+            int ymax = y;
+
+            while (nstack > 0)
+            {
+                int x = stack[(nstack - 1) * 2];
+                int y = stack[(nstack - 1) * 2 + 1];
+                nstack--;
+
+                if (visited[y * w + x])
+                    continue;
+
+                visited[y * w + x] = 1;
+
+                contours[ncontours * 2] = x;
+                contours[ncontours * 2 + 1] = y;
+                ncontours++;
+
+                if (x < xmin)
+                    xmin = x;
+                if (x > xmax)
+                    xmax = x;
+                if (y < ymin)
+                    ymin = y;
+                if (y > ymax)
+                    ymax = y;
+
+                if (x > 0 && PIXEL(p, 0, y, x - 1) == 1 && !visited[y * w + x - 1])
+                {
+                    stack[nstack * 2] = x - 1;
+                    stack[nstack * 2 + 1] = y;
+                    nstack++;
+                }
+
+                if (x < w - 1 && PIXEL(p, 0, y, x + 1) == 1 && !visited[y * w + x + 1])
+                {
+                    stack[nstack * 2] = x + 1;
+                    stack[nstack * 2 + 1] = y;
+                    nstack++;
+                }
+
+                if (y > 0 && PIXEL(p, 0, y - 1, x) == 1 && !visited[(y - 1) * w + x])
+                {
+                    stack[nstack * 2] = x;
+                    stack[nstack * 2 + 1] = y - 1;
+                    nstack++;
+                }
+
+                if (y < h - 1 && PIXEL(p, 0, y + 1, x) == 1 && !visited[(y + 1) * w + x])
+                {
+                    stack[nstack * 2] = x;
+                    stack[nstack * 2 + 1] = y + 1;
+                    nstack++;
+                }
+            }
+
+            free(stack);
+
+            int p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, p4_x, p4_y = 0;
+
+            for (int i = 0; i < ncontours; i++)
+            {
+                int x = contours[i * 2];
+                int y = contours[i * 2 + 1];
+
+                // P1
+                if (x == xmin)
+                {
+                    p1_x = x;
+                    p1_y = y;
+                }
+
+                // P2
+                else if (y == ymin)
+                {
+                    p2_x = x;
+                    p2_y = y;
+                }
+
+                // P3
+                else if (x == xmax)
+                {
+                    p3_x = x;
+                    p3_y = y;
+                }
+
+                // P4
+                else if (y == ymax)
+                {
+                    p4_x = x;
+                    p4_y = y;
+                }
+            }
+
+            // compute area from unsorted points
+            int width = (p3_x - p1_x);
+            int height = (p4_y - p2_y);
+            int area = abs(width * height);
+
+            if (ncontours > max_contour && area > max_area)
+            {
+                max_contour = ncontours;
+                max_area = area;
+
+                min_x = xmin;
+                min_y = ymin;
+                max_x = xmax;
+                max_y = ymax;
+
+                P1_x = p1_x;
+                P1_y = p1_y;
+                P2_x = p2_x;
+                P2_y = p2_y;
+                P3_x = p3_x;
+                P3_y = p3_y;
+                P4_x = p4_x;
+                P4_y = p4_y;
+
+                max_contours = (int *)malloc(sizeof(int) * max_contour * 2);
+                memcpy(max_contours, contours, sizeof(int) * max_contour * 2);
+            }
+
+            ncontours = 0;
+        }
+    }
+
+    free(visited);
+    free(contours);
+
+    CV_IMAGE_FREE(p);
+
+    printf("min_x: %d, min_y: %d, max_x: %d, max_y: %d\n", min_x, min_y, max_x, max_y);
+
+    printf("P1(%d, %d)\n", P1_x, P1_y);
+    printf("P2(%d, %d)\n", P2_x, P2_y);
+    printf("P3(%d, %d)\n", P3_x, P3_y);
+    printf("P4(%d, %d)\n", P4_x, P4_y);
+
+    printf("max_contour: %d, max_area: %d\n", max_contour, max_area);
+
+    *nrects = 4;
+    int *rects = (int *)malloc(sizeof(int) * 8);
+    rects[0] = P1_x;
+    rects[1] = P1_y;
+    rects[2] = P2_x;
+    rects[3] = P2_y;
+    rects[4] = P3_x;
+    rects[5] = P3_y;
+    rects[6] = P4_x;
+    rects[7] = P4_y;
+
+    return rects;
+}
+
+int *CV_GRID_INTERSECTION(Image *src, int *lines, int nlines, int *nintersection)
+{
+    CV_CHECK_IMAGE(src);
+
+    int w = src->w;
+    int h = src->h;
+
+    int *intersection = (int *)malloc(sizeof(int) * nlines * nlines * 2);
+    memset(intersection, 0, sizeof(int) * nlines * nlines * 2);
+
+    int j = 0;
+    for (int i = 0; i < nlines; i++)
+    {
+        int rho1 = lines[i * 2];
+        int theta1 = lines[i * 2 + 1];
+
+        for (int k = i + 1; k < nlines; k++)
+        {
+            int rho2 = lines[k * 2];
+            int theta2 = lines[k * 2 + 1];
+
+            float a = cos(theta1 * PI / 180.0);
+            float b = sin(theta1 * PI / 180.0);
+            float c = cos(theta2 * PI / 180.0);
+            float d = sin(theta2 * PI / 180.0);
+
+            float det = a * d - b * c;
+            if (det == 0)
+                continue;
+
+            float x = (d * rho1 - b * rho2) / det;
+            float y = (-c * rho1 + a * rho2) / det;
+
+            if (x < 0 || x > w || y < 0 || y > h)
+                continue;
+
+            intersection[j * 2] = (int)x;
+            intersection[j * 2 + 1] = (int)y;
+            j++;
+        }
+    }
+
+    *nintersection = j;
+
+    return intersection;
+}
+// sort intersections by x value
+int *CV_SORT_INTERSECTIONS(int *intersections, int nintersections)
+{
+    int *sorted = (int *)malloc(sizeof(int) * nintersections * 2);
+    memset(sorted, 0, sizeof(int) * nintersections * 2);
+
+    for (int i = 0; i < nintersections; i++)
+    {
+        int x = intersections[i * 2];
+        int y = intersections[i * 2 + 1];
+
+        int j = 0;
+        for (j = 0; j < i; j++)
+        {
+            int y2 = sorted[j * 2 + 1];
+
+            if (y < y2)
+                break;
+        }
+
+        for (int k = i; k > j; k--)
+        {
+            sorted[k * 2] = sorted[(k - 1) * 2];
+            sorted[k * 2 + 1] = sorted[(k - 1) * 2 + 1];
+        }
+
+        sorted[j * 2] = x;
+        sorted[j * 2 + 1] = y;
+    }
+
+    return sorted;
+}
+
+int *CV_GRID_BOXES(int *intersections, int nintersections, int *nboxes)
+{
+    int *boxes = (int *)malloc(sizeof(int) * nintersections * 4);
+    memset(boxes, 0, sizeof(int) * nintersections * 4);
+
+    int snbi = sqrt(nintersections);
+
+    int j = 0;
+    for (int i = 0; i < nintersections - snbi; i++)
+    {
+        if ((i + 1) % snbi == 0)
+            continue;
+
+        int x1 = intersections[i * 2];
+        int y1 = intersections[i * 2 + 1];
+        int x4 = intersections[i * 2 + snbi * 2 + 2];
+        int y4 = intersections[i * 2 + snbi * 2 + 3];
+
+        boxes[j * 4] = x1;
+        boxes[j * 4 + 1] = y1;
+        boxes[j * 4 + 2] = x4;
+        boxes[j * 4 + 3] = y4;
+        j++;
+    }
+
+    *nboxes = j;
+
+    return boxes;
+}
+
+Image *CV_ROTATE(Image *src, Image *dst, float angle, Uint32 background)
 {
     CV_CHECK_IMAGE(src);
 
@@ -1381,7 +1890,8 @@ Image *CV_ROTATE(Image *src, Image *dst, float angle)
             {
                 for (int c = 0; c < src->c; c++)
                 {
-                    PIXEL(dst, c, y, x) = 0;
+                    int r = (background >> (16 - c * 8)) & 0xff;
+                    PIXEL(dst, c, y, x) = r / 255.0;
                 }
             }
         }
@@ -1417,6 +1927,49 @@ Image *CV_RESIZE(Image *src, Image *dst, float scale)
                 for (int c = 0; c < src->c; c++)
                 {
                     PIXEL(dst, c, y, x) = 0;
+                }
+            }
+        }
+    }
+    return dst;
+}
+
+Image *CV_ZOOM(Image *src, Image *dst, float scale, Uint32 background)
+{
+    CV_CHECK_IMAGE(src);
+
+    if (dst == NULL)
+    {
+        dst = CV_ZEROS(src->c, src->h, src->w);
+    }
+
+    // zoom and keeps previous dimensions
+
+    int hwidth = src->w / 2;
+    int hheight = src->h / 2;
+    int hwidth2 = dst->w / 2;
+    int hheight2 = dst->h / 2;
+
+    for (int x = 0; x < dst->w; x++)
+    {
+        for (int y = 0; y < dst->h; y++)
+        {
+            int xs = (int)((x - hwidth2) / scale) + hwidth;
+            int ys = (int)((y - hheight2) / scale) + hheight;
+
+            if (xs >= 0 && xs < src->w && ys >= 0 && ys < src->h)
+            {
+                for (int c = 0; c < src->c; c++)
+                {
+                    PIXEL(dst, c, y, x) = PIXEL(src, c, ys, xs);
+                }
+            }
+            else
+            {
+                for (int c = 0; c < src->c; c++)
+                {
+                    int r = (background >> (16 - c * 8)) & 0xff;
+                    PIXEL(dst, c, y, x) = r / 255.0;
                 }
             }
         }

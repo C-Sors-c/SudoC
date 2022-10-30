@@ -99,6 +99,7 @@ Image *CV_IMAGE_INIT(int channels, int height, int width);
 Image *CV_ZEROS(int channels, int height, int width);
 Image *CV_ONES(int channels, int height, int width);
 Image *CV_IMAGE_COPY(Image *image);
+Image *CV_IMAGE_COPY_PART(Image *image, int xstart, int ystart, int xend, int yend);
 
 void CV_IMAGE_SHOW(Image *image, char *title);
 void CV_IMAGE_SHOW_MATRIX4(Matrix4 *matrix, char *title, int index);
@@ -138,6 +139,7 @@ Image *CV_NON_MAX_SUPPRESSION(Image *src, Image *dst, Image *dst_x, Image *dst_y
 Image *CV_HYSTERESIS_THRESHOLDING(Image *src, Image *dst, float low, float high);
 Image *CV_CANNY(Image *src, Image *dst, float low, float high);
 
+Image *CV_ADAPTIVE_THRESHOLD(Image *src, Image *dst, int block_size, float otsu_weight, float c);
 float CV_THRESHOLD(Image *src);
 Image *CV_OTSU(Image *src, Image *dst);
 Image *CV_OR(Image *src1, Image *src2, Image *dst);
@@ -145,13 +147,14 @@ Image *CV_AND(Image *src1, Image *src2, Image *dst);
 Image *CV_XOR(Image *src1, Image *src2, Image *dst);
 Image *CV_NOT(Image *src, Image *dst);
 
-Image *CV_DILATE(Image *src, Image *dst, int kernel_size);
+Image *CV_DILATION(Image *src, Image *dst, int kernel_size);
+Image *CV_EROSION(Image *src, Image *dst, int kernel_size);
 
 Uint32 CV_RGB(Uint8 r, Uint8 g, Uint8 b);
-Image *CV_DRAW_POINT(Image *dst, int x, int y, Uint32 color);
+Image *CV_DRAW_POINT(Image *dst, int x, int y, int width, Uint32 color);
 Image *CV_DRAW_LINE(Image *dst, int x1, int y1, int x2, int y2, int width, Uint32 color);
 Image *CV_DRAW_RECT(Image *dst, int x, int y, int w, int h, int width, Uint32 color);
-Image *CV_DRAW_CIRCLE(Image *dst, int x, int y, int r, Uint32 color);
+Image *CV_DRAW_CIRCLE(Image *dst, int x, int y, int r, int width, Uint32 color);
 Image *CV_DRAW_DIGIT(Image *dst, int x, int y, int digit, int size, Uint32 color);
 
 int CV_FLOOR(float x);
@@ -159,7 +162,19 @@ int CV_ROUND(float x);
 int CV_CEIL(float x);
 
 int *CV_HOUGH_LINES(Image *src, int threshold, int *nlines);
+int *CV_SIMPLIFY_HOUGH_LINES(int *lines, int nlines, int threshold, int *nsimplified);
 Image *CV_DRAW_HOUGH_LINES(Image *dst, int *lines, int nlines, int weight, Uint32 color);
+float CV_HOUGH_LINES_ORIENTATION(int *lines, int nlines);
 
-Image *CV_ROTATE(Image *src, Image *dst, float angle);
+int *CV_FIND_LARGEST_CONTOUR(Image *src, int *nrects);
+
+int *CV_REMOVE_DIAGONALS(int *lines, int nlines, int *nsimplified);
+int *CV_GRID_INTERSECTION(Image *src, int *lines, int nlines, int *nintersection);
+int *CV_SORT_INTERSECTIONS(int *intersections, int nintersections);
+int *CV_GRID_BOXES(int *intersections, int nintersections, int *nboxes);
+
+Image *CV_ROTATE(Image *src, Image *dst, float angle, Uint32 background);
 Image *CV_RESIZE(Image *src, Image *dst, float scale);
+Image *CV_ZOOM(Image *src, Image *dst, float scale, Uint32 background);
+
+// int *CV_FLOOD_FILL(Image *src, int *npoints);
