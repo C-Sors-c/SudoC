@@ -15,7 +15,7 @@ DATA_DIR := out
 TEST_DATA_DIR := ./tests/out
 TEST_BOX_DIR := ./tests/out/box
 
-SRC :=	${wildcard ./sudoc/src/*.c} ./sudoc/main.c
+SRC :=	${wildcard ./sudoc/src/*.c} ${wildcard ./tests/src/*.c} ./sudoc/main.c
 
 SOLVER_SRC := ${wildcard ./sudoc/src/*.c} ./sudoc/solver.c
 
@@ -43,6 +43,8 @@ build-test: ${TEST_OBJ}
 build-solver: ${SOLVER_OBJ}
 	@mkdir -p ${BUILD_DIR}
 	@${CC} -o ${BUILD_DIR}/${EXEC_SOLVER} $^ ${LDFLAGS} ${LDLIBS}
+
+build-s1: build build-solver
 
 # RUN
 run: build clean-main

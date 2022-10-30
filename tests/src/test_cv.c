@@ -829,13 +829,14 @@ int test_s1_cv_hough_lines()
 int test_s1_cv_rotate(int angle)
 {
     Image *image = CV_LOAD("tests/samples/sudoku1.png", RGB);
-    Image *rotated = CV_ROTATE(image, NULL, angle, 0x000000);
+    Image *rotated = CV_ROTATE(image, NULL, angle, CV_RGB(242, 241, 239));
 
     CV_SAVE(rotated, "tests/out/test_cv_rotate.png");
     CV_IMAGE_SHOW(rotated, "test_s1_cv_rotate");
 
     CV_IMAGE_FREE(image);
     CV_IMAGE_FREE(rotated);
+    return assert(true, true, "test_s1_cv_rotate");
 }
 
 int test_s1_cv_save_boxes()
