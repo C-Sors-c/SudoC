@@ -24,3 +24,38 @@ void init_rand()
 {
     srand(time(NULL));
 }
+
+bool cmp(float a, float b)
+{
+    return fabs(a - b) < 0.0001;
+}
+
+bool eq(float a, float b)
+{
+    return cmp(a, b);
+}
+
+bool neq(float a, float b)
+{
+    return !eq(a, b);
+}
+
+bool gt(float a, float b)
+{
+    return a > b;
+}
+
+bool gte(float a, float b)
+{
+    return a > b || eq(a, b);
+}
+
+bool lt(float a, float b)
+{
+    return a < b;
+}
+
+bool lte(float a, float b)
+{
+    return a < b || eq(a, b);
+}
