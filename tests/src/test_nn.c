@@ -89,14 +89,10 @@ int test_nnxor()
         float p4 = m_get(predictions, 3, 1);
 
         float tests[4] = {p1, p2, p3, p4};
-        float sum = 0;
 
         for (int j = 0; j < 4; j++)
             if (tests[j] > min_accuracy)
-            {
                 correct++;
-                sum += tests[j];
-            }
 
         accuracy = (p1 + p2 + p3 + p4) / 4.0;
         matrix_destroy(predictions);

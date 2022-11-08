@@ -3,6 +3,10 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
+#include <limits.h>
+#include <math.h>
+#include <stdint.h>
+#include <stdbool.h>
 
 // Color codes for printing
 #define RESET "\033[0m"
@@ -17,3 +21,10 @@
 
 int assert(int result, int expected, char name[]);
 void init_rand();
+bool cmp(float a, float b);
+bool eq(float a, float b);
+bool neq(float a, float b);
+bool gt(float a, float b);
+bool gte(float a, float b);
+bool lt(float a, float b);
+bool lte(float a, float b);

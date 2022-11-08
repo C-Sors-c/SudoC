@@ -15,7 +15,7 @@ struct Matrix
 };
 
 typedef struct Matrix Matrix;
-#define MATRIX(matrix, i, j) (matrix->data[(i)*matrix->dim2 + (j)])
+#define MAT(matrix, i, j) (matrix->data[(i)*matrix->dim2 + (j)])
 Matrix *matrix_init(int dim1, int dim2, float *datap);
 Matrix *matrix_copy(Matrix *m, Matrix *dst);
 void matrix_zero(Matrix *m);
@@ -47,7 +47,7 @@ struct Matrix4
 };
 
 typedef struct Matrix4 Matrix4;
-#define MATRIX4(matrix, i, j, k, l) (matrix->data[(i)*matrix->dim2 * matrix->dim3 * matrix->dim4 + (j)*matrix->dim3 * matrix->dim4 + (k)*matrix->dim4 + (l)])
+#define MAT4(matrix, i, j, k, l) (matrix->data[(i)*matrix->dim2 * matrix->dim3 * matrix->dim4 + (j)*matrix->dim3 * matrix->dim4 + (k)*matrix->dim4 + (l)])
 Matrix4 *matrix4_init(int dim1, int dim2, int dim3, int dim4, float *datap);
 void matrix4_copy(Matrix4 *m, Matrix4 *dst);
 void matrix4_zero(Matrix4 *m);

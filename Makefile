@@ -2,9 +2,9 @@
 
 CC := gcc
 CPPFLAGS :=
-CFLAGS := -Wall -Wextra -std=c99 -O3 `pkg-config --cflags sdl2 SDL2_image` -Wno-unknown-pragmas
+CFLAGS := -Wall -Wextra -Werror -Wno-unknown-pragmas -Wno-unused-variable -std=c99 -O3 -fsanitize=address `pkg-config --cflags sdl2 SDL2_image`
 LDFLAGS := -lm
-LDLIBS := `pkg-config --libs sdl2 SDL2_image`
+LDLIBS := -fsanitize=address `pkg-config --libs sdl2 SDL2_image`
 
 EXEC := main
 EXEC_TEST := test
@@ -30,7 +30,7 @@ SOLVER_OBJ := ${SOLVER_SRC:.c=.o}
 
 .PHONY: build all
 
-all: build build-solver build-test clean-main clean-test
+all: build build-solver build-test clean-main clean-test clean-solver
 
 # BUILD
 build: ${OBJ}
