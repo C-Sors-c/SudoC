@@ -2,7 +2,7 @@
 
 CC := gcc
 CPPFLAGS :=
-CFLAGS := -Wall -Wextra -Werror -Wno-unknown-pragmas -Wno-unused-variable -std=c99 -O3 -fsanitize=address `pkg-config --cflags sdl2 SDL2_image`
+CFLAGS := -Wall -Wextra -Werror -Wno-unknown-pragmas -Wno-unused-variable -Wno-unused-parameter -std=c99 -O3 -fsanitize=address `pkg-config --cflags sdl2 SDL2_image`
 LDFLAGS := -lm
 LDLIBS := -fsanitize=address `pkg-config --libs sdl2 SDL2_image`
 

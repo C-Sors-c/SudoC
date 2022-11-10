@@ -335,7 +335,7 @@ int test_cv_hough_lines()
 
 int test_cv_simplify_hough_lines()
 {
-    Image *image = CV_LOAD("tests/samples/sudoku1.png", RGB);
+    Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", RGB);
     Image *processed = CV_COPY(image);
 
     int k = 5;
@@ -354,7 +354,7 @@ int test_cv_simplify_hough_lines()
     int *lines = CV_HOUGH_LINES(processed, 300, &n);
     int *merged = CV_MERGE_LINES(lines, n, 35, &n);
 
-    CV_DRAW_LINES(image, image, merged, n, 1, CV_RGB(255, 0, 0));
+    CV_DRAW_LINES(image, image, merged, n, 2, CV_RGB(255, 0, 0));
 
     CV_SAVE(image, "tests/out/test_cv_hough_lines.png");
 
@@ -558,84 +558,36 @@ int test_cv_save_boxes()
 
 int test_cv_find_countours()
 {
-    Image *image = CV_LOAD("tests/samples/sudoku15.png", RGB);
-
-    Image *g = CV_RGB_TO_GRAY(image, image);
-
-    Image *gray = CV_RGB_TO_GRAY(image, NULL);
+    Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", RGB);
+    Image *processed = CV_COPY(image);
 
     int k = 5;
-    Image *blur = CV_GAUSSIAN_BLUR(gray, NULL, k, 1);
 
-    Image *sharp = CV_SHARPEN(blur, NULL, k * 2);
-    Image *threshold = CV_ADAPTIVE_THRESHOLD(sharp, NULL, k, 0.5, 0.5);
+    CV_RGB_TO_GRAY(processed, processed);
+    CV_GAUSSIAN_BLUR(processed, processed, k, 1);
+    CV_SHARPEN(processed, processed, k * 2);
+    CV_ADAPTIVE_THRESHOLD(processed, processed, k, 0.5, 0.5);
+    CV_NOT(processed, processed);
+    CV_DILATE(processed, processed, 3);
+    CV_ERODE(processed, processed, 3);
 
-    Image *not = CV_NOT(gray, NULL);
+    // CV_SOBEL(processed, processed);
 
-    // Image *sobel = CV_SOBEL(not, NULL);
-    // Image *nonmax = CV_NON_MAX_SUPPRESSION(sobel, NULL, NULL, NULL);
+    // int n = 0;
+    // int *lines = CV_HOUGH_LINES(processed, 400, &n);
+    // int *merged = CV_MERGE_LINES(lines, n, 35, &n);
 
-    Image *dilated = CV_DILATE(not, NULL, 1);
-    Image *eroded = CV_ERODE(dilated, NULL, 1);
+    // int *contours = CV_FIND_LARGEST_CONTOUR(merged, n, &n);
 
-    Image *blur2 = CV_GAUSSIAN_BLUR(eroded, NULL, 5, 5);
-    Image *canny = CV_CANNY(blur2, NULL, 0.1, 0.9);
+    // CV_DRAW_LINES(image, image, merged, n, 1, CV_RGB(255, 0, 0));
 
-    int nlines = 0;
-    int *lines = CV_HOUGH_LINES(not, 30, &nlines);
-
-    int nsimplified = 0;
-    int *simplified = CV_MERGE_LINES(lines, nlines, 30, &nsimplified);
-    // float orientation = CV_ORIENTATION(simplified, nsimplified);
-    CV_DRAW_LINES(image, image, simplified, nsimplified, 1, CV_RGB(255, 0, 0));
-
-    CV_SAVE(image, "tests/out/test_cv_find_countours.png");
-
-    // int nn = 0;
-    // int *coords = CV_FIND_LARGEST_CONTOUR(processed, &nn);
-
-    for (int i = 0; i < nlines; i++)
-    {
-        int rho = lines[i * 2];
-        int theta = lines[i * 2 + 1];
-
-        printf("rho: %d, theta: %d\n", rho, theta);
-    }
-
-    printf("nlines: %d, nsimplified: %d\n", nlines, nsimplified);
-
-    for (int i = 0; i < nsimplified; i++)
-    {
-        int rho = simplified[i * 2];
-        int theta = simplified[i * 2 + 1];
-
-        printf("rho: %d, theta: %d\n", rho, theta);
-    }
-
-    // printf("coords: %d\n", nn);
-
-    // for (int i = 0; i < nn; i++)
-    // {
-    //     int x = coords[i * 2];
-    //     int y = coords[i * 2 + 1];
-    //     CV_DRAW_POINT(image, x, y, 2, CV_RGB(0, 0, 255));
-    // }
+    CV_SAVE(processed, "tests/out/test_cv_find_countours.png");
 
     CV_FREE(&image);
-    CV_FREE(&gray);
-    CV_FREE(&blur);
-    CV_FREE(&sharp);
-    CV_FREE(&threshold);
-    CV_FREE(&not );
-    CV_FREE(&dilated);
-    CV_FREE(&eroded);
-    // CV_FREE(&canny);
-    // CV_FREE(&processed);
-    // CV_FREE(&draw);
+    CV_FREE(&processed);
 
-    // FREE(coords);
     // FREE(lines);
-    // FREE(simplified);
+    // FREE(merged);
 
     return assert(true, true, "test_cv_find_countours");
 }

@@ -146,6 +146,7 @@ Image *CV_INIT(int channels, int height, int width);
 Image *CV_ZEROS(int channels, int height, int width);
 Image *CV_ONES(int channels, int height, int width);
 Image *CV_COPY(const Image *image);
+void CV_COPY_TO(const Image *src, Image *dst);
 Image *CV_COPY_REGION(const Image *image, int xstart, int ystart, int xend, int yend);
 
 void CV_SHOW(const Image *image, char *title);
@@ -195,9 +196,14 @@ Image *CV_OR(const Image *src1, Image *src2, Image *dst);
 Image *CV_AND(const Image *src1, Image *src2, Image *dst);
 Image *CV_XOR(const Image *src1, Image *src2, Image *dst);
 Image *CV_NOT(const Image *src, Image *dst);
+Image *CV_SUB(const Image *src1, Image *src2, Image *dst);
+int CV_COUNT_NON_ZERO(const Image *src);
 
-Image *CV_DILATE(const Image *src, Image *dst, int kernel_size);
-Image *CV_ERODE(const Image *src, Image *dst, int kernel_size);
+Image *CV_DILATE(const Image *src, Image *dst, int k);
+Image *CV_ERODE(const Image *src, Image *dst, int k);
+Image *CV_OPEN(const Image *src, Image *dst, int k);
+Image *CV_CLOSE(const Image *src, Image *dst, int k);
+Image *CV_MORPHOLOGICAL_SKELETON(const Image *src, Image *dst, int k);
 
 Uint32 CV_RGB(Uint8 r, Uint8 g, Uint8 b);
 pixel_t CV_COLOR(Uint32 color, int channel);

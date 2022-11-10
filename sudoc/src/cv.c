@@ -83,6 +83,24 @@ Image *CV_COPY(const Image *src)
     return copy;
 }
 
+/// @brief Copy an image from src to dst.
+/// @param src The image to copy.
+/// @param dst The image to copy to.
+void CV_COPY_TO(const Image *src, Image *dst)
+{
+    ASSERT_IMG(src);
+
+    if (dst == NULL)
+    {
+        dst = CV_COPY(src);
+        return;
+    }
+
+    ASSERT_IMG(dst);
+    ASSERT_DIM(dst, src->c, src->h, src->w);
+    memcpy(dst->data, src->data, src->c * src->h * src->w * sizeof(pixel_t));
+}
+
 /// @brief Create a copy of a particlar region of an image.
 /// @param src The image to copy.
 /// @param xstart The x coordinate of the top left corner of the region.
@@ -1407,6 +1425,73 @@ Image *CV_NOT(const Image *src, Image *dst)
     return dst;
 }
 
+/// @brief Apply a subtraction operation to two images
+/// @param src1 The first source image
+/// @param src2 The second source image
+/// @param dst The destination image
+/// @return The destination image (dst)
+Image *CV_SUB(const Image *src1, Image *src2, Image *dst)
+{
+    ASSERT_IMG(src1);
+    ASSERT_IMG(src2);
+
+    Image *tmp1 = CV_COPY(src1);
+    Image *tmp2 = CV_COPY(src2);
+
+    if (dst == NULL)
+        dst = CV_INIT(src1->c, src1->h, src1->w);
+    ASSERT_IMG(dst);
+    ASSERT_DIM(src2, src1->c, src1->h, src1->w);
+    ASSERT_DIM(dst, src1->c, src1->h, src1->w);
+
+    for (int c = 0; c < src1->c; c++)
+    {
+        for (int i = 0; i < src1->h; i++)
+        {
+            for (int j = 0; j < src1->w; j++)
+            {
+                float p1 = PIXEL(tmp1, c, i, j);
+                float p2 = PIXEL(tmp2, c, i, j);
+
+                if (p1 == 1 && p2 == 0)
+                    PIXEL(dst, c, i, j) = 1;
+                else
+                    PIXEL(dst, c, i, j) = 0;
+            }
+        }
+    }
+
+    CV_FREE(&tmp1);
+    CV_FREE(&tmp2);
+    return dst;
+}
+
+/// @brief Count the non-zero pixels in an image
+/// @param src The source image
+/// @return The number of non-zero pixels
+int CV_COUNT_NON_ZERO(const Image *src)
+{
+    ASSERT_IMG(src);
+
+    int count = 0;
+
+    for (int c = 0; c < src->c; c++)
+    {
+        for (int i = 0; i < src->h; i++)
+        {
+            for (int j = 0; j < src->w; j++)
+            {
+                float p = PIXEL(src, c, i, j);
+
+                if (p == 1)
+                    count++;
+            }
+        }
+    }
+
+    return count;
+}
+
 /// @brief Apply a dilation operation to an image
 /// @param src The source image
 /// @param dst The destination image
@@ -1498,6 +1583,97 @@ Image *CV_ERODE(const Image *src, Image *dst, int k)
     }
 
     CV_FREE(&tmp);
+    return dst;
+}
+
+/// @brief Apply an opening operation to an image
+/// @param src The source image
+/// @param dst The destination image
+/// @param k The kernel size
+/// @return The destination image (dst)
+Image *CV_OPEN(const Image *src, Image *dst, int k)
+{
+    ASSERT_IMG(src);
+    ASSERT_CHANNEL(src, 1);
+
+    Image *tmp = CV_COPY(src);
+
+    if (dst == NULL)
+        dst = CV_COPY(src);
+    ASSERT_IMG(dst);
+    ASSERT_DIM(dst, src->c, src->h, src->w);
+
+    CV_ERODE(tmp, tmp, k);
+    CV_DILATE(tmp, dst, k);
+
+    CV_FREE(&tmp);
+    return dst;
+}
+
+/// @brief Apply a closing operation to an image
+/// @param src The source image
+/// @param dst The destination image
+/// @param k The kernel size
+/// @return The destination image (dst)
+Image *CV_CLOSE(const Image *src, Image *dst, int k)
+{
+    ASSERT_IMG(src);
+    ASSERT_CHANNEL(src, 1);
+
+    Image *tmp = CV_COPY(src);
+
+    if (dst == NULL)
+        dst = CV_COPY(src);
+    ASSERT_IMG(dst);
+    ASSERT_DIM(dst, src->c, src->h, src->w);
+
+    CV_DILATE(tmp, tmp, k);
+    CV_ERODE(tmp, dst, k);
+
+    CV_FREE(&tmp);
+    return dst;
+}
+
+/// @brief Apply a morphological skeletonization operation to an image
+/// @param src The source image
+/// @param dst The destination image
+/// @param k The kernel size
+/// @return The destination image (dst)
+Image *CV_MORPHOLOGICAL_SKELETON(const Image *src, Image *dst, int k)
+{
+    ASSERT_IMG(src);
+    ASSERT_CHANNEL(src, 1);
+
+    Image *tmp = CV_COPY(src);
+
+    if (dst == NULL)
+        dst = CV_COPY(src);
+    ASSERT_IMG(dst);
+    ASSERT_DIM(dst, src->c, src->h, src->w);
+
+    Image *tmp1 = CV_INIT(src->c, src->h, src->w);
+    Image *tmp2 = CV_INIT(src->c, src->h, src->w);
+
+    int r = k / 2;
+
+    while (1)
+    {
+        CV_ERODE(tmp, tmp1, k);
+        CV_DILATE(tmp1, tmp2, k);
+
+        CV_SUB(tmp, tmp2, tmp1);
+
+        CV_OR(dst, tmp1, dst);
+
+        CV_COPY_TO(tmp1, tmp);
+
+        if (CV_COUNT_NON_ZERO(tmp) == 0)
+            break;
+    }
+
+    CV_FREE(&tmp);
+    CV_FREE(&tmp1);
+    CV_FREE(&tmp2);
     return dst;
 }
 
@@ -1780,8 +1956,8 @@ int *CV_HOUGH_LINES(const Image *src, int threshold, int *nlines)
     int w = src->w;
     int h = src->h;
 
-    int *accumulator = (int *)malloc(sizeof(int) * w * h * 180);
-    memset(accumulator, 0, sizeof(int) * w * h * 180);
+    int *accumulator = (int *)calloc(w * h * 180, sizeof(int));
+    ASSERT_PTR(accumulator);
 
     for (int y = 0; y < h; y++)
     {
@@ -1795,7 +1971,7 @@ int *CV_HOUGH_LINES(const Image *src, int threshold, int *nlines)
                 double theta = (double)t * PI / 180;            // theta in radian
                 double rho = (x * cos(theta) + y * sin(theta)); // rho in pixel
 
-                int r = (int)round(rho);
+                int r = (int)ceil(rho);
                 // smart workaround to avoid negative values
                 // since the accumulator is a 1D array
                 // we need to shift the values to the right
@@ -1805,54 +1981,58 @@ int *CV_HOUGH_LINES(const Image *src, int threshold, int *nlines)
         }
     }
 
-    // we count the number of lines to allocate the memory
-    int nb_lines = 0;
-    for (int i = 0; i < w * h * 180; i++)
-    {
-        if (accumulator[i] >= threshold)
-            nb_lines++;
-    }
-
-    // we 2 integers per line (rho and theta)
-    int *lines = (int *)malloc(sizeof(int) * nb_lines * 2);
-    memset(lines, 0, sizeof(int) * nb_lines * 2);
+    int *lines = (int *)malloc(sizeof(int) * w * h * 180 * 2);
+    ASSERT_PTR(lines);
 
     // we fill the lines array
-    int j = 0;
+    int n = 0;
     for (int i = 0; i < w * h * 180; i++)
     {
-        if (accumulator[i] >= threshold)
-        {
-            int rho = i % (w * h) - w * h / 2;
-            int theta = i / (w * h);
+        if (accumulator[i] < threshold)
+            continue;
 
-            lines[j] = rho;
-            lines[j + 1] = theta;
-
-            j += 2;
-        }
+        lines[n * 2] = i % (w * h) - w * h / 2; // rho
+        lines[n * 2 + 1] = i / (w * h);         // theta
+        n++;
     }
 
-    // sort the lines by rho
-    for (int i = 0; i < nb_lines * 2; i += 2)
+    if (n == 0)
     {
-        for (int j = i + 2; j < nb_lines * 2; j += 2)
-        {
-            if (lines[i] > lines[j])
-            {
-                int tmp = lines[i];
-                lines[i] = lines[j];
-                lines[j] = tmp;
+        FREE(accumulator);
+        FREE(lines);
+        return NULL;
+    }
 
-                tmp = lines[i + 1];
-                lines[i + 1] = lines[j + 1];
-                lines[j + 1] = tmp;
+    int *rlines = (int *)realloc(lines, sizeof(int) * n * 2);
+    if (rlines == NULL)
+    {
+        FREE(accumulator);
+        FREE(lines);
+        return NULL;
+    }
+    else
+        lines = rlines;
+
+    // sort the lines by rho
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = i + 1; j < n; j++)
+        {
+            if (lines[i * 2] > lines[j * 2])
+            {
+                int tmp = lines[i * 2];
+                lines[i * 2] = lines[j * 2];
+                lines[j * 2] = tmp;
+
+                tmp = lines[i * 2 + 1];
+                lines[i * 2 + 1] = lines[j * 2 + 1];
+                lines[j * 2 + 1] = tmp;
             }
         }
     }
 
     // cleanup and return
-    *nlines = nb_lines;
+    *nlines = n;
     FREE(accumulator);
     return lines;
 }
@@ -1865,18 +2045,14 @@ int *CV_HOUGH_LINES(const Image *src, int threshold, int *nlines)
 /// @return An array of simplified lines where 2n is rho and 2n+1 is theta.
 int *CV_MERGE_LINES(int *lines, int nlines, int threshold, int *n)
 {
-    ASSERT_PTR(lines);
     ASSERT_PTR(n);
-
     *n = 0;
+
+    if (lines == NULL)
+        return NULL;
 
     int *merged_lines = (int *)malloc(sizeof(int) * nlines * 2);
     memset(merged_lines, 0, sizeof(int) * nlines * 2);
-
-    // int tmp_rho = 0;
-    // int tmp_theta = 0;
-
-    // TODO: find a better way to merge lines
 
     int j = 0;
     for (int i = 0; i < nlines * 2; i += 2)
@@ -1889,45 +2065,18 @@ int *CV_MERGE_LINES(int *lines, int nlines, int threshold, int *n)
         {
             if (abs(rho - merged_lines[k]) < threshold && abs(theta - merged_lines[k + 1]) < threshold)
             {
-                // tmp_rho = rho;
-                // tmp_theta = theta;
                 found = true;
-                // printf("       rho=%d, theta=%d, merged_rho=%d, merged_theta=%d\n", rho, theta, merged_lines[k], merged_lines[k + 1]);
                 break;
             }
         }
 
         if (!found)
         {
-            if (j > 1)
-            {
-                // printf("rho=%d, theta=%d, merged_rho=%d, merged_theta=%d\n", rho, theta, merged_lines[j - 2], merged_lines[j - 1]);
-                // printf("tmp_rho=%d, tmp_theta=%d\n", tmp_rho, tmp_theta);
-
-                // int avg_rho = (tmp_rho + merged_lines[j - 2]) / 2;
-                // int avg_theta = (tmp_theta + merged_lines[j - 1]) / 2;
-
-                // merged_lines[j - 2] = avg_rho;
-                // merged_lines[j - 1] = avg_theta;
-            }
-
-            // start = i;
-            // end = i;
             merged_lines[j] = rho;
             merged_lines[j + 1] = theta;
-            // printf("------>: rho=%d, theta=%d\n", rho, theta);
             j += 2;
         }
     }
-
-    // if (j > 1)
-    // {
-    //     int avg_rho = (tmp_rho + merged_lines[j - 2]) / 2;
-    //     int avg_theta = (tmp_theta + merged_lines[j - 1]) / 2;
-
-    //     merged_lines[j - 2] = avg_rho;
-    //     merged_lines[j - 1] = avg_theta;
-    // }
 
     *n = j / 2;
     return merged_lines;
