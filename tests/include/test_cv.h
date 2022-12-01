@@ -20,7 +20,7 @@ int test_cv_otsu();
 int test_cv_dilate();
 int test_cv_erode();
 int test_cv_hough_lines();
-int test_cv_simplify_hough_lines();
+int test_cv_merge_lines();
 int test_cv_adaptative_threshold();
 int test_cv_intersection();
 int test_cv_boxes();

@@ -387,7 +387,7 @@ char **CV_LIST_DIR(const char *path, int *count)
         if (entry->d_type == 8)
         {
             char *file = malloc(strlen(path) + strlen(entry->d_name) + 2);
-            sprintf(file, "%s/%s", path, entry->d_name);
+            snprintf(file, strlen(path) + strlen(entry->d_name) + 2, "%s/%s", path, entry->d_name);
 
             files[i] = file;
             i++;
@@ -421,7 +421,7 @@ Image **CV_LOAD_FOLDER(const char *path, int *count, int mode)
         if (entry->d_type == 8)
         {
             char *file = malloc(strlen(path) + strlen(entry->d_name) + 2);
-            sprintf(file, "%s/%s", path, entry->d_name);
+            snprintf(file, strlen(path) + strlen(entry->d_name) + 2, "%s/%s", path, entry->d_name);
 
             Image *image = CV_LOAD(file, mode);
             images = realloc(images, sizeof(Image *) * (*count + 1));
