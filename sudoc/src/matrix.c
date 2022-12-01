@@ -45,7 +45,7 @@ Matrix *matrix_init(int dim1, int dim2, float *datap)
 
     m->size = dim1 * dim2;
     if (datap != NULL)
-    {   
+    {
         // copy provided data to the new matrix
         m->data = malloc(m->size * sizeof(m->data));
         for (int i = 0; i < m->size; i++)
@@ -308,7 +308,6 @@ Matrix *matrix_multiply(Matrix *m1, Matrix *m2, Matrix *dst)
         printf("m1->dim1: %d m1->dim2: %d m2->dim1: %d m2->dim2: %d dst->dim1: %d dst->dim2: %d\n", m1->dim1, m1->dim2, m2->dim1, m2->dim2, dst->dim1, dst->dim2);
         errx(EXIT_FAILURE, "matrix_multiply: matrix dimensions do not match, expected output to be (%i, %i)\n", m1->dim1, m2->dim2);
     }
-    
 
     for (int i = 0; i < dst->dim1; i++)
     {
@@ -425,13 +424,11 @@ Matrix *matrix_elementwise_multiply(Matrix *m1, Matrix *m2, Matrix *dst)
         errx(EXIT_FAILURE, "matrix_elementwise_multiply: matrix dimensions do not match\n");
     }
 
-    for (int i = 0; i < dst->dim1; i++)
+    for (int i = 0; i < dst->size; i++)
     {
-        for (int j = 0; j < dst->dim2; j++)
-        {
-            dst->data[i * m1->dim2 + j] = m1->data[i * m1->dim2 + j] * m2->data[i * m2->dim2 + j];
-        }
+        dst->data[i] = m1->data[i] * m2->data[i];
     }
+
     return dst;
 }
 
@@ -556,8 +553,12 @@ void matrix4_zero(Matrix4 *m)
 //   dst - pointer to the destination matrix
 //
 
-void matrix4_copy(Matrix4 *m, Matrix4 *dst)
+Matrix4 *matrix4_copy(Matrix4 *m, Matrix4 *dst)
 {
+
+    if (dst == NULL)
+        dst = matrix4_init(m->dim1, m->dim2, m->dim3, m->dim4, NULL);
+
     if (m->dim1 != dst->dim1 || m->dim2 != dst->dim2 || m->dim3 != dst->dim3 || m->dim4 != dst->dim4)
     {
         errx(EXIT_FAILURE, "matrix4_copy: matrix dimensions do not match\n");
@@ -565,6 +566,8 @@ void matrix4_copy(Matrix4 *m, Matrix4 *dst)
 
     for (int i = 0; i < m->size; i++)
         dst->data[i] = m->data[i];
+
+    return dst;
 }
 
 // Function: m4_get
@@ -727,18 +730,13 @@ Matrix *matrix4_flatten(Matrix4 *m, Matrix *dst)
 
 Matrix4 *matrix4_unflatten(Matrix *m, Matrix4 *dst)
 {
-    if (dst == NULL)
-    {
-        dst = matrix4_init(m->dim1, m->dim2 / (dst->dim3 * dst->dim4), dst->dim3, dst->dim4, NULL);
-    }
-
     for (int i = 0; i < m->size; i++)
         dst->data[i] = m->data[i];
 
     return dst;
 }
 
-// Function: matrix4_sum_rows
+// Function: matrix4_sum_channels
 // ---------------------------------
 // Calculates the bias gradient from 4d delta matrix.
 //
@@ -750,7 +748,7 @@ Matrix4 *matrix4_unflatten(Matrix *m, Matrix4 *dst)
 //   pointer to the resulting matrix
 //
 
-Matrix *matrix4_sum_rows(Matrix4 *m, Matrix *dst)
+Matrix *matrix4_sum_channels(Matrix4 *m, Matrix *dst)
 {
     if (dst == NULL)
     {
@@ -759,7 +757,7 @@ Matrix *matrix4_sum_rows(Matrix4 *m, Matrix *dst)
 
     if (m->dim2 != dst->dim1)
     {
-        errx(EXIT_FAILURE, "matrix4_sum_rows: matrix dimensions do not match\n");
+        errx(EXIT_FAILURE, "matrix4_sum_channels: matrix dimensions do not match\n");
     }
 
     for (int i = 0; i < m->dim1; i++)
@@ -850,6 +848,40 @@ Matrix4 *matrix4_transpose(Matrix4 *m)
     t->dim4 = tmp;
 
     return t;
+}
+
+// Function: matrix_elementwise_multiply
+// -------------------------------------
+// Multiplies two matrices elementwise.
+//
+// Parameters:
+//   m1 - pointer to the first matrix
+//   m2 - pointer to the second matrix
+//   dst - pointer to the destination matrix
+//
+// Returns:
+//   a pointer to the result matrix
+//
+
+Matrix4 *matrix4_elementwise_multiply(Matrix4 *m1, Matrix4 *m2, Matrix4 *dst)
+{
+    if (dst == NULL)
+    {
+        dst = matrix4_init(m1->dim1, m1->dim2, m1->dim3, m1->dim4, NULL);
+    }
+
+    if (m1->dim1 != m2->dim1 || m1->dim2 != m2->dim2 || m1->dim3 != m2->dim3 || m1->dim4 != m2->dim4 ||
+        m1->dim1 != dst->dim1 || m1->dim2 != dst->dim2 || m1->dim3 != dst->dim3 || m1->dim4 != dst->dim4)
+    {
+        errx(EXIT_FAILURE, "matrix4_elementwise_multiply: matrix dimensions do not match\n");
+    }
+
+    for (int i = 0; i < dst->size; i++)
+    {
+        dst->data[i] = m1->data[i] * m2->data[i];
+    }
+
+    return dst;
 }
 
 // Function: matrix4_convolve
@@ -951,7 +983,7 @@ Matrix4 *matrix4_convolve_transpose(Matrix4 *weights, Matrix4 *input, Matrix4 *d
     return matrix4_convolve(weights_t, input, dst, stride, padding);
 }
 
-// Function: matrix4_scalar_multiply
+// Function: matrix4_multiply_scalar
 // ---------------------------------
 // Multiplies a matrix by a scalar.
 //
@@ -959,7 +991,7 @@ Matrix4 *matrix4_convolve_transpose(Matrix4 *weights, Matrix4 *input, Matrix4 *d
 //   m - pointer to the matrix
 //   s - scalar
 //
-void matrix4_scalar_multiply(Matrix4 *m, float s)
+void matrix4_multiply_scalar(Matrix4 *m, float s)
 {
     for (int i = 0; i < m->size; i++)
         m->data[i] *= s;

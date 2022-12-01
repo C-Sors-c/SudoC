@@ -168,3 +168,24 @@ int test_nnxor_load()
 
     return assert(failed, 0, "test_nnxor_load");
 }
+
+int test_cnn()
+{
+
+    int batchsize = 4;
+
+    // define the layers
+    ConvLayer **conv_layers = malloc(sizeof(ConvLayer));
+    conv_layers[0] = conv_layer_init(28, 28, 1, 8, 3, 2, 1, batchsize, relu, d_relu, "conv0");
+
+    FCLayer **fc_layers = malloc(sizeof(FCLayer));
+    fc_layers[0] = fc_layer_init(14 * 14 * 8, 10, batchsize, leaky_relu, d_leaky_relu, "fc0");
+
+    ActivationLayer *output_layer = activation_layer_init(10, batchsize, softmax, d_softmax);
+    int num_conv_layers = 1;
+    int num_fc_layers = 1;
+
+    CNN *network = cnn_init(conv_layers, num_conv_layers, fc_layers, num_fc_layers, output_layer);
+
+    return assert(1, 1, "test_cnn");
+}

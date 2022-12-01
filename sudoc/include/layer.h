@@ -69,7 +69,7 @@ ConvLayer *conv_layer_init(
     int input_height, int input_width, int input_depth,
     int n_filters, int kernel_size, int stride, int padding, int batch_size,
     float (*activation_func)(float), float (*d_activation_func)(float),
-    bool load_weights, char *name);
+    char *name);
 Matrix4 *conv_layer_forward(ConvLayer *layer, Matrix4 *input);
 Matrix4 *conv_layer_backward(ConvLayer *layer, Matrix4 *previous_activations, Matrix4 *previous_deltas, float learning_rate);
 void conv_layer_print(ConvLayer *layer);

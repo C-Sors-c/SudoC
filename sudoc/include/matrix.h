@@ -49,7 +49,7 @@ struct Matrix4
 typedef struct Matrix4 Matrix4;
 #define MAT4(matrix, i, j, k, l) (matrix->data[(i)*matrix->dim2 * matrix->dim3 * matrix->dim4 + (j)*matrix->dim3 * matrix->dim4 + (k)*matrix->dim4 + (l)])
 Matrix4 *matrix4_init(int dim1, int dim2, int dim3, int dim4, float *datap);
-void matrix4_copy(Matrix4 *m, Matrix4 *dst);
+Matrix4 *matrix4_copy(Matrix4 *m, Matrix4 *dst);
 void matrix4_zero(Matrix4 *m);
 float m4_get(Matrix4 *m, int dim1, int dim2, int dim3, int dim4);
 void m4_set(Matrix4 *m, int dim1, int dim2, int dim3, int dim4, float value);
@@ -62,8 +62,9 @@ Matrix4 *matrix4_convolve_transpose(Matrix4 *weights, Matrix4 *input, Matrix4 *d
 Matrix4 *matrix4_add_bias(Matrix4 *m1, Matrix *bias, Matrix4 *dst);
 Matrix *matrix4_flatten(Matrix4 *m, Matrix *dst);
 Matrix4 *matrix4_unflatten(Matrix *m, Matrix4 *dst);
-Matrix *matrix4_sum_rows(Matrix4 *m1, Matrix *dst);
-void matrix4_scalar_multiply(Matrix4 *m, float s);
+Matrix *matrix4_sum_channels(Matrix4 *m1, Matrix *dst);
+Matrix4 *matrix4_elementwise_multiply(Matrix4 *m1, Matrix4 *m2, Matrix4 *dst);
+void matrix4_multiply_scalar(Matrix4 *m, float s);
 void matrix4_map_function(Matrix4 *m, float (*func)(float));
 bool matrix4_element_wise_equal(Matrix4 *m1, Matrix4 *m2);
 void matrix4_destroy(Matrix4 *m);

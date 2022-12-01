@@ -142,7 +142,7 @@ ConvLayer *conv_layer_init(
     int input_height, int input_width, int input_depth,
     int n_filters, int kernel_size, int stride, int padding,
     int batch_size, float (*activation_func)(float), float (*d_activation_func)(float),
-    bool load_weights, char *name)
+    char *name)
 {
     ConvLayer *layer = malloc(sizeof(ConvLayer));
 
@@ -163,16 +163,8 @@ ConvLayer *conv_layer_init(
     layer->activation_func = activation_func;
     layer->d_activation_func = d_activation_func;
 
-    // initialize weights and biases
-    if (load_weights)
-    {
-        // parser for weights
-    }
-    else
-    {
-        layer->weights = conv_weight_init(n_filters, input_depth, kernel_size, kernel_size);
-        layer->biases = conv_bias_init(n_filters, 1);
-    }
+    layer->weights = conv_weight_init(n_filters, input_depth, kernel_size, kernel_size);
+    layer->biases = conv_bias_init(n_filters, 1);
 
     // initialize activations and deltas
     layer->activations = matrix4_init(batch_size, n_filters, layer->output_height, layer->output_width, NULL);
@@ -197,11 +189,31 @@ Matrix4 *conv_layer_forward(ConvLayer *layer, Matrix4 *input)
 }
 
 // backward pass
-// Matrix4 *conv_layer_backward(ConvLayer *layer, Matrix4 *previous_activations, Matrix4 *previous_deltas, float learning_rate)
-// {
-//     // TODO: implement and test
-//     return NULL;
-// }
+Matrix4 *conv_layer_backward(ConvLayer *layer, Matrix4 *previous_activations, Matrix4 *previous_deltas, float learning_rate)
+{
+    // calculate deltas
+    Matrix4 *dZ = matrix4_copy(layer->activations, NULL);
+    matrix4_map_function(dZ, layer->d_activation_func);
+    matrix4_elementwise_multiply(dZ, previous_deltas, dZ);
+
+    // calculate gradients
+    matrix4_convolve_transpose(layer->weights_gradient, previous_activations, dZ, layer->stride, layer->padding);
+    matrix4_sum_channels(dZ, layer->biases_gradient);
+
+    // update weights and biases
+    matrix4_multiply_scalar(layer->weights_gradient, -learning_rate);
+    matrix_multiply_scalar(layer->biases_gradient, -learning_rate);
+    matrix4_add(layer->weights, layer->weights_gradient, layer->weights);
+    matrix_add(layer->biases, layer->biases_gradient, layer->biases);
+
+    // calculate deltas for previous layer
+    matrix4_convolve(layer->weights, dZ, layer->deltas, layer->stride, layer->padding);
+
+    // free memory
+    matrix4_destroy(dZ);
+
+    return layer->deltas;
+}
 
 // print layer info
 void conv_layer_print(ConvLayer *layer)
