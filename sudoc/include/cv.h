@@ -213,16 +213,18 @@ Image *CV_DRAW_RECT(const Image *src, Image *dst, int x, int y, int w, int h, in
 Image *CV_DRAW_CIRCLE(const Image *src, Image *dst, int x, int y, int r, int width, Uint32 color);
 Image *CV_DRAW_DIGIT(const Image *src, Image *dst, int x, int y, int digit, int size, Uint32 color);
 
-int *CV_HOUGH_LINES(const Image *src, int threshold, int *nlines);
+int *CV_HOUGH_TRANSFORM(const Image *src, int threshold, int *nlines);
 int *CV_MERGE_LINES(int *lines, int nlines, int threshold, int *nsimplified);
+int *CV_HOUGH_LINES(const Image *src, int intersection_threshold, int merge_threshold, int *nlines);
 Image *CV_DRAW_LINES(const Image *src, Image *dst, int *lines, int nlines, int weight, Uint32 color);
 float CV_ORIENTATION(int *lines, int nlines);
 
-int *CV_FIND_LARGEST_CONTOUR(const Image *src, int *nrects);
-
-int *CV_GRID_INTERSECTION(Image *src, int *lines, int nlines, int *nintersection);
-int *CV_SORT_INTERSECTIONS(int *intersections, int nintersections);
+int *CV_INTERSECTIONS_RAW(int *lines, int nlines, int *nintersection);
+int *CV_INTERSECTIONS_SORT(int *intersections, int nintersections);
+int *CV_INTERSECTIONS(int *lines, int nlines, int *nintersection);
 int *CV_GRID_BOXES(int *intersections, int nintersections, int *nboxes);
+
+int *CV_FIND_LARGEST_CONTOUR(const Image *src, int *nrects);
 
 Image *CV_ROTATE(const Image *src, Image *dst, float angle, Uint32 background);
 Image *CV_SCALE(const Image *src, Image *dst, float scale);

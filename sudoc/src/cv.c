@@ -1238,7 +1238,6 @@ Image *CV_ADAPTIVE_THRESHOLD(const Image *src, Image *dst, int block_size, float
     float gaussian_weight = 1.0 - otsu_weight;
 
     Matrix *kernel = CV_GET_GAUSSIAN_KERNEL(block_size, 1);
-
     Image *mean = CV_APPLY_FILTER(tmp, NULL, kernel);
 
     for (int h = 0; h < src->h; h++)
@@ -1248,9 +1247,11 @@ Image *CV_ADAPTIVE_THRESHOLD(const Image *src, Image *dst, int block_size, float
             float p = PIXEL(tmp, 0, h, w);
             float m = PIXEL(mean, 0, h, w);
 
-            // float threshold = m + c * sqrt(v - m * m);
-            float local_threshold = otsu_weight * otsu + gaussian_weight * (m - c * sqrt(m));
-            float threshold = (local_threshold * gaussian_weight) + (otsu * otsu_weight);
+            float mcs = m - c * sqrt(m);
+            float g2 = gaussian_weight * gaussian_weight;
+
+            // magic formula i invented
+            float threshold = otsu_weight * (2 * otsu + (m - c * sqrt(m)) * (gaussian_weight * gaussian_weight));
 
             if (p > threshold)
                 PIXEL(dst, 0, h, w) = 1;
@@ -1945,7 +1946,7 @@ Image *CV_DRAW_DIGIT(const Image *src, Image *dst, int x, int y, int digit, int 
 /// @param threshold The threshold value, representing the minimum number of intersections to detect a line
 /// @param nlines The number of lines that will be returned.
 /// @return An array of lines where 2n is rho and 2n+1 is theta.
-int *CV_HOUGH_LINES(const Image *src, int threshold, int *nlines)
+int *CV_HOUGH_TRANSFORM(const Image *src, int threshold, int *nlines)
 {
     ASSERT_IMG(src);
     ASSERT_CHANNEL(src, 1);
@@ -2082,6 +2083,27 @@ int *CV_MERGE_LINES(int *lines, int nlines, int threshold, int *n)
     return merged_lines;
 }
 
+/// @brief Return detected lines in an image.
+/// @param src The source image
+/// @param intersection_threshold The threshold value, representing the minimum number of intersections to detect a line 
+/// @param merge_threshold The threshold value to eliminate lines that are too close to each other.
+/// @param nlines The number of lines that will be returned.
+/// @return An array of lines where 2n is rho and 2n+1 is theta.
+int *CV_HOUGH_LINES(const Image *src, int intersection_threshold, int merge_threshold, int *nlines)
+{
+    ASSERT_IMG(src);
+    ASSERT_CHANNEL(src, 1);
+
+    int *lines = CV_HOUGH_TRANSFORM(src, intersection_threshold, nlines);
+    if (lines == NULL)
+        return NULL;
+
+    int *merged_lines = CV_MERGE_LINES(lines, *nlines, merge_threshold, nlines);
+    FREE(lines);
+
+    return merged_lines;
+}
+
 /// @brief Draw lines on an image.
 /// @param src The source image
 /// @param dst The destination image
@@ -2155,6 +2177,137 @@ float CV_ORIENTATION(int *lines, int nlines)
 
     FREE(histo);
     return max_theta;
+}
+
+/// @brief Find all intersections between two lines
+/// @param width Width of the image
+/// @param height Height of the image
+/// @param lines Lines to find intersections
+/// @param nlines Number of lines
+/// @param nintersection Number of intersections
+/// @return Array of intersections where 2n and 2n+1 are x and y coordinates
+int *CV_INTERSECTIONS_RAW(int *lines, int nlines, int *nintersection)
+{
+    int *intersection = (int *)malloc(sizeof(int) * nlines * nlines * 2);
+    memset(intersection, 0, sizeof(int) * nlines * nlines * 2);
+
+    int j = 0;
+    for (int i = 0; i < nlines; i++)
+    {
+        int rho1 = lines[i * 2];
+        int theta1 = lines[i * 2 + 1];
+
+        for (int k = i + 1; k < nlines; k++)
+        {
+            int rho2 = lines[k * 2];
+            int theta2 = lines[k * 2 + 1];
+
+            float a = cos(theta1 * PI / 180.0);
+            float b = sin(theta1 * PI / 180.0);
+            float c = cos(theta2 * PI / 180.0);
+            float d = sin(theta2 * PI / 180.0);
+
+            float det = a * d - b * c;
+            if (det == 0)
+                continue;
+
+            float x = (d * rho1 - b * rho2) / det;
+            float y = (-c * rho1 + a * rho2) / det;
+
+            intersection[j * 2] = (int)x;
+            intersection[j * 2 + 1] = (int)y;
+            j++;
+        }
+    }
+
+    *nintersection = j;
+
+    return intersection;
+}
+
+/// @brief Sort intersections by x coordinate
+/// @param intersections Intersections to sort
+/// @param nintersections Number of intersections
+/// @return Sorted intersections by x coordinate
+int *CV_INTERSECTIONS_SORT(int *intersections, int nintersections)
+{
+    int *sorted = (int *)malloc(sizeof(int) * nintersections * 2);
+    memset(sorted, 0, sizeof(int) * nintersections * 2);
+
+    for (int i = 0; i < nintersections; i++)
+    {
+        int x = intersections[i * 2];
+        int y = intersections[i * 2 + 1];
+
+        int j = 0;
+        for (j = 0; j < i; j++)
+        {
+            int y2 = sorted[j * 2 + 1];
+
+            if (y < y2)
+                break;
+        }
+
+        for (int k = i; k > j; k--)
+        {
+            sorted[k * 2] = sorted[(k - 1) * 2];
+            sorted[k * 2 + 1] = sorted[(k - 1) * 2 + 1];
+        }
+
+        sorted[j * 2] = x;
+        sorted[j * 2 + 1] = y;
+    }
+
+    return sorted;
+}
+
+/// @brief Find all intersections between two lines
+/// @param lines Lines to find intersections
+/// @param nlines Number of lines
+/// @param nintersection Number of intersections
+/// @return Array of intersections where 2n and 2n+1 are x and y coordinates
+int *CV_INTERSECTIONS(int *lines, int nlines, int *nintersection)
+{
+    int *intersections = CV_INTERSECTIONS_RAW(lines, nlines, nintersection);
+    int *sorted = CV_INTERSECTIONS_SORT(intersections, *nintersection);
+
+    FREE(intersections);
+
+    return sorted;
+}
+
+/// @brief Find all boxes in a grid
+/// @param intersections Intersections to find boxes
+/// @param nintersections Number of intersections
+/// @param nboxes Number of boxes
+/// @return Array of boxes where 4n, 4n+1, 4n+2 and 4n+3 are x and y coordinates of the 4 corners
+int *CV_GRID_BOXES(int *intersections, int nintersections, int *nboxes)
+{
+    int *boxes = (int *)malloc(sizeof(int) * nintersections * 4);
+    memset(boxes, 0, sizeof(int) * nintersections * 4);
+
+    int snbi = sqrt(nintersections);
+
+    int j = 0;
+    for (int i = 0; i < nintersections - snbi; i++)
+    {
+        if ((i + 1) % snbi == 0)
+            continue;
+
+        int x1 = intersections[i * 2];
+        int y1 = intersections[i * 2 + 1];
+        int x4 = intersections[i * 2 + snbi * 2 + 2];
+        int y4 = intersections[i * 2 + snbi * 2 + 3];
+
+        boxes[j * 4] = x1;
+        boxes[j * 4 + 1] = y1;
+        boxes[j * 4 + 2] = x4;
+        boxes[j * 4 + 3] = y4;
+        j++;
+    }
+
+    *nboxes = j;
+    return boxes;
 }
 
 /// @brief Find the largest rectangle in an image.
@@ -2366,129 +2519,6 @@ int *CV_FIND_LARGEST_CONTOUR(const Image *src, int *nrects)
     rects[7] = P4_y;
 
     return rects;
-}
-
-/// @brief Find all intersections between two lines
-/// @param src Source image
-/// @param lines Lines to find intersections
-/// @param nlines Number of lines
-/// @param nintersection Number of intersections
-/// @return Array of intersections where 2n and 2n+1 are x and y coordinates
-int *CV_GRID_INTERSECTION(Image *src, int *lines, int nlines, int *nintersection)
-{
-    ASSERT_IMG(src);
-
-    int w = src->w;
-    int h = src->h;
-
-    int *intersection = (int *)malloc(sizeof(int) * nlines * nlines * 2);
-    memset(intersection, 0, sizeof(int) * nlines * nlines * 2);
-
-    int j = 0;
-    for (int i = 0; i < nlines; i++)
-    {
-        int rho1 = lines[i * 2];
-        int theta1 = lines[i * 2 + 1];
-
-        for (int k = i + 1; k < nlines; k++)
-        {
-            int rho2 = lines[k * 2];
-            int theta2 = lines[k * 2 + 1];
-
-            float a = cos(theta1 * PI / 180.0);
-            float b = sin(theta1 * PI / 180.0);
-            float c = cos(theta2 * PI / 180.0);
-            float d = sin(theta2 * PI / 180.0);
-
-            float det = a * d - b * c;
-            if (det == 0)
-                continue;
-
-            float x = (d * rho1 - b * rho2) / det;
-            float y = (-c * rho1 + a * rho2) / det;
-
-            if (x < 0 || x > w || y < 0 || y > h)
-                continue;
-
-            intersection[j * 2] = (int)x;
-            intersection[j * 2 + 1] = (int)y;
-            j++;
-        }
-    }
-
-    *nintersection = j;
-
-    return intersection;
-}
-
-/// @brief Sort intersections by x coordinate
-/// @param intersections Intersections to sort
-/// @param nintersections Number of intersections
-/// @return Sorted intersections by x coordinate
-int *CV_SORT_INTERSECTIONS(int *intersections, int nintersections)
-{
-    int *sorted = (int *)malloc(sizeof(int) * nintersections * 2);
-    memset(sorted, 0, sizeof(int) * nintersections * 2);
-
-    for (int i = 0; i < nintersections; i++)
-    {
-        int x = intersections[i * 2];
-        int y = intersections[i * 2 + 1];
-
-        int j = 0;
-        for (j = 0; j < i; j++)
-        {
-            int y2 = sorted[j * 2 + 1];
-
-            if (y < y2)
-                break;
-        }
-
-        for (int k = i; k > j; k--)
-        {
-            sorted[k * 2] = sorted[(k - 1) * 2];
-            sorted[k * 2 + 1] = sorted[(k - 1) * 2 + 1];
-        }
-
-        sorted[j * 2] = x;
-        sorted[j * 2 + 1] = y;
-    }
-
-    return sorted;
-}
-
-/// @brief Find all boxes in a grid
-/// @param intersections Intersections to find boxes
-/// @param nintersections Number of intersections
-/// @param nboxes Number of boxes
-/// @return Array of boxes where 4n, 4n+1, 4n+2 and 4n+3 are x and y coordinates of the 4 corners
-int *CV_GRID_BOXES(int *intersections, int nintersections, int *nboxes)
-{
-    int *boxes = (int *)malloc(sizeof(int) * nintersections * 4);
-    memset(boxes, 0, sizeof(int) * nintersections * 4);
-
-    int snbi = sqrt(nintersections);
-
-    int j = 0;
-    for (int i = 0; i < nintersections - snbi; i++)
-    {
-        if ((i + 1) % snbi == 0)
-            continue;
-
-        int x1 = intersections[i * 2];
-        int y1 = intersections[i * 2 + 1];
-        int x4 = intersections[i * 2 + snbi * 2 + 2];
-        int y4 = intersections[i * 2 + snbi * 2 + 3];
-
-        boxes[j * 4] = x1;
-        boxes[j * 4 + 1] = y1;
-        boxes[j * 4 + 2] = x4;
-        boxes[j * 4 + 3] = y4;
-        j++;
-    }
-
-    *nboxes = j;
-    return boxes;
 }
 
 /// @brief Rotate an image by a given angle in degrees

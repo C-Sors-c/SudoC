@@ -280,28 +280,18 @@ int test_cv_adaptive_threshold()
     char *img3 = "tests/samples/sudoku.png";
     char *img4 = "tests/samples/sudoku1.png";
 
-    Image *image = CV_LOAD(img4, RGB);
-    Image *gray = CV_RGB_TO_GRAY(image, NULL);
+    Image *image = CV_LOAD(img1, GRAYSCALE);
+    CV_GAUSSIAN_BLUR(image, image, 5, 1);
+    CV_SHARPEN(image, image, 10);
+    CV_ADAPTIVE_THRESHOLD(image, image, 5, 0.5, 0.5);
 
-    int k = 5;
-    Image *blur = CV_GAUSSIAN_BLUR(gray, NULL, k, 1);
-    Image *sharp = CV_SHARPEN(blur, NULL, k * 2);
-    Image *threshold = CV_ADAPTIVE_THRESHOLD(sharp, NULL, k, 0.5, 0.5);
+    CV_NOT(image, image);
+    CV_DILATE(image, image, 3);
+    CV_ERODE(image, image, 3);
 
-    Image *not = CV_NOT(threshold, NULL);
-    Image *dilated = CV_DILATE(not, NULL, 3);
-    Image *eroded = CV_ERODE(dilated, NULL, 3);
-
-    CV_SAVE(eroded, "tests/out/test_cv_adaptive_threshold.png");
+    CV_SAVE(image, "tests/out/test_cv_adaptive_threshold.png");
 
     CV_FREE(&image);
-    CV_FREE(&gray);
-    CV_FREE(&blur);
-    CV_FREE(&sharp);
-    CV_FREE(&threshold);
-    CV_FREE(&not );
-    CV_FREE(&dilated);
-    CV_FREE(&eroded);
 
     return assert(true, true, "test_cv_adaptive_threshold");
 }
@@ -339,12 +329,10 @@ int test_cv_hough_lines()
     Image *image = CV_LOAD("tests/samples/sudoku1.png", RGB);
     Image *processed = CV_COPY(image);
 
-    int k = 5;
-
     CV_RGB_TO_GRAY(processed, processed);
-    CV_GAUSSIAN_BLUR(processed, processed, k, 1);
-    CV_SHARPEN(processed, processed, k * 2);
-    CV_ADAPTIVE_THRESHOLD(processed, processed, k, 0.5, 0.5);
+    CV_GAUSSIAN_BLUR(processed, processed, 5, 1);
+    CV_SHARPEN(processed, processed, 10);
+    CV_ADAPTIVE_THRESHOLD(processed, processed, 5, 0.5, 0.5);
     CV_NOT(processed, processed);
     CV_DILATE(processed, processed, 3);
     CV_ERODE(processed, processed, 3);
@@ -352,7 +340,7 @@ int test_cv_hough_lines()
     CV_SOBEL(processed, processed);
 
     int n = 0;
-    int *lines = CV_HOUGH_LINES(processed, 300, &n);
+    int *lines = CV_HOUGH_TRANSFORM(processed, 300, &n);
 
     CV_DRAW_LINES(image, image, lines, n, 1, CV_RGB(255, 0, 0));
 
@@ -366,201 +354,179 @@ int test_cv_hough_lines()
     return assert(true, true, "test_cv_hough_lines");
 }
 
-int test_cv_merge_lines()
+int test_cv_hough_lines_merged()
 {
     Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", RGB);
     Image *processed = CV_COPY(image);
 
-    int k = 5;
-
     CV_RGB_TO_GRAY(processed, processed);
-    CV_GAUSSIAN_BLUR(processed, processed, k, 1);
-    CV_SHARPEN(processed, processed, k * 2);
-    CV_ADAPTIVE_THRESHOLD(processed, processed, k, 0.5, 0.5);
-    CV_NOT(processed, processed);
-    CV_DILATE(processed, processed, 3);
-    CV_ERODE(processed, processed, 3);
+    CV_GAUSSIAN_BLUR(processed, processed, 5, 1);
 
+    CV_SHARPEN(processed, processed, 10);
+    CV_ADAPTIVE_THRESHOLD(processed, processed, 5, 0.5, 0.5);
+    
+    CV_NOT(processed, processed);
+    
+    CV_DILATE(processed, processed, 3);
+
+    CV_ERODE(processed, processed, 3);
     CV_SOBEL(processed, processed);
 
     int n = 0;
-    int *lines = CV_HOUGH_LINES(processed, 300, &n);
-    int *merged = CV_MERGE_LINES(lines, n, 35, &n);
+    int *lines = CV_HOUGH_LINES(processed, 300, 35, &n);
 
-    CV_DRAW_LINES(image, image, merged, n, 2, CV_RGB(255, 0, 0));
-
-    CV_SAVE(image, "tests/out/test_cv_hough_lines.png");
+    CV_DRAW_LINES(image, image, lines, n, 2, CV_RGB(255, 0, 0));
+    CV_SAVE(image, "tests/out/test_cv_test_cv_hough_lines_merged.png");
 
     CV_FREE(&image);
     CV_FREE(&processed);
-
     FREE(lines);
-    FREE(merged);
 
-    return assert(true, true, "test_cv_merge_lines");
+    return assert(true, true, "test_cv_hough_lines_merged");
 }
 
-int test_cv_intersection()
+int test_cv_intersections()
 {
-    Image *image = CV_LOAD("tests/samples/sudoku.png", RGB);
+    Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", RGB);
     Image *processed = CV_COPY(image);
 
-    int k = 5;
-
     CV_RGB_TO_GRAY(processed, processed);
-    CV_GAUSSIAN_BLUR(processed, processed, k, 1);
-    CV_SHARPEN(processed, processed, k * 2);
-    CV_ADAPTIVE_THRESHOLD(processed, processed, k, 0.5, 0.5);
+    CV_GAUSSIAN_BLUR(processed, processed, 5, 1);
+    CV_SHARPEN(processed, processed, 10);
+    CV_ADAPTIVE_THRESHOLD(processed, processed, 5, 0.5, 0.5);
     CV_NOT(processed, processed);
     CV_DILATE(processed, processed, 3);
     CV_ERODE(processed, processed, 3);
-
     CV_SOBEL(processed, processed);
 
     int n = 0;
-    int *lines = CV_HOUGH_LINES(processed, 300, &n);
-    int *merged = CV_MERGE_LINES(lines, n, 35, &n);
+    int *lines = CV_HOUGH_LINES(processed, 300, 35, &n);
 
-    int inter = 0;
-    int *intersections = CV_INTERSECTIONS(merged, n, &inter);
-    int *sorted_intersections = CV_SORT_INTERSECTIONS(intersections, inter);
+    int ni = 0;
+    int *intersections = CV_INTERSECTIONS(lines, n, &ni);
 
-    if (inter < 100)
-    {
-        printf("wrong number of interserctions n4: %d\n", inter);
-        return assert(false, true, "test_cv_intersection");
-    }
+    if (ni < 100)
+        return assert(ni, 100, "test_cv_intersections");
     
-    // draw points
-    int i;
-    for (i = 0; i < inter; i++)
+    for (int i = 0; i < ni; i++)
     {
-        int x = sorted_intersections[i * 2];
-        int y = sorted_intersections[i * 2 + 1];
-        printf("x: %d, y: %d\n", x, y);
-        // CV_DRAW_POINT(z1, z1, x, y, 10, CV_RGB(0, 0, 255));
+        int x = intersections[i * 2];
+        int y = intersections[i * 2 + 1];
+        CV_DRAW_POINT(image, image, x, y, 5, CV_RGB(255, 0, 0));
     }
 
-    // printf("intersections: %d\n", n4);
-
-    CV_SAVE(image, "tests/out/test_cv_intersection.png");
+    CV_SAVE(image, "tests/out/test_cv_intersections.png");
     
     FREE(lines);
-    FREE(merged);
     FREE(intersections);
-    FREE(sorted_intersections);
 
     CV_FREE(&image);
     CV_FREE(&processed);
 
-    return assert(true, true, "test_cv_intersection");
+    return assert(true, true, "test_cv_intersections");
 }
 
 int test_cv_boxes()
 {
     Image *image = CV_LOAD("tests/samples/sudoku.png", RGB);
-    Image *z1 = CV_ZOOM(image, NULL, 1.05, 0xffffff);
-    Image *gray = CV_RGB_TO_GRAY(image, NULL);
-    Image *blur = CV_GAUSSIAN_BLUR(gray, NULL, 3, 1);
-    Image *sharp = CV_SHARPEN(blur, NULL, 3);
-    Image *canny = CV_CANNY(blur, NULL, 0.05, 0.15);
-    Image *otsu = CV_OTSU(sharp, NULL);
-    Image *z2 = CV_ZOOM(canny, NULL, 1.05, 0xffffff);
-    // pass 1
-    int n = 0, n2 = 0, n3 = 0, n4 = 0, n5 = 0;
-    int *lines = CV_HOUGH_LINES(z2, 200, &n);
-    int *simplified = CV_MERGE_LINES(lines, n, 30, &n2);
-    int *intersections = CV_GRID_INTERSECTION(z2, simplified, n3, &n4);
-    int *sorted_intersections = CV_SORT_INTERSECTIONS(intersections, n4);
+    Image *processed = CV_COPY(image);
 
-    if (n4 < 100)
+    CV_RGB_TO_GRAY(processed, processed);
+    CV_GAUSSIAN_BLUR(processed, processed, 5, 1);
+    CV_SHARPEN(processed, processed, 10);
+    CV_ADAPTIVE_THRESHOLD(processed, processed, 5, 0.5, 0.5);
+    CV_NOT(processed, processed);
+    CV_DILATE(processed, processed, 3);
+    CV_ERODE(processed, processed, 3);
+    CV_SOBEL(processed, processed);
+
+    int n = 0;
+    int *lines = CV_HOUGH_LINES(processed, 300, 35, &n);
+
+    int ni = 0;
+    int *intersections = CV_INTERSECTIONS(lines, n, &ni);
+
+    if (ni < 100)
+        return assert(ni, 100, "test_cv_boxes");
+
+    int nb = 0;
+    int *boxes = CV_GRID_BOXES(intersections, ni, &nb);
+
+    int padding = 3;
+    for (int i = 0; i < nb; i++)
     {
-        printf("wrong number of interserctions n4: %d\n", n4);
-        return assert(false, true, "test_cv_intersection");
-    }
-
-    int *boxes = CV_GRID_BOXES(sorted_intersections, n4, &n5);
-
-    printf("boxes: %d\n", n5);
-    // draw points
-    for (int i = 0; i < n5; i++)
-    {
-        int x1 = boxes[i * 4];
-        int y1 = boxes[i * 4 + 1];
-        int x2 = boxes[i * 4 + 2];
-        int y2 = boxes[i * 4 + 3];
+        int x1 = boxes[i * 4 + 0] + padding * 2;
+        int y1 = boxes[i * 4 + 1] + padding * 2;
+        int x2 = boxes[i * 4 + 2] - padding;
+        int y2 = boxes[i * 4 + 3] - padding;
 
         int rw = x2 - x1;
         int rh = y2 - y1;
 
-        CV_DRAW_RECT(z1, z1, x1, y1, rw, rh, 2, CV_RGB(0, 0, 255));
+        CV_DRAW_RECT(image, image, x1, y1, rw, rh, 1, CV_RGB(255, 0, 0));
     }
 
-    CV_SAVE(z1, "tests/out/test_cv_boxes.png");
+    CV_SAVE(image, "tests/out/test_cv_boxes.png");
 
     CV_FREE(&image);
-    CV_FREE(&z1);
-    CV_FREE(&z2);
-    CV_FREE(&gray);
-    CV_FREE(&blur);
-    CV_FREE(&sharp);
-    CV_FREE(&canny);
-    CV_FREE(&otsu);
+    CV_FREE(&processed);
 
     FREE(lines);
-    FREE(simplified);
     FREE(intersections);
-    FREE(sorted_intersections);
+    FREE(boxes);
 
     return assert(true, true, "test_cv_boxes");
 }
 
 int test_cv_save_boxes()
 {
-    Image *image = CV_LOAD("tests/samples/sudoku2.png", RGB);
-    Image *copy = CV_COPY(image);
-    Image *gray = CV_RGB_TO_GRAY(image, NULL);
+     Image *image = CV_LOAD("tests/samples/sudoku.png", RGB);
+    Image *processed = CV_COPY(image);
 
-    int k = 5;
-    Image *blur = CV_GAUSSIAN_BLUR(gray, NULL, k, 1);
-    Image *sharp = CV_SHARPEN(blur, NULL, k);
-    Image *threshold = CV_ADAPTIVE_THRESHOLD(sharp, NULL, k, 0.5, 0.5);
+    CV_RGB_TO_GRAY(processed, processed);
+    CV_GAUSSIAN_BLUR(processed, processed, 5, 1);
+    CV_SHARPEN(processed, processed, 10);
+    CV_ADAPTIVE_THRESHOLD(processed, processed, 5, 0.5, 0.5);
+    CV_NOT(processed, processed);
+    CV_DILATE(processed, processed, 3);
+    CV_ERODE(processed, processed, 3);
+    CV_SOBEL(processed, processed);
 
-    Image *not = CV_NOT(threshold, NULL);
-    Image *dilated = CV_DILATE(not, NULL, 3);
-    Image *eroded = CV_ERODE(dilated, NULL, 3);
+    int n = 0;
+    int *lines = CV_HOUGH_LINES(processed, 300, 35, &n);
 
-    Image *processed = CV_COPY(eroded);
+    int ni = 0;
+    int *intersections = CV_INTERSECTIONS(lines, n, &ni);
 
-    int n = 0, n2 = 0, n3 = 0, n4 = 0, n5 = 0;
+    if (ni < 100)
+        return assert(ni, 100, "test_cv_boxes");
 
-    int *lines = CV_HOUGH_LINES(processed, 200, &n);
-    int *simplified = CV_MERGE_LINES(lines, n, 30, &n2);
-    int *intersections = CV_GRID_INTERSECTION(processed, simplified, n3, &n4);
-    int *sorted_intersections = CV_SORT_INTERSECTIONS(intersections, n4);
-    int *boxes = CV_GRID_BOXES(sorted_intersections, n4, &n5);
+    int nb = 0;
+    int *boxes = CV_GRID_BOXES(intersections, ni, &nb);
 
     Image *box;
-
-    for (int i = 0; i < n5; i++)
+    int padding = 3;
+    for (int i = 0; i < nb; i++)
     {
-        int x1 = boxes[i * 4];
-        int y1 = boxes[i * 4 + 1];
-        int x2 = boxes[i * 4 + 2];
-        int y2 = boxes[i * 4 + 3];
+        int x1 = boxes[i * 4 + 0] + padding * 2;
+        int y1 = boxes[i * 4 + 1] + padding * 2;
+        int x2 = boxes[i * 4 + 2] - padding;
+        int y2 = boxes[i * 4 + 3] - padding;
         box = CV_COPY_REGION(image, x1, y1, x2, y2);
 
         char path[100];
         snprintf(path, 100, "tests/out/box/test_cv_save_boxes_%d.png", i);
+        
         CV_SAVE(box, path);
+        CV_FREE(&box);
     }
 
-    for (int i = 0; i < n5; i += 2)
+   for (int i = 0; i < nb; i++)
     {
-        int x1 = boxes[i * 4 + 0] + 0;
-        int y1 = boxes[i * 4 + 1] + 0;
-        int x2 = boxes[i * 4 + 2] - 0;
-        int y2 = boxes[i * 4 + 3] - 0;
+        int x1 = boxes[i * 4 + 0] + padding * 2;
+        int y1 = boxes[i * 4 + 1] + padding * 2;
+        int x2 = boxes[i * 4 + 2] - padding;
+        int y2 = boxes[i * 4 + 3] - padding;
 
         int rw = x2 - x1;
         int rh = y2 - y1;
@@ -571,21 +537,11 @@ int test_cv_save_boxes()
     CV_SAVE(image, "tests/out/test_cv_save_boxes.png");
 
     CV_FREE(&image);
-    CV_FREE(&copy);
-    CV_FREE(&gray);
-    CV_FREE(&blur);
-    CV_FREE(&sharp);
-    CV_FREE(&threshold);
-    CV_FREE(&not );
-    CV_FREE(&dilated);
-    CV_FREE(&eroded);
     CV_FREE(&processed);
-    CV_FREE(&box);
 
     FREE(lines);
-    FREE(simplified);
     FREE(intersections);
-    FREE(sorted_intersections);
+    FREE(boxes);
 
     return assert(true, true, "test_cv_boxes");
 }
@@ -605,23 +561,30 @@ int test_cv_find_countours()
     CV_DILATE(processed, processed, 3);
     CV_ERODE(processed, processed, 3);
 
-    // CV_SOBEL(processed, processed);
+    CV_SOBEL(processed, processed);
 
-    // int n = 0;
-    // int *lines = CV_HOUGH_LINES(processed, 400, &n);
-    // int *merged = CV_MERGE_LINES(lines, n, 35, &n);
+    int n = 0;
+    int *lines = CV_HOUGH_LINES(processed, 300, 35, &n);
 
-    // int *contours = CV_FIND_LARGEST_CONTOUR(merged, n, &n);
+    int nr = 0;
+    int *pts = CV_FIND_LARGEST_CONTOUR(processed, &nr);
 
-    // CV_DRAW_LINES(image, image, merged, n, 1, CV_RGB(255, 0, 0));
+    for (int i = 0; i < nr; i++)
+    {
+        int x = pts[i * 2 + 0];
+        int y = pts[i * 2 + 1];
 
-    CV_SAVE(processed, "tests/out/test_cv_find_countours.png");
+        CV_DRAW_POINT(image, image, x, y, 3, CV_RGB(255, 0, 0));
+    }
+
+
+    CV_SAVE(image, "tests/out/test_cv_find_countours.png");
 
     CV_FREE(&image);
     CV_FREE(&processed);
 
-    // FREE(lines);
-    // FREE(merged);
+    FREE(lines);
+    FREE(pts);
 
     return assert(true, true, "test_cv_find_countours");
 }
@@ -760,7 +723,7 @@ int test_s1_cv_hough_lines()
 
     int n1 = 0;
     int n2 = 0;
-    int *lines = CV_HOUGH_LINES(z1, 300, &n1);
+    int *lines = CV_HOUGH_TRANSFORM(z1, 300, &n1);
     int *simplified = CV_MERGE_LINES(lines, n1, 30, &n2);
     Image *z2 = CV_ZOOM(image, NULL, 1.05, 0xffffff);
     CV_DRAW_LINES(z2, z2, simplified, n2, 2, CV_RGB(255, 0, 0));
@@ -810,11 +773,10 @@ int test_s1_cv_save_boxes()
 
     int n = 0, n2 = 0, n3 = 0, n4 = 0, n5 = 0;
 
-    int *lines = CV_HOUGH_LINES(processed, 200, &n);
+    int *lines = CV_HOUGH_TRANSFORM(processed, 200, &n);
     int *simplified = CV_MERGE_LINES(lines, n, 30, &n2);
-    int *intersections = CV_GRID_INTERSECTION(processed, simplified, n3, &n4);
-    int *sorted_intersections = CV_SORT_INTERSECTIONS(intersections, n4);
-    int *boxes = CV_GRID_BOXES(sorted_intersections, n4, &n5);
+    int *intersections = CV_INTERSECTIONS(simplified, n3, &n4);
+    int *boxes = CV_GRID_BOXES(intersections, n4, &n5);
 
     Image *box;
     for (int i = 0; i < n5; i++)
@@ -859,7 +821,6 @@ int test_s1_cv_save_boxes()
     FREE(lines);
     FREE(simplified);
     FREE(intersections);
-    FREE(sorted_intersections);
     FREE(boxes);
 
     return assert(true, true, "test_s1_cv_boxes");
