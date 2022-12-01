@@ -187,5 +187,13 @@ int test_cnn()
 
     CNN *network = cnn_init(conv_layers, num_conv_layers, fc_layers, num_fc_layers, output_layer);
 
+
+    // todo test the training
+
+
+
+    // free the memory
+    cnn_destroy(network);
+
     return assert(1, 1, "test_cnn");
 }

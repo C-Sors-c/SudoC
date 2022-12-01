@@ -132,7 +132,8 @@ void cnn_destroy(CNN *neural_network)
     for (int i = 0; i < neural_network->num_conv_layers; i++)
         conv_layer_destroy(neural_network->conv_layers[i]);
     for (int i = 0; i < neural_network->num_fc_layers; i++)
-        activation_layer_destroy(neural_network->output_layer);
+        fc_layer_destroy(neural_network->fc_layers[i]);
+    activation_layer_destroy(neural_network->output_layer);
 
     free(neural_network->conv_layers);
     free(neural_network->fc_layers);
