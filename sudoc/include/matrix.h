@@ -34,6 +34,8 @@ void matrix_map_function(Matrix *m, float (*func)(float));
 bool matrix_element_wise_equal(Matrix *m1, Matrix *m2);
 void matrix_destroy(Matrix *m);
 void matrix_print(Matrix *m);
+float matrix_det(Matrix *m);
+Matrix *matrix_inverse(Matrix *m);
 
 // 4D matrix utils
 struct Matrix4

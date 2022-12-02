@@ -480,6 +480,133 @@ void matrix_print(Matrix *m)
     }
 }
 
+// TODO: add tests
+float matrix_det(Matrix *m)
+{
+    if (m->dim1 != m->dim2)
+        errx(EXIT_FAILURE, "matrix_det: matrix is not square\n");
+
+    if (m->dim1 == 1)
+        return m->data[0];
+
+    if (m->dim1 == 2)
+        return m->data[0] * m->data[3] - m->data[1] * m->data[2];
+
+    float det = 0;
+
+    for (int i = 0; i < m->dim1; i++)
+    {
+        Matrix *sub = matrix_init(m->dim1 - 1, m->dim2 - 1, NULL);
+        for (int j = 1; j < m->dim1; j++)
+        {
+            for (int k = 0; k < m->dim2; k++)
+            {
+                if (k < i)
+                    sub->data[(j - 1) * (m->dim2 - 1) + k] = m->data[j * m->dim2 + k];
+                else if (k > i)
+                    sub->data[(j - 1) * (m->dim2 - 1) + k - 1] = m->data[j * m->dim2 + k];
+            }
+        }
+        det += pow(-1, i) * m->data[i] * matrix_det(sub);
+        matrix_destroy(sub);
+    }
+
+    return det;
+}
+
+// Function: matrix_inverse
+// ------------------------
+// Returns the inverse of a matrix.
+//
+// Parameters:
+//   m - pointer to the matrix
+//
+// Returns:
+//   a pointer to the inverse of the matrix
+//
+Matrix *matrix_inverse(Matrix *m)
+{
+    if (m->dim1 != m->dim2)
+        errx(EXIT_FAILURE, "matrix_inverse: matrix is not square\n");
+
+    float det = matrix_det(m);
+    if (det == 0)
+        errx(EXIT_FAILURE, "matrix_inverse: matrix is not invertible\n");
+
+    Matrix *inv = matrix_init(m->dim1, m->dim2, NULL);
+
+    for (int i = 0; i < m->dim1; i++)
+    {
+        for (int j = 0; j < m->dim2; j++)
+        {
+            Matrix *sub = matrix_init(m->dim1 - 1, m->dim2 - 1, NULL);
+            for (int k = 0; k < m->dim1; k++)
+            {
+                for (int l = 0; l < m->dim2; l++)
+                {
+                    if (k < i && l < j)
+                        sub->data[k * (m->dim2 - 1) + l] = m->data[k * m->dim2 + l];
+                    else if (k < i && l > j)
+                        sub->data[k * (m->dim2 - 1) + l - 1] = m->data[k * m->dim2 + l];
+                    else if (k > i && l < j)
+                        sub->data[(k - 1) * (m->dim2 - 1) + l] = m->data[k * m->dim2 + l];
+                    else if (k > i && l > j)
+                        sub->data[(k - 1) * (m->dim2 - 1) + l - 1] = m->data[k * m->dim2 + l];
+                }
+            }
+            inv->data[j * m->dim2 + i] = pow(-1, i + j) * matrix_det(sub) / det;
+            matrix_destroy(sub);
+        }
+    }
+
+    return inv;
+}
+
+Matrix *matrix_solve(Matrix *A, Matrix *b)
+{
+    if (A->dim1 != A->dim2)
+        errx(EXIT_FAILURE, "matrix_solve: matrix is not square\n");
+
+    if (A->dim1 != b->dim1)
+        errx(EXIT_FAILURE, "matrix_solve: matrix dimensions do not match\n");
+
+    Matrix *A_inv = matrix_inverse(A);
+    Matrix *x = matrix_multiply(A_inv, b, NULL);
+    matrix_destroy(A_inv);
+
+    return x;
+}
+
+
+Matrix *matrix_perspective_transform(Matrix *src, Matrix *dst, Matrix *H)
+{
+    if (src->dim1 != 2 || dst->dim1 != 2)
+        errx(EXIT_FAILURE, "matrix_perspective_transform: matrix is not 2xN\n");
+
+    if (src->dim2 != dst->dim2)
+        errx(EXIT_FAILURE, "matrix_perspective_transform: matrix dimensions do not match\n");
+
+    Matrix *H_inv = matrix_inverse(H);
+    Matrix *src_hom = matrix_init(3, src->dim2, NULL);
+    for (int i = 0; i < src->dim2; i++)
+    {
+        src_hom->data[i] = src->data[i];
+        src_hom->data[src->dim2 + i] = src->data[src->dim2 + i];
+        src_hom->data[2 * src->dim2 + i] = 1;
+    }
+    Matrix *dst_hom = matrix_multiply(H_inv, src_hom, NULL);
+    for (int i = 0; i < dst->dim2; i++)
+    {
+        dst->data[i] = dst_hom->data[i] / dst_hom->data[2 * dst->dim2 + i];
+        dst->data[dst->dim2 + i] = dst_hom->data[dst->dim2 + i] / dst_hom->data[2 * dst->dim2 + i];
+    }
+    matrix_destroy(src_hom);
+    matrix_destroy(dst_hom);
+    matrix_destroy(H_inv);
+
+    return dst;
+}
+
 #pragma endregion matrix
 
 #pragma region matrix4

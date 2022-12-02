@@ -631,13 +631,26 @@ int test_cv_resize()
 
 int test_cv_zoom()
 {
-    Image *image = CV_LOAD("tests/samples/lena.png", RGB);
-    Image *zoomed = CV_ZOOM(image, NULL, 2.0, 0x000000);
+    // Image *image = CV_LOAD("tests/samples/lena.png", RGB);
+    // Image *zoomed = CV_ZOOM(image, NULL, 2.0, 0x000000);
 
-    CV_SAVE(zoomed, "tests/out/test_cv_zoom.png");
+    // CV_SAVE(zoomed, "tests/out/test_cv_zoom.png");
 
-    CV_FREE(&image);
-    CV_FREE(&zoomed);
+    // CV_FREE(&image);
+    // CV_FREE(&zoomed);
+
+    float m[] = {
+        1, 0, -2,
+        5, 1, 9,
+        4, 5, 2
+    };
+
+    Matrix *matrix = matrix_init(3, 3, m);
+    float det = matrix_det(matrix);
+    printf("det: %f\n", det);
+
+    matrix_destroy(matrix);
+
     return assert(true, true, "test_cv_zoom");
 }
 
