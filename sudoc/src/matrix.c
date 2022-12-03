@@ -28,8 +28,8 @@ How to create a new matrix?
 
 /// @brief Allocates memory for a matrix of size dim1 x dim2 and returns a pointer to the matrix.
 /// @param dim1 - number of rows
-/// @param dim2 - number of columns
-/// @param datap - a pointer to an array of n_rows (optional)
+/// @param dim2 number of columns
+/// @param datap a pointer to an array of n_rows (optional)
 /// @return a pointer to the matrix
 Matrix *matrix_init(int dim1, int dim2, float *datap)
 {
@@ -58,8 +58,8 @@ Matrix *matrix_init(int dim1, int dim2, float *datap)
 }
 
 /// @brief Copies the data from a matrix to a new one
-/// @param m - a pointer to the matrix
-/// @param dst - a pointer to the destination matrix
+/// @param m a pointer to the matrix
+/// @param dst a pointer to the destination matrix
 /// @return a pointer to the destination matrix
 Matrix *matrix_copy(Matrix *m, Matrix *dst)
 {
@@ -80,7 +80,7 @@ Matrix *matrix_copy(Matrix *m, Matrix *dst)
 }
 
 /// @brief Resets the matrix to zero values
-/// @param m - a pointer to the matrix
+/// @param m a pointer to the matrix
 void matrix_zero(Matrix *m)
 {
     for (int i = 0; i < m->size; i++)
@@ -88,9 +88,9 @@ void matrix_zero(Matrix *m)
 }
 
 /// @brief Gets a value from a row major matrix
-/// @param m - a pointer to the matrix
-/// @param i - row index
-/// @param j - col index
+/// @param m a pointer to the matrix
+/// @param i row index
+/// @param j col index
 /// @return the value at the specified position
 float m_get(Matrix *m, int i, int j)
 {
@@ -103,10 +103,10 @@ float m_get(Matrix *m, int i, int j)
 }
 
 /// @brief Sets a value into a row major matrix
-/// @param m - a pointer to the matrix
-/// @param dim1 - number of row
-/// @param dim2 - number of column
-/// @param value - the value to set
+/// @param m a pointer to the matrix
+/// @param dim1 number of row
+/// @param dim2 number of column
+/// @param value the value to set
 void m_set(Matrix *m, int dim1, int dim2, float value)
 {
     if (dim1 < 0 || dim1 >= m->dim1 || dim2 < 0 || dim2 >= m->dim2)
@@ -116,9 +116,9 @@ void m_set(Matrix *m, int dim1, int dim2, float value)
 }
 
 /// @brief Adds two matrices and returns the result.
-/// @param m1 - pointer to the first matrix
-/// @param m2 - pointer to the second matrix
-/// @param dst - a pointer to the destination matrix
+/// @param m1 pointer to the first matrix
+/// @param m2 pointer to the second matrix
+/// @param dst a pointer to the destination matrix
 /// @return a pointer to the result matrix
 Matrix *matrix_add(Matrix *m1, Matrix *m2, Matrix *dst)
 {
@@ -139,9 +139,9 @@ Matrix *matrix_add(Matrix *m1, Matrix *m2, Matrix *dst)
 }
 
 /// @brief Adds a bias matrix to a matrix and returns the result.
-/// @param m1 - pointer to the matrix
-/// @param m2 - pointer to the bias matrix
-/// @param dst - a pointer to the destination matrix
+/// @param m1 pointer to the matrix
+/// @param m2 pointer to the bias matrix
+/// @param dst a pointer to the destination matrix
 /// @return a pointer to the result matrix
 Matrix *matrix_add_bias(Matrix *m1, Matrix *m2, Matrix *dst)
 {
@@ -162,8 +162,8 @@ Matrix *matrix_add_bias(Matrix *m1, Matrix *m2, Matrix *dst)
 }
 
 /// @brief Sums the rows of a matrix and returns the result.
-/// @param m1 - pointer to the matrix
-/// @param dst - pointer to the destination matrix
+/// @param m1 pointer to the matrix
+/// @param dst pointer to the destination matrix
 /// @return a pointer to the result matrix
 Matrix *matrix_sum_rows(Matrix *m1, Matrix *dst)
 {
@@ -187,9 +187,9 @@ Matrix *matrix_sum_rows(Matrix *m1, Matrix *dst)
 }
 
 /// @brief Subtracts two matrices and returns the result.
-/// @param m1 - pointer to the first matrix
-/// @param m2 - pointer to the second matrix
-/// @param dst - a pointer to the destination matrix
+/// @param m1 pointer to the first matrix
+/// @param m2 pointer to the second matrix
+/// @param dst a pointer to the destination matrix
 /// @return a pointer to the result matrix
 Matrix *matrix_subtract(Matrix *m1, Matrix *m2, Matrix *dst)
 {
@@ -214,9 +214,9 @@ Matrix *matrix_subtract(Matrix *m1, Matrix *m2, Matrix *dst)
 }
 
 /// @brief Multiplies two matrices and returns the result.
-/// @param m1 - pointer to the first matrix
-/// @param m2 - pointer to the second matrix
-/// @param dst - a pointer to the destination matrix
+/// @param m1 pointer to the first matrix
+/// @param m2 pointer to the second matrix
+/// @param dst a pointer to the destination matrix
 /// @return a pointer to the result matrix
 Matrix *matrix_multiply(Matrix *m1, Matrix *m2, Matrix *dst)
 {
@@ -246,8 +246,8 @@ Matrix *matrix_multiply(Matrix *m1, Matrix *m2, Matrix *dst)
 }
 
 /// @brief Multiplies a matrix by a scalar and returns the result.
-/// @param m - pointer to the matrix
-/// @param s - the scalar
+/// @param m pointer to the matrix
+/// @param s the scalar
 void matrix_multiply_scalar(Matrix *m, float s)
 {
     for (int i = 0; i < m->dim1; i++)
@@ -256,8 +256,8 @@ void matrix_multiply_scalar(Matrix *m, float s)
 }
 
 /// @brief Applies a function to each element of a matrix.
-/// @param m - pointer to the matrix
-/// @param f - the function
+/// @param m pointer to the matrix
+/// @param f the function
 void matrix_map_function(Matrix *m, float(f)(float))
 {
     for (int i = 0; i < m->dim1; i++)
@@ -266,7 +266,7 @@ void matrix_map_function(Matrix *m, float(f)(float))
 }
 
 /// @brief Frees the memory allocated for a matrix.
-/// @param m - pointer to the matrix
+/// @param m pointer to the matrix
 void matrix_destroy(Matrix *m)
 {
     free(m->data);
@@ -274,7 +274,7 @@ void matrix_destroy(Matrix *m)
 }
 
 /// @brief Returns the transpose of a matrix.
-/// @param m - pointer to the matrix
+/// @param m pointer to the matrix
 /// @return a pointer to the transpose of the matrix
 Matrix *matrix_transpose(Matrix *m)
 {
@@ -291,9 +291,9 @@ Matrix *matrix_transpose(Matrix *m)
 }
 
 /// @brief Multiplies two matrices elementwise.
-/// @param m1 - pointer to the first matrix
-/// @param m2 - pointer to the second matrix
-/// @param dst - pointer to the destination matrix
+/// @param m1 pointer to the first matrix
+/// @param m2 pointer to the second matrix
+/// @param dst pointer to the destination matrix
 /// @return a pointer to the result matrix
 Matrix *matrix_elementwise_multiply(Matrix *m1, Matrix *m2, Matrix *dst)
 {
@@ -311,8 +311,8 @@ Matrix *matrix_elementwise_multiply(Matrix *m1, Matrix *m2, Matrix *dst)
 }
 
 /// @brief Checks if two matrices are elementwise equal.
-/// @param m1 - pointer to the first matrix
-/// @param m2 - pointer to the second matrix
+/// @param m1 pointer to the first matrix
+/// @param m2 pointer to the second matrix
 /// @return true if the matrices are elementwise equal, false otherwise
 bool matrix_element_wise_equal(Matrix *m1, Matrix *m2)
 {
@@ -327,7 +327,7 @@ bool matrix_element_wise_equal(Matrix *m1, Matrix *m2)
 }
 
 /// @brief Prints a matrix to the console.
-/// @param m - pointer to the matrix
+/// @param m pointer to the matrix
 void matrix_print(Matrix *m)
 {
     printf("dim1:%i, dim2:%i\n", m->dim1, m->dim2);
@@ -342,7 +342,7 @@ void matrix_print(Matrix *m)
 }
 
 /// @brief Computes the determinant of a matrix.
-/// @param m - pointer to the matrix
+/// @param m pointer to the matrix
 /// @return the determinant of the matrix
 float matrix_det(Matrix *m)
 {
@@ -378,7 +378,7 @@ float matrix_det(Matrix *m)
 }
 
 /// @brief Computes the inverse of a matrix.
-/// @param m - pointer to the matrix
+/// @param m pointer to the matrix
 /// @return a pointer to the inverse of the matrix
 Matrix *matrix_inverse(Matrix *m)
 {
@@ -419,8 +419,8 @@ Matrix *matrix_inverse(Matrix *m)
 }
 
 /// @brief Solve a linear system of equations.
-/// @param A - pointer to the coefficient matrix
-/// @param b - pointer to the right hand side vector
+/// @param A pointer to the coefficient matrix
+/// @param b pointer to the right hand side vector
 /// @return a pointer to the solution vector
 Matrix *matrix_solve(Matrix *A, Matrix *b)
 {
@@ -435,8 +435,8 @@ Matrix *matrix_solve(Matrix *A, Matrix *b)
 }
 
 /// @brief Computes the perspective transformation matrix.
-/// @param src - array of 4 source points
-/// @param dst - array of 4 destination points
+/// @param src array of 4 source points
+/// @param dst array of 4 destination points
 /// @return a pointer to the perspective transformation matrix (3x3)
 Matrix *matrix_transformation(const Tupple *src, const Tupple *dst)
 {
@@ -444,72 +444,15 @@ Matrix *matrix_transformation(const Tupple *src, const Tupple *dst)
         errx(EXIT_FAILURE, "matrix_transformation: src or dst is NULL\n");
 
     float a[64] = {
-        src[0].x,
-        src[0].y,
-        1,
-        0,
-        0,
-        0,
-        -dst[0].x * src[0].x,
-        -dst[0].x * src[0].y,
-        0,
-        0,
-        0,
-        src[0].x,
-        src[0].y,
-        1,
-        -dst[0].y * src[0].x,
-        -dst[0].y * src[0].y,
-        src[1].x,
-        src[1].y,
-        1,
-        0,
-        0,
-        0,
-        -dst[1].x * src[1].x,
-        -dst[1].x * src[1].y,
-        0,
-        0,
-        0,
-        src[1].x,
-        src[1].y,
-        1,
-        -dst[1].y * src[1].x,
-        -dst[1].y * src[1].y,
-        src[2].x,
-        src[2].y,
-        1,
-        0,
-        0,
-        0,
-        -dst[2].x * src[2].x,
-        -dst[2].x * src[2].y,
-        0,
-        0,
-        0,
-        src[2].x,
-        src[2].y,
-        1,
-        -dst[2].y * src[2].x,
-        -dst[2].y * src[2].y,
-        src[3].x,
-        src[3].y,
-        1,
-        0,
-        0,
-        0,
-        -dst[3].x * src[3].x,
-        -dst[3].x * src[3].y,
-        0,
-        0,
-        0,
-        src[3].x,
-        src[3].y,
-        1,
-        -dst[3].y * src[3].x,
-        -dst[3].y * src[3].y,
+        src[0].x, src[0].y, 1, 0, 0, 0, -dst[0].x * src[0].x, -dst[0].x * src[0].y,
+        0, 0, 0, src[0].x, src[0].y, 1, -dst[0].y * src[0].x, -dst[0].y * src[0].y,
+        src[1].x, src[1].y, 1, 0, 0, 0, -dst[1].x * src[1].x, -dst[1].x * src[1].y,
+        0, 0, 0, src[1].x, src[1].y, 1, -dst[1].y * src[1].x, -dst[1].y * src[1].y,
+        src[2].x, src[2].y, 1, 0, 0, 0, -dst[2].x * src[2].x, -dst[2].x * src[2].y,
+        0, 0, 0, src[2].x, src[2].y, 1, -dst[2].y * src[2].x, -dst[2].y * src[2].y,
+        src[3].x, src[3].y, 1, 0, 0, 0, -dst[3].x * src[3].x, -dst[3].x * src[3].y,
+        0, 0, 0, src[3].x, src[3].y, 1, -dst[3].y * src[3].x, -dst[3].y * src[3].y,
     };
-    Matrix *A = matrix_init(8, 8, a);
 
     float b[8] = {
         dst[0].x,
@@ -522,25 +465,20 @@ Matrix *matrix_transformation(const Tupple *src, const Tupple *dst)
         dst[3].y,
     };
 
+    Matrix *A = matrix_init(8, 8, a);
     Matrix *B = matrix_init(8, 1, b);
-    Matrix *h = matrix_solve(A, B);
+    Matrix *M = matrix_solve(A, B);
 
-    float h_data[9] = {
-        h->data[0],
-        h->data[1],
-        h->data[2],
-        h->data[3],
-        h->data[4],
-        h->data[5],
-        h->data[6],
-        h->data[7],
-        1,
+    float m[9] = {
+        M->data[0], M->data[1], M->data[2],
+        M->data[3], M->data[4], M->data[5],
+        M->data[6], M->data[7], 1,
     };
 
-    Matrix *H = matrix_init(3, 3, h_data);
+    Matrix *H = matrix_init(3, 3, m);
     Matrix *H_inv = matrix_inverse(H);
 
-    matrix_destroy(h);
+    matrix_destroy(M);
     matrix_destroy(A);
     matrix_destroy(B);
     matrix_destroy(H);
