@@ -639,17 +639,36 @@ int test_cv_zoom()
     // CV_FREE(&image);
     // CV_FREE(&zoomed);
 
-    float m[] = {
-        1, 0, -2,
-        5, 1, 9,
-        4, 5, 2
-    };
+    Point pA = {50, 0};
+    Point pB = {0, 150};
+    Point pC = {200, 200};
+    Point pD = {0, 200};
 
-    Matrix *matrix = matrix_init(3, 3, m);
-    float det = matrix_det(matrix);
-    printf("det: %f\n", det);
+    Point pE = {0, 0};
+    Point pF = {200, 0};
+    Point pG = {200, 200};
+    Point pH = {0, 200};
 
-    matrix_destroy(matrix);
+    Point *src = malloc(sizeof(Point) * 4);
+    Point *dst = malloc(sizeof(Point) * 4);
+
+    src[0] = pA;
+    src[1] = pB;
+    src[2] = pC;
+    src[3] = pD;
+
+    dst[0] = pE;
+    dst[1] = pF;
+    dst[2] = pG;
+    dst[3] = pH;
+
+    Matrix *M = matrix_get_perspective_transform(src, dst);
+
+    matrix_print(M);
+
+    FREE(src);
+    FREE(dst);
+    matrix_destroy(M);
 
     return assert(true, true, "test_cv_zoom");
 }

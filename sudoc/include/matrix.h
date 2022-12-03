@@ -5,6 +5,12 @@
 #include <stdbool.h>
 #include <math.h>
 
+typedef struct
+{
+    int x;
+    int y;
+} Point;
+
 // 2D matrix utils
 struct Matrix
 {
@@ -36,6 +42,7 @@ void matrix_destroy(Matrix *m);
 void matrix_print(Matrix *m);
 float matrix_det(Matrix *m);
 Matrix *matrix_inverse(Matrix *m);
+Matrix *matrix_get_perspective_transform(Point *src, Point *dst);
 
 // 4D matrix utils
 struct Matrix4

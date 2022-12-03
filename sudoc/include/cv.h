@@ -20,11 +20,6 @@ typedef struct
     pixel_t *data;
 } Image;
 
-typedef struct
-{
-    int x;
-    int y;
-} Point;
 
 #define PI 3.14159265358979323846
 #define RGB 3

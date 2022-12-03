@@ -2652,4 +2652,34 @@ Image *CV_ZOOM(const Image *src, Image *dst, float scale, Uint32 background)
     return dst;
 }
 
+Image *CV_WARP_TRANSFORM(const Image *src, Matrix *M)
+{
+    ASSERT_IMG(src);
+    ASSERT_MAT(M);
+
+    Image *dst = CV_INIT(src->c, src->h, src->w);
+
+    for (int c = 0; c < src->c; c++)
+    {
+        for (int x = 0; x < src->w; x++)
+        {
+            for (int y = 0; y < src->h; y++)
+            {
+                float xs = MAT(M, 0, 0) * x + MAT(M, 0, 1) * y + MAT(M, 0, 2);
+                float ys = MAT(M, 1, 0) * x + MAT(M, 1, 1) * y + MAT(M, 1, 2);
+
+                int x1 = (int)floor(xs);
+                int y1 = (int)floor(ys);
+
+                if (xs >= 0 && xs < src->w && ys >= 0 && ys < src->h)
+                    PIXEL(dst, c, y, x) = PIXEL(src, c, y1, x1);
+                else
+                    PIXEL(dst, c, y, x) = 0;
+            }
+        }
+    }
+
+    return dst;
+}
+
 #pragma endregion Transform
