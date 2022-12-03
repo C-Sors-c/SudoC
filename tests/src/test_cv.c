@@ -604,39 +604,9 @@ int test_cv_draw()
     return assert(true, true, "test_cv_draw");
 }
 
-int test_cv_rotate()
-{
-    // Image *image = CV_LOAD("tests/samples/lena.png", RGB);
-    // Image *rotated = CV_ROTATE(image, NULL, 45.0, 0x000000);
-
-    // CV_SAVE(rotated, "tests/out/test_cv_rotate.png");
-
-    // CV_FREE(&image);
-    // CV_FREE(&rotated);
-    return assert(true, true, "test_cv_rotate");
-}
-
-int test_cv_resize()
-{
-    // Image *image = CV_LOAD("tests/samples/lena.png", RGB);
-    // Image *resized = CV_SCALE(image, NULL, 0.5);
-
-    // CV_SAVE(resized, "tests/out/test_cv_resize.png");
-
-    // CV_FREE(&image);
-    // CV_FREE(&resized);
-    return assert(true, true, "test_cv_resize");
-}
-
 int test_cv_transform()
 {
     Image *image = CV_LOAD("tests/samples/warp.png", RGB);
-    // Image *zoomed = CV_ZOOM(image, NULL, 2.0, 0x000000);
-
-    // CV_SAVE(zoomed, "tests/out/test_cv_transform.png");
-
-    // CV_FREE(&image);
-    // CV_FREE(&zoomed);
 
     Tupple pA = {50, 0};
     Tupple pB = {150, 0};
@@ -662,20 +632,76 @@ int test_cv_transform()
     dst[3] = pH;
 
     Matrix *M = matrix_transformation(src, dst);
+    Image * tf = CV_TRANSFORM(image, M, T(image->w, image->h), T(0, 0), CV_RGB(0, 0, 0));
 
-    Image * tf = CV_TRANSFORM(image, M, T(image->w, image->h), T(0, 0), CV_RGB(255, 0, 0));
-
-    Image *rot = CV_SCALE(tf, 2, CV_RGB(0, 255, 0));
-
-    CV_SAVE(rot, "tests/out/test_cv_zoom_src.png");
-
+    CV_SAVE(tf, "tests/out/test_cv_transform.png");
 
     CV_FREE(&image);
     CV_FREE(&tf);
-    CV_FREE(&rot);
     FREE(src);
     FREE(dst);
     matrix_destroy(M);
 
     return assert(true, true, "test_cv_transform");
 }
+
+int test_cv_rotate()
+{
+    Image *image = CV_LOAD("tests/samples/lena.png", RGB);
+    Image *rotated = CV_ROTATE(image, 45, true, CV_RGB(0, 0, 0));
+
+    CV_SAVE(rotated, "tests/out/test_cv_rotate.png");
+
+    CV_FREE(&image);
+    CV_FREE(&rotated);
+    return assert(true, true, "test_cv_rotate");
+}
+
+int test_cv_scale()
+{
+    Image *image = CV_LOAD("tests/samples/lena.png", RGB);
+    Image *scale = CV_SCALE(image, 1.5, CV_RGB(0, 0, 0));
+
+    CV_SAVE(scale, "tests/out/test_cv_scale.png");
+
+    CV_FREE(&image);
+    CV_FREE(&scale);
+    return assert(true, true, "test_cv_scale");
+}
+
+int test_cv_resize()
+{
+    Image *image = CV_LOAD("tests/samples/lena.png", RGB);
+    Image *resize = CV_RESIZE(image, T(300, 200), CV_RGB(0, 0, 0));
+
+    CV_SAVE(resize, "tests/out/test_cv_resize.png");
+
+    CV_FREE(&image);
+    CV_FREE(&resize);
+    return assert(true, true, "test_cv_resize");
+}
+
+int test_cv_zoom()
+{
+    Image *image = CV_LOAD("tests/samples/lena.png", RGB);
+    Image *zoom = CV_ZOOM(image, 1.5, CV_RGB(0, 0, 0));
+
+    CV_SAVE(zoom, "tests/out/test_cv_zoom.png");
+
+    CV_FREE(&image);
+    CV_FREE(&zoom);
+    return assert(true, true, "test_cv_zoom");
+}
+
+int test_cv_translate()
+{
+    Image *image = CV_LOAD("tests/samples/lena.png", RGB);
+    Image *translate = CV_TRANSLATE(image, T(50, 50), CV_RGB(0, 0, 0));
+
+    CV_SAVE(translate, "tests/out/test_cv_translate.png");
+
+    CV_FREE(&image);
+    CV_FREE(&translate);
+    return assert(true, true, "test_cv_translate");
+}
+

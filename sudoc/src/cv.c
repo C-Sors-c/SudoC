@@ -2451,6 +2451,13 @@ int *CV_FIND_LARGEST_CONTOUR(const Image *src, int *nrects)
     return rects;
 }
 
+/// @brief Apply a perspective transform to an image
+/// @param src Source image.
+/// @param M 3x3 perspective transformation matrix.
+/// @param dsize Size of the output image.
+/// @param offset Offset of the transformation in the destination image.
+/// @param background Background color in the destination image.
+/// @return Destination image.
 Image *CV_TRANSFORM(const Image *src, const Matrix *M, Tupple dsize, Tupple offset, Uint32 background)
 {
     ASSERT_IMG(src);
@@ -2482,8 +2489,8 @@ Image *CV_TRANSFORM(const Image *src, const Matrix *M, Tupple dsize, Tupple offs
         {
             for (int x = 0; x < dst->w; x++)
             {
-                int xt = x + offset.x;
-                int yt = y + offset.y;
+                int xt = x - offset.x;
+                int yt = y - offset.y;
 
                 float x1 = (m11 * xt + m12 * yt + m13) / (m31 * xt + m32 * yt + m33);
                 float y1 = (m21 * xt + m22 * yt + m23) / (m31 * xt + m32 * yt + m33);
@@ -2532,7 +2539,7 @@ Image *CV_ROTATE(const Image *src, float angle, bool resize, Uint32 background)
     }
 
     Tupple dsize = {w, h};
-    Tupple offset = {-w / 2.0f, -h / 2.0f};
+    Tupple offset = {w / 2.0f, h / 2.0f};
 
     Image *dst = CV_TRANSFORM(src, M, dsize, offset, background);
 
@@ -2566,8 +2573,38 @@ Image *CV_SCALE(const Image *src, float factor, Uint32 background)
     matrix_destroy(M);
 
     return dst;
+}
 
+/// @brief Resize an image to a given size
+/// @param src Source image
+/// @param dsize Destination size
+/// @param background Background color to fill the empty space
+/// @return Resized image
+Image *CV_RESIZE(const Image *src, Tupple dsize, Uint32 background)
+{
+    ASSERT_IMG(src);
 
+    float x_factor = (float)dsize.x / (float)src->w;
+    float y_factor = (float)dsize.y / (float)src->h;
+
+    float ix = 1.0f / x_factor;
+    float iy = 1.0f / y_factor;
+
+    float m[9] = {
+        iy, 0, 0,
+        0, ix, 0,
+        0, 0, 1
+    };
+
+    Matrix *M = matrix_init(3, 3, m);
+
+    Tupple offset = {0, 0};
+
+    Image *dst = CV_TRANSFORM(src, M, dsize, offset, background);
+
+    matrix_destroy(M);
+
+    return dst;
 }
 
 /// @brief Zoom in/out an image without changing the image size
