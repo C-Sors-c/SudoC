@@ -38,7 +38,7 @@ int (*test_cv[])() = {
     // test_cv_draw,
     // test_cv_rotate,
     // test_cv_resize,
-    test_cv_zoom, // TODO: fix zoom
+    test_cv_transform, // TODO: fix zoom
     // test_s1_cv_gaussian_blur,
     // test_s1_cv_sobel,
     // test_s1_cv_canny,
@@ -54,7 +54,6 @@ int (*tests_matrix[])() = {
     // test_matrix_multiply_scalar,
     // test_matrix_transpose,
     // test_matrix_map_function,
-    test_matrix_get_perspective_transformation,
     // test_matrix4_init,
     // test_matrix4_add,
     // test_matrix4_subtract,

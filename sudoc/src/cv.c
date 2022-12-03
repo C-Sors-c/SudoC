@@ -1467,32 +1467,6 @@ Image *CV_SUB(const Image *src1, Image *src2, Image *dst)
     return dst;
 }
 
-/// @brief Count the non-zero pixels in an image
-/// @param src The source image
-/// @return The number of non-zero pixels
-int CV_COUNT_NON_ZERO(const Image *src)
-{
-    ASSERT_IMG(src);
-
-    int count = 0;
-
-    for (int c = 0; c < src->c; c++)
-    {
-        for (int i = 0; i < src->h; i++)
-        {
-            for (int j = 0; j < src->w; j++)
-            {
-                float p = PIXEL(src, c, i, j);
-
-                if (p == 1)
-                    count++;
-            }
-        }
-    }
-
-    return count;
-}
-
 /// @brief Apply a dilation operation to an image
 /// @param src The source image
 /// @param dst The destination image
@@ -1635,49 +1609,6 @@ Image *CV_CLOSE(const Image *src, Image *dst, int k)
     return dst;
 }
 
-/// @brief Apply a morphological skeletonization operation to an image
-/// @param src The source image
-/// @param dst The destination image
-/// @param k The kernel size
-/// @return The destination image (dst)
-Image *CV_MORPHOLOGICAL_SKELETON(const Image *src, Image *dst, int k)
-{
-    ASSERT_IMG(src);
-    ASSERT_CHANNEL(src, 1);
-
-    Image *tmp = CV_COPY(src);
-
-    if (dst == NULL)
-        dst = CV_COPY(src);
-    ASSERT_IMG(dst);
-    ASSERT_DIM(dst, src->c, src->h, src->w);
-
-    Image *tmp1 = CV_INIT(src->c, src->h, src->w);
-    Image *tmp2 = CV_INIT(src->c, src->h, src->w);
-
-    int r = k / 2;
-
-    while (1)
-    {
-        CV_ERODE(tmp, tmp1, k);
-        CV_DILATE(tmp1, tmp2, k);
-
-        CV_SUB(tmp, tmp2, tmp1);
-
-        CV_OR(dst, tmp1, dst);
-
-        CV_COPY_TO(tmp1, tmp);
-
-        if (CV_COUNT_NON_ZERO(tmp) == 0)
-            break;
-    }
-
-    CV_FREE(&tmp);
-    CV_FREE(&tmp1);
-    CV_FREE(&tmp2);
-    return dst;
-}
-
 /// @brief Build a uint32 from r, g, b values. (0 <= r, g, b <= 255) and a is skipped
 /// @param r The red value
 /// @param g The green value
@@ -1730,8 +1661,7 @@ Image *CV_DRAW_POINT(const Image *src, Image *dst, int x, int y, int width, Uint
                 if (x + i < 0 || x + i >= dst->w || y + j < 0 || y + j >= dst->h)
                     continue;
 
-                int r = (color >> (16 - c * 8)) & 0xff;
-                PIXEL(dst, c, y + j, x + i) = r / 255.0;
+                PIXEL(dst, c, y + j, x + i) = CV_COLOR(color, c);
             }
         }
     }
@@ -2085,7 +2015,7 @@ int *CV_MERGE_LINES(int *lines, int nlines, int threshold, int *n)
 
 /// @brief Return detected lines in an image.
 /// @param src The source image
-/// @param intersection_threshold The threshold value, representing the minimum number of intersections to detect a line 
+/// @param intersection_threshold The threshold value, representing the minimum number of intersections to detect a line
 /// @param merge_threshold The threshold value to eliminate lines that are too close to each other.
 /// @param nlines The number of lines that will be returned.
 /// @return An array of lines where 2n is rho and 2n+1 is theta.
@@ -2521,163 +2451,87 @@ int *CV_FIND_LARGEST_CONTOUR(const Image *src, int *nrects)
     return rects;
 }
 
-/// @brief Rotate an image by a given angle in degrees
-/// @param src The source image
-/// @param dst The destination image
-/// @param angle The angle in degrees
-/// @param background The background color
-/// @return The rotated image (dst)
-Image *CV_ROTATE(const Image *src, Image *dst, float angle, Uint32 background)
+Image *CV_TRANSFORM(const Image *src, const Matrix *M, Tupple dsize, Tupple offset, Uint32 background)
 {
     ASSERT_IMG(src);
 
-    Image *tmp = CV_COPY(src);
+    Image *dst = CV_INIT(src->c, dsize.x, dsize.y);
 
-    if (dst == NULL)
-        dst = CV_INIT(src->c, src->h, src->w);
-    ASSERT_IMG(dst);
-    ASSERT_DIM(dst, src->c, src->h, src->w);
-
-    float radians = angle * PI / 180.0;
-    int hwidth = src->w / 2;
-    int hheight = src->h / 2;
-    double sinma = sin(-radians);
-    double cosma = cos(-radians);
-
-    for (int c = 0; c < src->c; c++)
-    {
-        for (int x = 0; x < src->w; x++)
-        {
-            for (int y = 0; y < src->h; y++)
-            {
-
-                int xt = x - hwidth;
-                int yt = y - hheight;
-
-                int xs = (int)round((cosma * xt - sinma * yt) + hwidth);
-                int ys = (int)round((sinma * xt + cosma * yt) + hheight);
-
-                if (xs >= 0 && xs < src->w && ys >= 0 && ys < src->h)
-                    PIXEL(dst, c, y, x) = PIXEL(tmp, c, ys, xs);
-                else
-                    PIXEL(dst, c, y, x) = CV_COLOR(background, c);
-            }
-        }
-    }
-
-    CV_FREE(&tmp);
-    return dst;
-}
-
-/// @brief Rescale an image by a given factor
-/// @param src The source image
-/// @param dst The destination image
-/// @param scale The scale factor
-/// @return The resized image (dst)
-Image *CV_SCALE(const Image *src, Image *dst, float scale)
-{
-    ASSERT_IMG(src);
-
-    Image *tmp = CV_COPY(src);
-
-    int nh = (int)round(src->h * scale);
-    int nw = (int)round(src->w * scale);
-
-    if (dst == NULL)
-        dst = CV_INIT(src->c, nh, nw);
-    ASSERT_IMG(dst);
-    ASSERT_DIM(dst, src->c, nh, nw);
-
-    for (int c = 0; c < src->c; c++)
-    {
-        for (int x = 0; x < dst->w; x++)
-        {
-            for (int y = 0; y < dst->h; y++)
-            {
-                int xs = (int)(x / scale);
-                int ys = (int)(y / scale);
-
-                if (xs >= 0 && xs < src->w && ys >= 0 && ys < src->h)
-                    PIXEL(dst, c, y, x) = PIXEL(tmp, c, ys, xs);
-                else
-                    PIXEL(dst, c, y, x) = 0;
-            }
-        }
-    }
-
-    CV_FREE(&tmp);
-    return dst;
-}
-
-/// @brief Zoom in an image by a given factor
-/// @param src The source image
-/// @param dst The destination image
-/// @param scale The scale factor
-/// @param background The background color
-/// @return The zoomed image (dst)
-Image *CV_ZOOM(const Image *src, Image *dst, float scale, Uint32 background)
-{
-    ASSERT_IMG(src);
-
-    Image *tmp = CV_COPY(src);
-
-    if (dst == NULL)
-        dst = CV_INIT(src->c, src->h, src->w);
-    ASSERT_IMG(dst);
-    ASSERT_DIM(dst, src->c, src->h, src->w);
-
-    int hwidth = src->w / 2;
-    int hheight = src->h / 2;
-    int hwidth2 = dst->w / 2;
-    int hheight2 = dst->h / 2;
-
-    for (int c = 0; c < src->c; c++)
-    {
-        for (int x = 0; x < dst->w; x++)
-        {
-            for (int y = 0; y < dst->h; y++)
-            {
-                int xs = (int)((x - hwidth2) / scale) + hwidth;
-                int ys = (int)((y - hheight2) / scale) + hheight;
-
-                if (xs >= 0 && xs < src->w && ys >= 0 && ys < src->h)
-                    PIXEL(dst, c, y, x) = PIXEL(tmp, c, ys, xs);
-                else
-                    PIXEL(dst, c, y, x) = CV_COLOR(background, c);
-            }
-        }
-    }
-
-    CV_FREE(&tmp);
-    return dst;
-}
-
-Image *CV_WARP_TRANSFORM(const Image *src, Matrix *M)
-{
-    ASSERT_IMG(src);
     ASSERT_MAT(M);
-
-    Image *dst = CV_INIT(src->c, src->h, src->w);
-
-    for (int c = 0; c < src->c; c++)
+    if (M->dim1 != 3 || M->dim2 != 3)
     {
-        for (int x = 0; x < src->w; x++)
+        DEBUG_INFO;
+        ERRX("Matrix must be 3x3");
+    }
+
+    float m11 = MAT(M, 0, 0);
+    float m12 = MAT(M, 0, 1);
+    float m13 = MAT(M, 0, 2);
+
+    float m21 = MAT(M, 1, 0);
+    float m22 = MAT(M, 1, 1);
+    float m23 = MAT(M, 1, 2);
+
+    float m31 = MAT(M, 2, 0);
+    float m32 = MAT(M, 2, 1);
+    float m33 = MAT(M, 2, 2);
+
+    for (int c = 0; c < dst->c; c++)
+    {
+        for (int y = 0; y < dst->h; y++)
         {
-            for (int y = 0; y < src->h; y++)
+            for (int x = 0; x < dst->w; x++)
             {
-                float xs = MAT(M, 0, 0) * x + MAT(M, 0, 1) * y + MAT(M, 0, 2);
-                float ys = MAT(M, 1, 0) * x + MAT(M, 1, 1) * y + MAT(M, 1, 2);
+                int xt = x + offset.x;
+                int yt = y + offset.y;
 
-                int x1 = (int)floor(xs);
-                int y1 = (int)floor(ys);
+                float x1 = (m11 * xt + m12 * yt + m13) / (m31 * xt + m32 * yt + m33);
+                float y1 = (m21 * xt + m22 * yt + m23) / (m31 * xt + m32 * yt + m33);
 
-                if (xs >= 0 && xs < src->w && ys >= 0 && ys < src->h)
-                    PIXEL(dst, c, y, x) = PIXEL(src, c, y1, x1);
+                int x2 = (int)x1;
+                int y2 = (int)y1;
+
+                if (x1 < 0 || x1 >= src->w || y1 < 0 || y1 >= src->h)
+                    PIXEL(dst, c, y, x) = CV_COLOR(background, c);
                 else
-                    PIXEL(dst, c, y, x) = 0;
+                    PIXEL(dst, c, y, x) = PIXEL(src, c, y2, x2);
             }
         }
     }
+
+    return dst;
+}
+
+
+Image *CV_ROTATE(const Image *src, float angle, bool resize, Uint32 background)
+{
+    ASSERT_IMG(src);
+
+    float rad = angle * PI / 180.0f;
+
+    float m[9] = {
+        cos(rad), -sin(rad), src->w / 2.0f,
+        sin(rad), cos(rad), src->h / 2.0f,
+        0, 0, 1
+    };
+
+    Matrix *M = matrix_init(3, 3, m);
+
+    int w = src->w;
+    int h = src->h;
+
+    if (resize)
+    {
+        w = (int)(src->w * fabs(cos(rad)) + src->h * fabs(sin(rad)));
+        h = (int)(src->w * fabs(sin(rad)) + src->h * fabs(cos(rad)));
+    }
+
+    Tupple dsize = {w, h};
+    Tupple offset = {-w / 2.0f, -h / 2.0f};
+
+    Image *dst = CV_TRANSFORM(src, M, dsize, offset, background);
+
+    matrix_destroy(M);
 
     return dst;
 }

@@ -2,6 +2,12 @@
 
 void malloc_error() { errx(EXIT_FAILURE, "Error allocating memory"); }
 
+Tupple T(int x, int y)
+{
+    Tupple t = {x, y};
+    return t;
+}
+
 #pragma region matrix
 
 /*
@@ -412,11 +418,15 @@ Matrix *matrix_inverse(Matrix *m)
     return inv;
 }
 
+/// @brief Solve a linear system of equations.
+/// @param A - pointer to the coefficient matrix
+/// @param b - pointer to the right hand side vector
+/// @return a pointer to the solution vector
 Matrix *matrix_solve(Matrix *A, Matrix *b)
 {
     Matrix *h = matrix_init(8, 1, NULL);
-
     Matrix *A_inv = matrix_inverse(A);
+
     matrix_multiply(A_inv, b, h);
 
     matrix_destroy(A_inv);
@@ -424,56 +434,118 @@ Matrix *matrix_solve(Matrix *A, Matrix *b)
     return h;
 }
 
-
 /// @brief Computes the perspective transformation matrix.
 /// @param src - array of 4 source points
 /// @param dst - array of 4 destination points
 /// @return a pointer to the perspective transformation matrix (3x3)
-Matrix *matrix_get_perspective_transformation(Point *src, Point *dst)
+Matrix *matrix_transformation(const Tupple *src, const Tupple *dst)
 {
+    if (src == NULL || dst == NULL)
+        errx(EXIT_FAILURE, "matrix_transformation: src or dst is NULL\n");
+
     float a[64] = {
-        src[0].x, src[0].y, 1, 0, 0, 0, -dst[0].x * src[0].x, -dst[0].x * src[0].y,
-        0, 0, 0, src[0].x, src[0].y, 1, -dst[0].y * src[0].x, -dst[0].y * src[0].y,
-        src[1].x, src[1].y, 1, 0, 0, 0, -dst[1].x * src[1].x, -dst[1].x * src[1].y,
-        0, 0, 0, src[1].x, src[1].y, 1, -dst[1].y * src[1].x, -dst[1].y * src[1].y,
-        src[2].x, src[2].y, 1, 0, 0, 0, -dst[2].x * src[2].x, -dst[2].x * src[2].y,
-        0, 0, 0, src[2].x, src[2].y, 1, -dst[2].y * src[2].x, -dst[2].y * src[2].y,
-        src[3].x, src[3].y, 1, 0, 0, 0, -dst[3].x * src[3].x, -dst[3].x * src[3].y,
-        0, 0, 0, src[3].x, src[3].y, 1, -dst[3].y * src[3].x, -dst[3].y * src[3].y,
+        src[0].x,
+        src[0].y,
+        1,
+        0,
+        0,
+        0,
+        -dst[0].x * src[0].x,
+        -dst[0].x * src[0].y,
+        0,
+        0,
+        0,
+        src[0].x,
+        src[0].y,
+        1,
+        -dst[0].y * src[0].x,
+        -dst[0].y * src[0].y,
+        src[1].x,
+        src[1].y,
+        1,
+        0,
+        0,
+        0,
+        -dst[1].x * src[1].x,
+        -dst[1].x * src[1].y,
+        0,
+        0,
+        0,
+        src[1].x,
+        src[1].y,
+        1,
+        -dst[1].y * src[1].x,
+        -dst[1].y * src[1].y,
+        src[2].x,
+        src[2].y,
+        1,
+        0,
+        0,
+        0,
+        -dst[2].x * src[2].x,
+        -dst[2].x * src[2].y,
+        0,
+        0,
+        0,
+        src[2].x,
+        src[2].y,
+        1,
+        -dst[2].y * src[2].x,
+        -dst[2].y * src[2].y,
+        src[3].x,
+        src[3].y,
+        1,
+        0,
+        0,
+        0,
+        -dst[3].x * src[3].x,
+        -dst[3].x * src[3].y,
+        0,
+        0,
+        0,
+        src[3].x,
+        src[3].y,
+        1,
+        -dst[3].y * src[3].x,
+        -dst[3].y * src[3].y,
     };
-    Matrix *A = matrix_init(8, 8, a);    
+    Matrix *A = matrix_init(8, 8, a);
 
     float b[8] = {
-        dst[0].x, dst[0].y,
-        dst[1].x, dst[1].y,
-        dst[2].x, dst[2].y,
-        dst[3].x, dst[3].y,
+        dst[0].x,
+        dst[0].y,
+        dst[1].x,
+        dst[1].y,
+        dst[2].x,
+        dst[2].y,
+        dst[3].x,
+        dst[3].y,
     };
 
     Matrix *B = matrix_init(8, 1, b);
-
     Matrix *h = matrix_solve(A, B);
 
-    matrix_destroy(A);
-    matrix_destroy(B);
-
-    // float h_data[9] = {
-    //     h->data[0], h->data[1], h->data[2],
-    //     h->data[3], h->data[4], h->data[5],
-    //     h->data[6], h->data[7], 1,
-    // };
-
-    float h_data[16] = {
-        h->data[0], h->data[1], 0, h->data[2],
-        h->data[3], h->data[4], 0, h->data[5],
-        0,          0,          1,          0,
-        h->data[6], h->data[7], 0,          1,
+    float h_data[9] = {
+        h->data[0],
+        h->data[1],
+        h->data[2],
+        h->data[3],
+        h->data[4],
+        h->data[5],
+        h->data[6],
+        h->data[7],
+        1,
     };
 
+    Matrix *H = matrix_init(3, 3, h_data);
+    Matrix *H_inv = matrix_inverse(H);
+
     matrix_destroy(h);
+    matrix_destroy(A);
+    matrix_destroy(B);
+    matrix_destroy(H);
 
-    return matrix_init(4, 4, h_data);
-
+    return H_inv;
 }
 
 #pragma endregion matrix

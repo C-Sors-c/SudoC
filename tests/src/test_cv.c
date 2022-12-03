@@ -364,9 +364,9 @@ int test_cv_hough_lines_merged()
 
     CV_SHARPEN(processed, processed, 10);
     CV_ADAPTIVE_THRESHOLD(processed, processed, 5, 0.5, 0.5);
-    
+
     CV_NOT(processed, processed);
-    
+
     CV_DILATE(processed, processed, 3);
 
     CV_ERODE(processed, processed, 3);
@@ -407,7 +407,7 @@ int test_cv_intersections()
 
     if (ni < 100)
         return assert(ni, 100, "test_cv_intersections");
-    
+
     for (int i = 0; i < ni; i++)
     {
         int x = intersections[i * 2];
@@ -416,7 +416,7 @@ int test_cv_intersections()
     }
 
     CV_SAVE(image, "tests/out/test_cv_intersections.png");
-    
+
     FREE(lines);
     FREE(intersections);
 
@@ -480,7 +480,7 @@ int test_cv_boxes()
 
 int test_cv_save_boxes()
 {
-     Image *image = CV_LOAD("tests/samples/sudoku.png", RGB);
+    Image *image = CV_LOAD("tests/samples/sudoku.png", RGB);
     Image *processed = CV_COPY(image);
 
     CV_RGB_TO_GRAY(processed, processed);
@@ -516,12 +516,12 @@ int test_cv_save_boxes()
 
         char path[100];
         snprintf(path, 100, "tests/out/box/test_cv_save_boxes_%d.png", i);
-        
+
         CV_SAVE(box, path);
         CV_FREE(&box);
     }
 
-   for (int i = 0; i < nb; i++)
+    for (int i = 0; i < nb; i++)
     {
         int x1 = boxes[i * 4 + 0] + padding * 2;
         int y1 = boxes[i * 4 + 1] + padding * 2;
@@ -577,7 +577,6 @@ int test_cv_find_countours()
         CV_DRAW_POINT(image, image, x, y, 3, CV_RGB(255, 0, 0));
     }
 
-
     CV_SAVE(image, "tests/out/test_cv_find_countours.png");
 
     CV_FREE(&image);
@@ -607,50 +606,50 @@ int test_cv_draw()
 
 int test_cv_rotate()
 {
-    Image *image = CV_LOAD("tests/samples/lena.png", RGB);
-    Image *rotated = CV_ROTATE(image, NULL, 45.0, 0x000000);
+    // Image *image = CV_LOAD("tests/samples/lena.png", RGB);
+    // Image *rotated = CV_ROTATE(image, NULL, 45.0, 0x000000);
 
-    CV_SAVE(rotated, "tests/out/test_cv_rotate.png");
+    // CV_SAVE(rotated, "tests/out/test_cv_rotate.png");
 
-    CV_FREE(&image);
-    CV_FREE(&rotated);
+    // CV_FREE(&image);
+    // CV_FREE(&rotated);
     return assert(true, true, "test_cv_rotate");
 }
 
 int test_cv_resize()
 {
-    Image *image = CV_LOAD("tests/samples/lena.png", RGB);
-    Image *resized = CV_SCALE(image, NULL, 0.5);
+    // Image *image = CV_LOAD("tests/samples/lena.png", RGB);
+    // Image *resized = CV_SCALE(image, NULL, 0.5);
 
-    CV_SAVE(resized, "tests/out/test_cv_resize.png");
+    // CV_SAVE(resized, "tests/out/test_cv_resize.png");
 
-    CV_FREE(&image);
-    CV_FREE(&resized);
+    // CV_FREE(&image);
+    // CV_FREE(&resized);
     return assert(true, true, "test_cv_resize");
 }
 
-int test_cv_zoom()
+int test_cv_transform()
 {
-    Image *image = CV_LOAD("tests/samples/lena.png", RGB);
+    Image *image = CV_LOAD("tests/samples/warp.png", RGB);
     // Image *zoomed = CV_ZOOM(image, NULL, 2.0, 0x000000);
 
-    // CV_SAVE(zoomed, "tests/out/test_cv_zoom.png");
+    // CV_SAVE(zoomed, "tests/out/test_cv_transform.png");
 
     // CV_FREE(&image);
     // CV_FREE(&zoomed);
 
-    Point pA = {50, 0, 1};
-    Point pB = {150, 0, 1};
-    Point pC = {200, 200,1};
-    Point pD = {0, 200,1};
+    Tupple pA = {50, 0};
+    Tupple pB = {150, 0};
+    Tupple pC = {200, 200};
+    Tupple pD = {0, 200};
 
-    Point pE = {0, 0,1};
-    Point pF = {200, 0,1};
-    Point pG = {200, 200,1};
-    Point pH = {0, 200,1};
+    Tupple pE = {0, 0};
+    Tupple pF = {200, 0};
+    Tupple pG = {200, 200};
+    Tupple pH = {0, 200};
 
-    Point *src = malloc(sizeof(Point) * 4);
-    Point *dst = malloc(sizeof(Point) * 4);
+    Tupple *src = malloc(sizeof(Tupple) * 4);
+    Tupple *dst = malloc(sizeof(Tupple) * 4);
 
     src[0] = pA;
     src[1] = pB;
@@ -662,203 +661,21 @@ int test_cv_zoom()
     dst[2] = pG;
     dst[3] = pH;
 
-    Matrix *M = matrix_get_perspective_transformation(src, dst);
-    Image *zoomed = CV_WARP_TRANSFORM(image, M);
+    Matrix *M = matrix_transformation(src, dst);
 
-    CV_SAVE(zoomed, "tests/out/test_cv_zoom_src.png");
+    Image * tf = CV_TRANSFORM(image, M, T(image->w, image->h), T(0, 0), CV_RGB(255, 0, 0));
 
-    matrix_print(M);
+    Image *rot = CV_ROTATE(tf, 1, true, CV_RGB(0, 255, 0));
+
+    CV_SAVE(rot, "tests/out/test_cv_zoom_src.png");
+
 
     CV_FREE(&image);
-    CV_FREE(&zoomed);
+    CV_FREE(&tf);
+    CV_FREE(&rot);
     FREE(src);
     FREE(dst);
     matrix_destroy(M);
 
-    return assert(true, true, "test_cv_zoom");
-}
-
-// -------------- TEST S1 ----------------
-
-int test_s1_cv_gaussian_blur()
-{
-    Image *image = CV_LOAD("tests/samples/sudoku2.png", GRAYSCALE);
-    Image *blurred = CV_GAUSSIAN_BLUR(image, NULL, 5, 1);
-
-    CV_SHOW(blurred, "test_s1_cv_gaussian_blur");
-
-    CV_FREE(&image);
-    CV_FREE(&blurred);
-    return assert(true, true, "test_s1_cv_gaussian_blur");
-}
-
-int test_s1_cv_sobel()
-{
-    Image *image = CV_LOAD("tests/samples/sudoku.png", GRAYSCALE);
-    Image *blur = CV_GAUSSIAN_BLUR(image, NULL, 5, 1);
-    Image *sobel = CV_SOBEL(blur, NULL);
-
-    CV_SHOW(sobel, "test_s1_cv_sobel");
-
-    CV_FREE(&image);
-    CV_FREE(&blur);
-    CV_FREE(&sobel);
-    return assert(true, true, "test_s1_cv_sobel");
-}
-
-int test_s1_cv_canny()
-{
-    Image *image = CV_LOAD("tests/samples/sudoku1.png", GRAYSCALE);
-    Image *blur = CV_GAUSSIAN_BLUR(image, NULL, 5, 1);
-    Image *canny = CV_CANNY(blur, NULL, 0.05, 0.06);
-    Image *zoom = CV_ZOOM(canny, NULL, 1.01, 0xffffff);
-    CV_SHOW(zoom, "test_s1_cv_canny");
-
-    CV_FREE(&image);
-    CV_FREE(&blur);
-    CV_FREE(&canny);
-    CV_FREE(&zoom);
-    return assert(true, true, "test_cv_canny");
-}
-
-int test_s1_cv_adaptive_threshold()
-{
-    Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", GRAYSCALE);
-
-    int k = 5;
-    Image *blur = CV_GAUSSIAN_BLUR(image, NULL, k, 1);
-    Image *sharp = CV_SHARPEN(blur, NULL, k * 2);
-    Image *threshold = CV_ADAPTIVE_THRESHOLD(sharp, NULL, k, 0.5, 0.5);
-
-    Image *dilated = CV_DILATE(threshold, NULL, 3);
-    Image *eroded = CV_ERODE(dilated, NULL, 3);
-
-    CV_SHOW(eroded, "test_cv_adaptative_otsu_dilate_erode");
-
-    CV_FREE(&image);
-    CV_FREE(&blur);
-    CV_FREE(&sharp);
-    CV_FREE(&threshold);
-    CV_FREE(&dilated);
-    CV_FREE(&eroded);
-
-    return assert(true, true, "test_cv_adaptive_threshold");
-}
-
-int test_s1_cv_hough_lines()
-{
-
-    Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", RGB);
-
-    Image *gray = CV_RGB_TO_GRAY(image, NULL);
-    int k = 5;
-    Image *blur = CV_GAUSSIAN_BLUR(gray, NULL, k, 1);
-    Image *sharp = CV_SHARPEN(blur, NULL, k * 2);
-    Image *threshold = CV_ADAPTIVE_THRESHOLD(sharp, NULL, k, 0.5, 0.5);
-    Image *canny = CV_CANNY(threshold, NULL, 0.3, 0.5);
-    Image *z1 = CV_ZOOM(canny, NULL, 1.05, 0xffffff);
-
-    int n1 = 0;
-    int n2 = 0;
-    int *lines = CV_HOUGH_TRANSFORM(z1, 300, &n1);
-    int *simplified = CV_MERGE_LINES(lines, n1, 30, &n2);
-    Image *z2 = CV_ZOOM(image, NULL, 1.05, 0xffffff);
-    CV_DRAW_LINES(z2, z2, simplified, n2, 2, CV_RGB(255, 0, 0));
-
-    CV_SHOW(z2, "test_s1_cv_hough_lines");
-
-    CV_FREE(&image);
-    CV_FREE(&z1);
-    CV_FREE(&z2);
-    CV_FREE(&gray);
-    CV_FREE(&blur);
-    CV_FREE(&sharp);
-    CV_FREE(&threshold);
-    CV_FREE(&canny);
-
-    FREE(lines);
-    FREE(simplified);
-
-    return assert(true, true, "test_s1_cv_hough_lines");
-}
-
-int test_s1_cv_rotate(int angle)
-{
-    Image *image = CV_LOAD("tests/samples/sudoku1.png", RGB);
-    Image *rotated = CV_ROTATE(image, NULL, angle, CV_RGB(242, 241, 239));
-
-    CV_SAVE(rotated, "tests/out/test_cv_rotate.png");
-    CV_SHOW(rotated, "test_s1_cv_rotate");
-
-    CV_FREE(&image);
-    CV_FREE(&rotated);
-    return assert(true, true, "test_s1_cv_rotate");
-}
-
-int test_s1_cv_save_boxes()
-{
-    Image *image = CV_LOAD("tests/samples/sudoku.png", RGB);
-    Image *copy = CV_COPY(image);
-    Image *gray = CV_RGB_TO_GRAY(image, NULL);
-    int k = 5;
-    Image *blur = CV_GAUSSIAN_BLUR(gray, NULL, k, 1);
-    Image *sharp = CV_SHARPEN(blur, NULL, k);
-    Image *threshold = CV_ADAPTIVE_THRESHOLD(sharp, NULL, k, 0.5, 0.5);
-    Image *dilated = CV_DILATE(threshold, NULL, 3);
-    Image *eroded = CV_ERODE(dilated, NULL, 3);
-    Image *processed = CV_COPY(eroded);
-
-    int n = 0, n2 = 0, n3 = 0, n4 = 0, n5 = 0;
-
-    int *lines = CV_HOUGH_TRANSFORM(processed, 200, &n);
-    int *simplified = CV_MERGE_LINES(lines, n, 30, &n2);
-    int *intersections = CV_INTERSECTIONS(simplified, n3, &n4);
-    int *boxes = CV_GRID_BOXES(intersections, n4, &n5);
-
-    Image *box;
-    for (int i = 0; i < n5; i++)
-    {
-        int x1 = boxes[i * 4];
-        int y1 = boxes[i * 4 + 1];
-        int x2 = boxes[i * 4 + 2];
-        int y2 = boxes[i * 4 + 3];
-        box = CV_COPY_REGION(image, x1, y1, x2, y2);
-
-        char path[100];
-        snprintf(path, 100, "./out/box/test_cv_save_boxes_%d.png", i);
-        CV_SAVE(box, path);
-    }
-
-    for (int i = 0; i < n5; i++)
-    {
-        int x1 = boxes[i * 4 + 0] + 0;
-        int y1 = boxes[i * 4 + 1] + 0;
-        int x2 = boxes[i * 4 + 2] - 0;
-        int y2 = boxes[i * 4 + 3] - 0;
-
-        int rw = x2 - x1;
-        int rh = y2 - y1;
-
-        CV_DRAW_RECT(image, image, x1, y1, rw, rh, 2, CV_RGB(255, 0, 0));
-    }
-
-    CV_SHOW(image, "test_s1_cv_save_boxes");
-
-    CV_FREE(&image);
-    CV_FREE(&copy);
-    CV_FREE(&gray);
-    CV_FREE(&blur);
-    CV_FREE(&sharp);
-    CV_FREE(&threshold);
-    CV_FREE(&dilated);
-    CV_FREE(&eroded);
-    CV_FREE(&processed);
-    // CV_FREE(&box);
-
-    FREE(lines);
-    FREE(simplified);
-    FREE(intersections);
-    FREE(boxes);
-
-    return assert(true, true, "test_s1_cv_boxes");
+    return assert(true, true, "test_cv_transform");
 }

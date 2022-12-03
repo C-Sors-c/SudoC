@@ -198,13 +198,11 @@ Image *CV_AND(const Image *src1, Image *src2, Image *dst);
 Image *CV_XOR(const Image *src1, Image *src2, Image *dst);
 Image *CV_NOT(const Image *src, Image *dst);
 Image *CV_SUB(const Image *src1, Image *src2, Image *dst);
-int CV_COUNT_NON_ZERO(const Image *src);
 
 Image *CV_DILATE(const Image *src, Image *dst, int k);
 Image *CV_ERODE(const Image *src, Image *dst, int k);
 Image *CV_OPEN(const Image *src, Image *dst, int k);
 Image *CV_CLOSE(const Image *src, Image *dst, int k);
-Image *CV_MORPHOLOGICAL_SKELETON(const Image *src, Image *dst, int k);
 
 Uint32 CV_RGB(Uint8 r, Uint8 g, Uint8 b);
 pixel_t CV_COLOR(Uint32 color, int channel);
@@ -227,7 +225,5 @@ int *CV_GRID_BOXES(int *intersections, int nintersections, int *nboxes);
 
 int *CV_FIND_LARGEST_CONTOUR(const Image *src, int *nrects);
 
-Image *CV_ROTATE(const Image *src, Image *dst, float angle, Uint32 background);
-Image *CV_SCALE(const Image *src, Image *dst, float scale);
-Image *CV_ZOOM(const Image *src, Image *dst, float scale, Uint32 background);
-Image *CV_WARP_TRANSFORM(const Image *src, Matrix *M);
+Image *CV_TRANSFORM(const Image *src, const Matrix *M, Tupple dsize, Tupple origin, Uint32 background);
+Image *CV_ROTATE(const Image *src, float angle, bool resize, Uint32 background);

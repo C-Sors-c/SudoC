@@ -9,8 +9,9 @@ typedef struct
 {
     int x;
     int y;
-    int z;
-} Point;
+} Tupple;
+
+Tupple T(int x, int y);
 
 // 2D matrix utils
 struct Matrix
@@ -43,7 +44,7 @@ void matrix_destroy(Matrix *m);
 void matrix_print(Matrix *m);
 float matrix_det(Matrix *m);
 Matrix *matrix_inverse(Matrix *m);
-Matrix *matrix_get_perspective_transformation(Point *src, Point *dst);
+Matrix *matrix_transformation(const Tupple *src, const Tupple *dst);
 
 // 4D matrix utils
 struct Matrix4
