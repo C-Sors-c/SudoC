@@ -42,7 +42,7 @@ void matrix_destroy(Matrix *m);
 void matrix_print(Matrix *m);
 float matrix_det(Matrix *m);
 Matrix *matrix_inverse(Matrix *m);
-Matrix *matrix_get_perspective_transform(Point *src, Point *dst);
+Matrix *matrix_get_perspective_transformation(Point *src, Point *dst);
 
 // 4D matrix utils
 struct Matrix4

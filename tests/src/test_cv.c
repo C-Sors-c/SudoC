@@ -662,7 +662,7 @@ int test_cv_zoom()
     dst[2] = pG;
     dst[3] = pH;
 
-    Matrix *M = matrix_get_perspective_transform(src, dst);
+    Matrix *M = matrix_get_perspective_transformation(src, dst);
 
     matrix_print(M);
 

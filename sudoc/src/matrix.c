@@ -412,66 +412,46 @@ Matrix *matrix_inverse(Matrix *m)
     return inv;
 }
 
+Matrix *matrix_solve(Matrix *A, Matrix *b)
+{
+    Matrix *h = matrix_init(8, 1, NULL);
+
+    Matrix *A_inv = matrix_inverse(A);
+    matrix_multiply(A_inv, b, h);
+
+    matrix_destroy(A_inv);
+
+    return h;
+}
+
+
 /// @brief Computes the perspective transformation matrix.
 /// @param src - array of 4 source points
 /// @param dst - array of 4 destination points
 /// @return a pointer to the perspective transformation matrix (3x3)
-Matrix *matrix_get_perspective_transform(Point *src, Point *dst)
+Matrix *matrix_get_perspective_transformation(Point *src, Point *dst)
 {
-    Matrix *M = matrix_init(3, 3, NULL);
-    Matrix *X = matrix_init(8, 1, NULL);
+    float a[64] = {
+        src[0].x, src[0].y, 1, 0, 0, 0, -dst[0].x * src[0].x, -dst[0].x * src[0].y,
+        0, 0, 0, src[0].x, src[0].y, 1, -dst[0].y * src[0].x, -dst[0].y * src[0].y,
+        src[1].x, src[1].y, 1, 0, 0, 0, -dst[1].x * src[1].x, -dst[1].x * src[1].y,
+        0, 0, 0, src[1].x, src[1].y, 1, -dst[1].y * src[1].x, -dst[1].y * src[1].y,
+        src[2].x, src[2].y, 1, 0, 0, 0, -dst[2].x * src[2].x, -dst[2].x * src[2].y,
+        0, 0, 0, src[2].x, src[2].y, 1, -dst[2].y * src[2].x, -dst[2].y * src[2].y,
+        src[3].x, src[3].y, 1, 0, 0, 0, -dst[3].x * src[3].x, -dst[3].x * src[3].y,
+        0, 0, 0, src[3].x, src[3].y, 1, -dst[3].y * src[3].x, -dst[3].y * src[3].y,
+    };
+    Matrix *A = matrix_init(8, 8, a);    
 
-    Matrix *A = matrix_init(8, 8, NULL);
-    Matrix *B = matrix_init(8, 1, NULL);
+    float b[8] = {
+        dst[0].x, dst[0].y,
+        dst[1].x, dst[1].y,
+        dst[2].x, dst[2].y,
+        dst[3].x, dst[3].y,
+    };
 
-    for (int i = 0; i < 4; i++)
-    {
-        A->data[i * 8 + 0] = src[i].x;
-        A->data[i * 8 + 1] = src[i].y;
-        A->data[i * 8 + 2] = 1;
-        A->data[i * 8 + 3] = 0;
-        A->data[i * 8 + 4] = 0;
-        A->data[i * 8 + 5] = 0;
-        A->data[i * 8 + 6] = -src[i].x * dst[i].x;
-        A->data[i * 8 + 7] = -src[i].y * dst[i].x;
+    Matrix *B = matrix_init(8, 1, b);
 
-        A->data[(i + 4) * 8 + 0] = 0;
-        A->data[(i + 4) * 8 + 1] = 0;
-        A->data[(i + 4) * 8 + 2] = 0;
-        A->data[(i + 4) * 8 + 3] = src[i].x;
-        A->data[(i + 4) * 8 + 4] = src[i].y;
-        A->data[(i + 4) * 8 + 5] = 1;
-        A->data[(i + 4) * 8 + 6] = -src[i].x * dst[i].y;
-        A->data[(i + 4) * 8 + 7] = -src[i].y * dst[i].y;
-
-        B->data[i] = dst[i].x;
-        B->data[i + 4] = dst[i].y;
-    }
-
-    Matrix *A_inv = matrix_inverse(A);
-    Matrix *X_tmp = matrix_multiply(A_inv, B, NULL);
-
-    for (int i = 0; i < 8; i++)
-        X->data[i] = X_tmp->data[i];
-
-    matrix_destroy(A);
-    matrix_destroy(B);
-    matrix_destroy(A_inv);
-    matrix_destroy(X_tmp);
-
-    M->data[0] = X->data[0];
-    M->data[1] = X->data[1];
-    M->data[2] = X->data[2];
-    M->data[3] = X->data[3];
-    M->data[4] = X->data[4];
-    M->data[5] = X->data[5];
-    M->data[6] = X->data[6];
-    M->data[7] = X->data[7];
-    M->data[8] = 1;
-
-    matrix_destroy(X);
-
-    return M;
 }
 
 #pragma endregion matrix
