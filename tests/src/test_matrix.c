@@ -197,9 +197,9 @@ int test_matrix_get_perspective_transformation()
     Matrix *m = matrix_get_perspective_transformation(src, dst);
 
 
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 4; i++)
     {
-        printf("%f %f %f\n", m->data[i * 3 + 0], m->data[i * 3 + 1], m->data[i * 3 + 2]);
+        printf("%f %f %f %f\n", m->data[i * 4 + 0], m->data[i * 4 + 1], m->data[i * 4 + 2], m->data[i * 4 + 3]);
     }
 
     matrix_destroy(m);
