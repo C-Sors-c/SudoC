@@ -2502,7 +2502,12 @@ Image *CV_TRANSFORM(const Image *src, const Matrix *M, Tupple dsize, Tupple offs
     return dst;
 }
 
-
+/// @brief Rotate an image
+/// @param src Source image
+/// @param angle Angle of rotation in degrees
+/// @param resize Resize the image to fit the rotated image
+/// @param background Background color to fill the empty space
+/// @return Rotated image
 Image *CV_ROTATE(const Image *src, float angle, bool resize, Uint32 background)
 {
     ASSERT_IMG(src);
@@ -2535,5 +2540,90 @@ Image *CV_ROTATE(const Image *src, float angle, bool resize, Uint32 background)
 
     return dst;
 }
+
+/// @brief Scale an image
+/// @param src Source image
+/// @param factor Scale factor
+/// @param background Background color to fill the empty space
+/// @return Scaled image
+Image *CV_SCALE(const Image *src, float factor, Uint32 background)
+{
+    ASSERT_IMG(src);
+
+    float m[9] = {
+        1.0f / factor, 0, 0,
+        0, 1.0f / factor, 0,
+        0, 0, 1
+    };
+
+    Matrix *M = matrix_init(3, 3, m);
+
+    Tupple dsize = {src->w * factor, src->h * factor};
+    Tupple offset = {0, 0};
+
+    Image *dst = CV_TRANSFORM(src, M, dsize, offset, background);
+
+    matrix_destroy(M);
+
+    return dst;
+
+
+}
+
+/// @brief Zoom in/out an image without changing the image size
+/// @param src Source image
+/// @param factor Zoom factor
+/// @param background Background color to fill the empty space
+/// @return Zoomed image
+Image *CV_ZOOM(const Image *src, float factor, Uint32 background)
+{
+    ASSERT_IMG(src);
+
+    factor = 1.0f / factor;
+
+    float m[9] = {
+        factor, 0, (1 - factor) * src->w / 2.0f,
+        0, factor, (1 - factor) * src->h / 2.0f,
+        0, 0, 1
+    };
+
+    Matrix *M = matrix_init(3, 3, m);
+
+    Tupple dsize = {src->w, src->h};
+    Tupple offset = {0, 0};
+
+    Image *dst = CV_TRANSFORM(src, M, dsize, offset, background);
+
+    matrix_destroy(M);
+
+    return dst;
+}
+
+/// @brief Translate an image
+/// @param src Source image
+/// @param offset Offset
+/// @param background Background color to fill the empty space
+/// @return Translated image
+Image *CV_TRANSLATE(const Image *src, Tupple offset, Uint32 background)
+{
+    ASSERT_IMG(src);
+
+    float m[9] = {
+        1, 0, offset.x,
+        0, 1, offset.y,
+        0, 0, 1
+    };
+
+    Matrix *M = matrix_init(3, 3, m);
+
+    Tupple dsize = {src->w, src->h};
+
+    Image *dst = CV_TRANSFORM(src, M, dsize, offset, background);
+
+    matrix_destroy(M);
+
+    return dst;
+}
+
 
 #pragma endregion Transform

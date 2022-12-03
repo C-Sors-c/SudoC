@@ -665,7 +665,7 @@ int test_cv_transform()
 
     Image * tf = CV_TRANSFORM(image, M, T(image->w, image->h), T(0, 0), CV_RGB(255, 0, 0));
 
-    Image *rot = CV_ROTATE(tf, 1, true, CV_RGB(0, 255, 0));
+    Image *rot = CV_SCALE(tf, 2, CV_RGB(0, 255, 0));
 
     CV_SAVE(rot, "tests/out/test_cv_zoom_src.png");
 
