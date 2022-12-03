@@ -452,6 +452,21 @@ Matrix *matrix_get_perspective_transformation(Point *src, Point *dst)
 
     Matrix *B = matrix_init(8, 1, b);
 
+    Matrix *h = matrix_solve(A, B);
+
+    matrix_destroy(A);
+    matrix_destroy(B);
+
+    float h_data[9] = {
+        h->data[0], h->data[1], h->data[2],
+        h->data[3], h->data[4], h->data[5],
+        h->data[6], h->data[7], 1,
+    };
+
+    matrix_destroy(h);
+
+    return matrix_init(3, 3, h_data);
+
 }
 
 #pragma endregion matrix

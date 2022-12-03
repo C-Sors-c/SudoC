@@ -169,6 +169,47 @@ int test_matrix_map_function()
     return assert(diff, true, "test_matrix_map_function");
 }
 
+int test_matrix_get_perspective_transformation()
+{
+    Point p1 = {50, 0, 1};
+    Point p2 = {150, 0, 1};
+    Point p3 = {0, 200, 1};
+    Point p4 = {200, 200, 1};
+
+    Point q1 = {0, 0, 1};
+    Point q2 = {200, 0, 1};
+    Point q3 = {0, 200, 1};
+    Point q4 = {200, 200, 1};
+
+    Point *src = malloc(sizeof(Point) * 4);
+    Point *dst = malloc(sizeof(Point) * 4);
+
+    src[0] = p1;
+    src[1] = p2;
+    src[2] = p3;
+    src[3] = p4;
+    
+    dst[0] = q1;
+    dst[1] = q2;
+    dst[2] = q3;
+    dst[3] = q4;
+
+    Matrix *m = matrix_get_perspective_transformation(src, dst);
+
+
+    for (int i = 0; i < 3; i++)
+    {
+        printf("%f %f %f\n", m->data[i * 3 + 0], m->data[i * 3 + 1], m->data[i * 3 + 2]);
+    }
+
+    matrix_destroy(m);
+    free(src);
+    free(dst);
+
+    return 0;
+
+}
+
 #pragma endregion matrix_tests
 
 #pragma region matrix_4_tests

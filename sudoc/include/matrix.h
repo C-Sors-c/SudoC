@@ -9,6 +9,7 @@ typedef struct
 {
     int x;
     int y;
+    int z;
 } Point;
 
 // 2D matrix utils

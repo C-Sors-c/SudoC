@@ -639,15 +639,15 @@ int test_cv_zoom()
     // CV_FREE(&image);
     // CV_FREE(&zoomed);
 
-    Point pA = {50, 0};
-    Point pB = {0, 150};
-    Point pC = {200, 200};
-    Point pD = {0, 200};
+    Point pA = {50, 0,1};
+    Point pB = {0, 150,1};
+    Point pC = {200, 200,1};
+    Point pD = {0, 200,1};
 
-    Point pE = {0, 0};
-    Point pF = {200, 0};
-    Point pG = {200, 200};
-    Point pH = {0, 200};
+    Point pE = {0, 0,1};
+    Point pF = {200, 0,1};
+    Point pG = {200, 200,1};
+    Point pH = {0, 200,1};
 
     Point *src = malloc(sizeof(Point) * 4);
     Point *dst = malloc(sizeof(Point) * 4);
