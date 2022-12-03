@@ -38,7 +38,7 @@ int (*test_cv[])() = {
     // test_cv_draw,
     // test_cv_rotate,
     // test_cv_resize,
-    //test_cv_zoom, // TODO: fix zoom
+    test_cv_zoom, // TODO: fix zoom
     // test_s1_cv_gaussian_blur,
     // test_s1_cv_sobel,
     // test_s1_cv_canny,

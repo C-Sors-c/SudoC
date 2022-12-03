@@ -230,3 +230,4 @@ int *CV_FIND_LARGEST_CONTOUR(const Image *src, int *nrects);
 Image *CV_ROTATE(const Image *src, Image *dst, float angle, Uint32 background);
 Image *CV_SCALE(const Image *src, Image *dst, float scale);
 Image *CV_ZOOM(const Image *src, Image *dst, float scale, Uint32 background);
+Image *CV_WARP_TRANSFORM(const Image *src, Matrix *M);

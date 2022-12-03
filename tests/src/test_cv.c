@@ -631,7 +631,7 @@ int test_cv_resize()
 
 int test_cv_zoom()
 {
-    // Image *image = CV_LOAD("tests/samples/lena.png", RGB);
+    Image *image = CV_LOAD("tests/samples/lena.png", RGB);
     // Image *zoomed = CV_ZOOM(image, NULL, 2.0, 0x000000);
 
     // CV_SAVE(zoomed, "tests/out/test_cv_zoom.png");
@@ -639,8 +639,8 @@ int test_cv_zoom()
     // CV_FREE(&image);
     // CV_FREE(&zoomed);
 
-    Point pA = {50, 0,1};
-    Point pB = {0, 150,1};
+    Point pA = {50, 0, 1};
+    Point pB = {150, 0, 1};
     Point pC = {200, 200,1};
     Point pD = {0, 200,1};
 
@@ -663,9 +663,14 @@ int test_cv_zoom()
     dst[3] = pH;
 
     Matrix *M = matrix_get_perspective_transformation(src, dst);
+    Image *zoomed = CV_WARP_TRANSFORM(image, M);
+
+    CV_SAVE(zoomed, "tests/out/test_cv_zoom_src.png");
 
     matrix_print(M);
 
+    CV_FREE(&image);
+    CV_FREE(&zoomed);
     FREE(src);
     FREE(dst);
     matrix_destroy(M);
