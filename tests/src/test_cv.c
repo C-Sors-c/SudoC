@@ -546,9 +546,9 @@ int test_cv_save_boxes()
     return assert(true, true, "test_cv_boxes");
 }
 
-int test_cv_find_largest_component()
+int test_cv_find_largest_rect()
 {
-    Image *image = CV_LOAD("tests/samples/sudoku2.png", RGB);
+    Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", RGB);
     Image *processed = CV_COPY(image);
 
     CV_RGB_TO_GRAY(processed, processed);
@@ -556,40 +556,34 @@ int test_cv_find_largest_component()
     CV_SHARPEN(processed, processed, 5);
     CV_ADAPTIVE_THRESHOLD(processed, processed, 5, 0.5, 0.5);
     CV_SOBEL(processed, processed);
-    
-    for (int i = 0; i < 3; i++)
-        CV_DILATE(processed, processed, 3);
-    
-    for (int i = 0; i < 3; i++)
-        CV_ERODE(processed, processed, 3);
+    CV_DILATE(processed, processed, 3);
+    CV_ERODE(processed, processed, 3);
 
-    // int n = 0;
-    // int *lines = CV_HOUGH_LINES(processed, 300, 35, &n);
+    int n = 0;
+    int *points = CV_GET_MAX_RECTANGLE(processed, &n);
 
-    int nr = 0;
-    int *pts = CV_FIND_LARGEST_COMPONENT(processed, &nr);
-    int *jarvis = CV_JARVIS_MARCH(pts, nr, &nr);
+    int Ax = points[0];
+    int Ay = points[1];
+    int Bx = points[2];
+    int By = points[3];
+    int Cx = points[4];
+    int Cy = points[5];
+    int Dx = points[6];
+    int Dy = points[7];
 
-    // printf("nr: %d\n", nr);
+    CV_DRAW_LINE(image, image, Ax, Ay, Bx, By, 1, CV_RGB(0, 255, 0));
+    CV_DRAW_LINE(image, image, Bx, By, Cx, Cy, 1, CV_RGB(0, 255, 0));
+    CV_DRAW_LINE(image, image, Cx, Cy, Dx, Dy, 1, CV_RGB(0, 255, 0));
+    CV_DRAW_LINE(image, image, Dx, Dy, Ax, Ay, 1, CV_RGB(0, 255, 0));
 
-    for (int i = 0; i < nr; i++)
-    {
-        int x = jarvis[i * 2 + 0];
-        int y = jarvis[i * 2 + 1];
-
-        CV_DRAW_POINT(image, image, x, y, 3, CV_RGB(255, 0, 0));
-    }
-
-    CV_SAVE(image, "tests/out/test_cv_find_largest_component.png");
+    CV_SAVE(image, "tests/out/test_cv_find_largest_rect.png");
 
     CV_FREE(&image);
     CV_FREE(&processed);
 
-    // FREE(lines);
-    FREE(pts);
-    FREE(jarvis);
+    FREE(points);
 
-    return assert(true, true, "test_cv_find_largest_component");
+    return assert(true, true, "test_cv_find_largest_rect");
 }
 
 int test_cv_draw()

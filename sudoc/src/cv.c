@@ -2244,7 +2244,7 @@ int *CV_GRID_BOXES(int *intersections, int nintersections, int *nboxes)
 /// @param src The source image
 /// @param n The number of rectangles
 /// @return An array of rectangles.
-int *CV_FIND_LARGEST_COMPONENT(const Image *src, int *n)
+int *CV_FIND_CONTOURS(const Image *src, int *n)
 {
     ASSERT_IMG(src);
     ASSERT_CHANNEL(src, 1);
@@ -2336,7 +2336,6 @@ int *CV_FIND_LARGEST_COMPONENT(const Image *src, int *n)
             }
 
             ncontours = 0;
-
         }
     }
 
@@ -2349,6 +2348,11 @@ int *CV_FIND_LARGEST_COMPONENT(const Image *src, int *n)
     return max_countours;
 }
 
+/// @brief Apply the Jarvis March algorithm to find the convex hull of a set of points
+/// @param points The points to find the convex hull
+/// @param n The number of points
+/// @param nconvex The number of points in the convex hull
+/// @return An array of points in the convex hull
 int *CV_JARVIS_MARCH(int *points, int n, int *nconvex)
 {
     *nconvex = n;
@@ -2423,6 +2427,141 @@ int *CV_JARVIS_MARCH(int *points, int n, int *nconvex)
     FREE(visited);
 
     return convex;
+}
+
+/// @brief Find a rectangle that fits inside a convex hull
+/// @param points The points in the convex hull
+/// @param n The number of points in the convex hull
+/// @return An array of 4 points in the rectangle
+int *CV_MIN_AREA_RECT(int *points, int npoints)
+{
+    int *rect = (int *)malloc(sizeof(int) * 8);
+    memset(rect, 0, sizeof(int) * 8);
+
+    int minx = INT_MAX;
+    int miny = INT_MAX;
+    int maxx = 0;
+    int maxy = 0;
+
+    // Find the bounding box
+    for (int i = 0; i < npoints; i++)
+    {
+        int x = points[i * 2];
+        int y = points[i * 2 + 1];
+
+        if (x < minx)
+            minx = x;
+        if (x > maxx)
+            maxx = x;
+        if (y < miny)
+            miny = y;
+        if (y > maxy)
+            maxy = y;
+    }
+
+    int tlx = 0;
+    int tly = 0;
+    int trx = 0;
+    int try = 0;
+    int brx = 0;
+    int bry = 0;
+    int blx = 0;
+    int bly = 0;
+
+    float tl = 0;
+    float tr = 0;
+    float br = 0;
+    float bl = 0;
+
+    // Find the points that are closest to the corners of the bounding box
+    for (int i = 0; i < npoints; i++)
+    {
+        int x = points[i * 2];
+        int y = points[i * 2 + 1];
+
+        float dst =  sqrt((x - minx) * (x - minx) + (y - miny) * (y - miny));
+        float dst2 = sqrt((x - maxx) * (x - maxx) + (y - miny) * (y - miny));
+        float dst3 = sqrt((x - maxx) * (x - maxx) + (y - maxy) * (y - maxy));
+        float dst4 = sqrt((x - minx) * (x - minx) + (y - maxy) * (y - maxy));
+
+        if (dst > tl)
+        {
+            tl = dst;
+            tlx = x;
+            tly = y;
+        }
+
+        if (dst2 > tr)
+        {
+            tr = dst2;
+            trx = x;
+            try = y;
+        }
+
+        if (dst3 > br)
+        {
+            br = dst3;
+            brx = x;
+            bry = y;
+        }
+
+        if (dst4 > bl)
+        {
+            bl = dst4;
+            blx = x;
+            bly = y;
+        }
+    }
+
+    rect[0] = tlx;
+    rect[1] = tly;
+    rect[2] = trx;
+    rect[3] = try;
+    rect[4] = brx;
+    rect[5] = bry;
+    rect[6] = blx;
+    rect[7] = bly;
+
+    return rect;
+}
+
+int *CV_GET_MAX_RECTANGLE(const Image *src, int *n)
+{
+    int *contours = NULL;
+    int ncontours = 0;
+
+    int *convex = NULL;
+    int nconvex = 0;
+
+    int *rect = NULL;
+
+    contours = CV_FIND_CONTOURS(src, &ncontours);
+    if (ncontours == 0)
+    {
+        *n = 0;
+        return NULL;
+    }
+
+    convex = CV_JARVIS_MARCH(contours, ncontours, &nconvex);
+    if (nconvex == 0)
+    {
+        *n = 0;
+        return NULL;
+    }
+
+    rect = CV_MIN_AREA_RECT(convex, nconvex);
+    if (rect == NULL)
+    {
+        *n = 0;
+        return NULL;
+    }
+
+    *n = 8;
+
+    FREE(contours);
+    FREE(convex);
+
+    return rect;
 }
 
 /// @brief Apply a perspective transform to an image

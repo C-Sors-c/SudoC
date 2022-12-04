@@ -25,7 +25,7 @@ int test_cv_hough_lines_merged();
 int test_cv_intersections();
 int test_cv_boxes();
 int test_cv_save_boxes();
-int test_cv_find_largest_component();
+int test_cv_find_largest_rect();
 int test_cv_draw();
 int test_cv_transform();
 int test_cv_rotate();
