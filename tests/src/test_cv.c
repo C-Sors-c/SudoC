@@ -567,14 +567,15 @@ int test_cv_find_largest_component()
     // int *lines = CV_HOUGH_LINES(processed, 300, 35, &n);
 
     int nr = 0;
-    int *pts = CV_CONVEX_HUE(processed, &nr);
+    int *pts = CV_FIND_LARGEST_COMPONENT(processed, &nr);
+    int *jarvis = CV_JARVIS_MARCH(pts, nr, &nr);
 
     // printf("nr: %d\n", nr);
 
     for (int i = 0; i < nr; i++)
     {
-        int x = pts[i * 2 + 0];
-        int y = pts[i * 2 + 1];
+        int x = jarvis[i * 2 + 0];
+        int y = jarvis[i * 2 + 1];
 
         CV_DRAW_POINT(image, image, x, y, 3, CV_RGB(255, 0, 0));
     }
@@ -586,6 +587,7 @@ int test_cv_find_largest_component()
 
     // FREE(lines);
     FREE(pts);
+    FREE(jarvis);
 
     return assert(true, true, "test_cv_find_largest_component");
 }

@@ -2349,57 +2349,80 @@ int *CV_FIND_LARGEST_COMPONENT(const Image *src, int *n)
     return max_countours;
 }
 
-int *CV_CONVEX_HUE(const Image *src, int *n)
+int *CV_JARVIS_MARCH(int *points, int n, int *nconvex)
 {
-    ASSERT_IMG(src);
-    ASSERT_CHANNEL(src, 1);
+    *nconvex = n;
 
-    int *contours = CV_FIND_LARGEST_COMPONENT(src, n);
+    int *convex = (int *)malloc(sizeof(int) * n * 2);
+    memset(convex, 0, sizeof(int) * n * 2);
 
-    int *hull = (int *)malloc(sizeof(int) * *n * 2);
-    memset(hull, 0, sizeof(int) * *n * 2);
+    int *visited = (int *)malloc(sizeof(int) * n);
+    memset(visited, 0, sizeof(int) * n);
 
-    int nhull = 0;
+    int x = points[0];
+    int y = points[1];
 
-    for (int i = 0; i < *n; i++)
+    for (int i = 1; i < n; i++)
     {
-        int x = contours[i * 2];
-        int y = contours[i * 2 + 1];
-
-        int j = i + 1;
-        if (j == *n)
-            j = 0;
-
-        int x1 = contours[j * 2];
-        int y1 = contours[j * 2 + 1];
-
-        int k = j + 1;
-        if (k == *n)
-            k = 0;
-
-        int x2 = contours[k * 2];
-        int y2 = contours[k * 2 + 1];
-
-        int dx1 = x1 - x;
-        int dy1 = y1 - y;
-        int dx2 = x2 - x;
-        int dy2 = y2 - y;
-
-        int cross = dx1 * dy2 - dy1 * dx2;
-
-        if (cross < 0)
+        if (points[i * 2 + 1] < y || (points[i * 2 + 1] == y && points[i * 2] < x))
         {
-            hull[nhull * 2] = x;
-            hull[nhull * 2 + 1] = y;
-            nhull++;
+            x = points[i * 2];
+            y = points[i * 2 + 1];
         }
     }
 
-    FREE(contours);
+    int j = 0;
+    int k = 0;
 
-    *n = nhull;
+    do
+    {
+        convex[j * 2] = x;
+        convex[j * 2 + 1] = y;
+        visited[k] = 1;
+        j++;
 
-    return hull;
+        int x1 = points[0];
+        int y1 = points[1];
+        int k1 = 0;
+
+        for (int i = 1; i < n; i++)
+        {
+            if (visited[i])
+                continue;
+
+            int x2 = points[i * 2];
+            int y2 = points[i * 2 + 1];
+
+            int cross = (x2 - x) * (y1 - y) - (x1 - x) * (y2 - y);
+
+            if (cross < 0)
+            {
+                x1 = x2;
+                y1 = y2;
+                k1 = i;
+            }
+            else if (cross == 0)
+            {
+                if (sqrt((x2 - x) * (x2 - x) + (y2 - y) * (y2 - y)) > sqrt((x1 - x) * (x1 - x) + (y1 - y) * (y1 - y)))
+                {
+                    x1 = x2;
+                    y1 = y2;
+                    k1 = i;
+                }
+            }
+        }
+
+        x = x1;
+        y = y1;
+        k = k1;
+
+    } while (x != convex[0] || y != convex[1]);
+
+    *nconvex = j;
+
+    FREE(visited);
+
+    return convex;
 }
 
 /// @brief Apply a perspective transform to an image
