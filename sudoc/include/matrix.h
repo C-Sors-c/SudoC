@@ -5,6 +5,14 @@
 #include <stdbool.h>
 #include <math.h>
 
+typedef struct
+{
+    int x;
+    int y;
+} Tupple;
+
+Tupple T(int x, int y);
+
 // 2D matrix utils
 struct Matrix
 {
@@ -34,6 +42,9 @@ void matrix_map_function(Matrix *m, float (*func)(float));
 bool matrix_element_wise_equal(Matrix *m1, Matrix *m2);
 void matrix_destroy(Matrix *m);
 void matrix_print(Matrix *m);
+float matrix_det(Matrix *m);
+Matrix *matrix_inverse(Matrix *m);
+Matrix *matrix_transformation(const Tupple *src, const Tupple *dst);
 
 // 4D matrix utils
 struct Matrix4
