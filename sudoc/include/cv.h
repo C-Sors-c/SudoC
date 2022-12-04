@@ -224,6 +224,7 @@ int *CV_INTERSECTIONS(int *lines, int nlines, int *nintersection);
 int *CV_GRID_BOXES(int *intersections, int nintersections, int *nboxes);
 
 int *CV_FIND_LARGEST_COMPONENT(const Image *src, int *nrects);
+int *CV_CONVEX_HUE(const Image *src, int *n);
 
 Image *CV_TRANSFORM(const Image *src, const Matrix *M, Tupple dsize, Tupple origin, Uint32 background);
 Image *CV_ROTATE(const Image *src, float angle, bool resize, Uint32 background);

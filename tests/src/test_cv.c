@@ -548,35 +548,33 @@ int test_cv_save_boxes()
 
 int test_cv_find_largest_component()
 {
-    Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", RGB);
+    Image *image = CV_LOAD("tests/samples/sudoku2.png", RGB);
     Image *processed = CV_COPY(image);
 
-    int k = 5;
-
     CV_RGB_TO_GRAY(processed, processed);
-    CV_GAUSSIAN_BLUR(processed, processed, k, 1);
-    CV_SHARPEN(processed, processed, k * 2);
-    CV_ADAPTIVE_THRESHOLD(processed, processed, k, 0.5, 0.5);
-    CV_NOT(processed, processed);
-    CV_DILATE(processed, processed, 3);
-    CV_ERODE(processed, processed, 3);
+    CV_GAUSSIAN_BLUR(processed, processed, 5, 1);
+    CV_SHARPEN(processed, processed, 5);
+    CV_ADAPTIVE_THRESHOLD(processed, processed, 5, 0.5, 0.5);
+    CV_SOBEL(processed, processed);
+    
+    for (int i = 0; i < 3; i++)
+        CV_DILATE(processed, processed, 3);
+    
+    for (int i = 0; i < 3; i++)
+        CV_ERODE(processed, processed, 3);
 
-    // CV_SOBEL(processed, processed);
-
-    int n = 0;
-    int *lines = CV_HOUGH_LINES(processed, 300, 35, &n);
+    // int n = 0;
+    // int *lines = CV_HOUGH_LINES(processed, 300, 35, &n);
 
     int nr = 0;
-    int *pts = CV_FIND_LARGEST_COMPONENT(processed, &nr);
+    int *pts = CV_CONVEX_HUE(processed, &nr);
 
-    printf("nr: %d\n", nr);
+    // printf("nr: %d\n", nr);
 
     for (int i = 0; i < nr; i++)
     {
         int x = pts[i * 2 + 0];
         int y = pts[i * 2 + 1];
-
-        printf("x: %d, y: %d\n", x, y);
 
         CV_DRAW_POINT(image, image, x, y, 3, CV_RGB(255, 0, 0));
     }
@@ -586,7 +584,7 @@ int test_cv_find_largest_component()
     CV_FREE(&image);
     CV_FREE(&processed);
 
-    FREE(lines);
+    // FREE(lines);
     FREE(pts);
 
     return assert(true, true, "test_cv_find_largest_component");

@@ -2349,6 +2349,59 @@ int *CV_FIND_LARGEST_COMPONENT(const Image *src, int *n)
     return max_countours;
 }
 
+int *CV_CONVEX_HUE(const Image *src, int *n)
+{
+    ASSERT_IMG(src);
+    ASSERT_CHANNEL(src, 1);
+
+    int *contours = CV_FIND_LARGEST_COMPONENT(src, n);
+
+    int *hull = (int *)malloc(sizeof(int) * *n * 2);
+    memset(hull, 0, sizeof(int) * *n * 2);
+
+    int nhull = 0;
+
+    for (int i = 0; i < *n; i++)
+    {
+        int x = contours[i * 2];
+        int y = contours[i * 2 + 1];
+
+        int j = i + 1;
+        if (j == *n)
+            j = 0;
+
+        int x1 = contours[j * 2];
+        int y1 = contours[j * 2 + 1];
+
+        int k = j + 1;
+        if (k == *n)
+            k = 0;
+
+        int x2 = contours[k * 2];
+        int y2 = contours[k * 2 + 1];
+
+        int dx1 = x1 - x;
+        int dy1 = y1 - y;
+        int dx2 = x2 - x;
+        int dy2 = y2 - y;
+
+        int cross = dx1 * dy2 - dy1 * dx2;
+
+        if (cross < 0)
+        {
+            hull[nhull * 2] = x;
+            hull[nhull * 2 + 1] = y;
+            nhull++;
+        }
+    }
+
+    FREE(contours);
+
+    *n = nhull;
+
+    return hull;
+}
+
 /// @brief Apply a perspective transform to an image
 /// @param src Source image.
 /// @param M 3x3 perspective transformation matrix.
