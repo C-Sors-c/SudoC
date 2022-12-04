@@ -546,7 +546,7 @@ int test_cv_save_boxes()
     return assert(true, true, "test_cv_boxes");
 }
 
-int test_cv_find_countours()
+int test_cv_find_largest_component()
 {
     Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", RGB);
     Image *processed = CV_COPY(image);
@@ -561,23 +561,27 @@ int test_cv_find_countours()
     CV_DILATE(processed, processed, 3);
     CV_ERODE(processed, processed, 3);
 
-    CV_SOBEL(processed, processed);
+    // CV_SOBEL(processed, processed);
 
     int n = 0;
     int *lines = CV_HOUGH_LINES(processed, 300, 35, &n);
 
     int nr = 0;
-    int *pts = CV_FIND_LARGEST_CONTOUR(processed, &nr);
+    int *pts = CV_FIND_LARGEST_COMPONENT(processed, &nr);
+
+    printf("nr: %d\n", nr);
 
     for (int i = 0; i < nr; i++)
     {
         int x = pts[i * 2 + 0];
         int y = pts[i * 2 + 1];
 
+        printf("x: %d, y: %d\n", x, y);
+
         CV_DRAW_POINT(image, image, x, y, 3, CV_RGB(255, 0, 0));
     }
 
-    CV_SAVE(image, "tests/out/test_cv_find_countours.png");
+    CV_SAVE(image, "tests/out/test_cv_find_largest_component.png");
 
     CV_FREE(&image);
     CV_FREE(&processed);
@@ -585,7 +589,7 @@ int test_cv_find_countours()
     FREE(lines);
     FREE(pts);
 
-    return assert(true, true, "test_cv_find_countours");
+    return assert(true, true, "test_cv_find_largest_component");
 }
 
 int test_cv_draw()

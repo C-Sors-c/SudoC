@@ -2240,11 +2240,11 @@ int *CV_GRID_BOXES(int *intersections, int nintersections, int *nboxes)
     return boxes;
 }
 
-/// @brief Find the largest rectangle in an image.
+/// @brief Find the largest connected component in a binary image
 /// @param src The source image
-/// @param nrects The number of rectangles
+/// @param n The number of rectangles
 /// @return An array of rectangles.
-int *CV_FIND_LARGEST_CONTOUR(const Image *src, int *nrects)
+int *CV_FIND_LARGEST_COMPONENT(const Image *src, int *n)
 {
     ASSERT_IMG(src);
     ASSERT_CHANNEL(src, 1);
@@ -2260,20 +2260,9 @@ int *CV_FIND_LARGEST_CONTOUR(const Image *src, int *nrects)
     int *visited = (int *)malloc(sizeof(int) * w * h * 2);
     memset(visited, 0, sizeof(int) * w * h * 2);
 
-    int *max_contours;
-
     int ncontours = 0;
-    int max_contour = 0;
-
-    int min_x = 0;
-    int min_y = 0;
-    int max_x = 0;
-    int max_y = 0;
-
-    int P1_x = 0, P1_y = 0, P2_x = 0, P2_y = 0, P3_x = 0, P3_y = 0,
-        P4_x = 0, P4_y = 0;
-
-    int max_area = 0;
+    int ncontours_max = 0;
+    int *max_countours = NULL;
 
     for (int y = 0; y < h; y++)
     {
@@ -2285,19 +2274,12 @@ int *CV_FIND_LARGEST_CONTOUR(const Image *src, int *nrects)
             if (visited[y * w + x])
                 continue;
 
-            int *stack = (int *)malloc(sizeof(int) * w * h * 2);
-            memset(stack, 0, sizeof(int) * w * h * 2);
-
+            int *stack = (int *)calloc(w * h, sizeof(int));
             int nstack = 0;
 
             stack[nstack * 2] = x;
             stack[nstack * 2 + 1] = y;
             nstack++;
-
-            int xmin = x;
-            int xmax = x;
-            int ymin = y;
-            int ymax = y;
 
             while (nstack > 0)
             {
@@ -2313,15 +2295,6 @@ int *CV_FIND_LARGEST_CONTOUR(const Image *src, int *nrects)
                 contours[ncontours * 2] = x;
                 contours[ncontours * 2 + 1] = y;
                 ncontours++;
-
-                if (x < xmin)
-                    xmin = x;
-                if (x > xmax)
-                    xmax = x;
-                if (y < ymin)
-                    ymin = y;
-                if (y > ymax)
-                    ymax = y;
 
                 if (x > 0 && PIXEL(p, 0, y, x - 1) == 1 && !visited[y * w + x - 1])
                 {
@@ -2352,103 +2325,28 @@ int *CV_FIND_LARGEST_CONTOUR(const Image *src, int *nrects)
                 }
             }
 
-            free(stack);
+            FREE(stack);
 
-            int p1_x = 0, p1_y = 0, p2_x = 0, p2_y = 0, p3_x = 0, p3_y = 0,
-                p4_x = 0, p4_y = 0;
-
-            for (int i = 0; i < ncontours; i++)
+            if (ncontours > ncontours_max)
             {
-                int x = contours[i * 2];
-                int y = contours[i * 2 + 1];
-
-                // P1
-                if (x == xmin)
-                {
-                    p1_x = x;
-                    p1_y = y;
-                }
-
-                // P2
-                else if (y == ymin)
-                {
-                    p2_x = x;
-                    p2_y = y;
-                }
-
-                // P3
-                else if (x == xmax)
-                {
-                    p3_x = x;
-                    p3_y = y;
-                }
-
-                // P4
-                else if (y == ymax)
-                {
-                    p4_x = x;
-                    p4_y = y;
-                }
-            }
-
-            // compute area from unsorted points
-            int width = (p3_x - p1_x);
-            int height = (p4_y - p2_y);
-            int area = abs(width * height);
-
-            if (ncontours > max_contour && area > max_area)
-            {
-                max_contour = ncontours;
-                max_area = area;
-
-                min_x = xmin;
-                min_y = ymin;
-                max_x = xmax;
-                max_y = ymax;
-
-                P1_x = p1_x;
-                P1_y = p1_y;
-                P2_x = p2_x;
-                P2_y = p2_y;
-                P3_x = p3_x;
-                P3_y = p3_y;
-                P4_x = p4_x;
-                P4_y = p4_y;
-
-                max_contours = (int *)malloc(sizeof(int) * max_contour * 2);
-                memcpy(max_contours, contours, sizeof(int) * max_contour * 2);
+                FREE(max_countours);
+                ncontours_max = ncontours;
+                max_countours = (int *)malloc(sizeof(int) * ncontours * 2);
+                memcpy(max_countours, contours, sizeof(int) * ncontours * 2);
             }
 
             ncontours = 0;
+
         }
     }
 
-    free(visited);
-    free(contours);
-
+    FREE(visited);
+    FREE(contours);
     CV_FREE(&p);
 
-    printf("min_x: %d, min_y: %d, max_x: %d, max_y: %d\n", min_x, min_y, max_x, max_y);
+    *n = ncontours_max;
 
-    printf("P1(%d, %d)\n", P1_x, P1_y);
-    printf("P2(%d, %d)\n", P2_x, P2_y);
-    printf("P3(%d, %d)\n", P3_x, P3_y);
-    printf("P4(%d, %d)\n", P4_x, P4_y);
-
-    printf("max_contour: %d, max_area: %d\n", max_contour, max_area);
-
-    *nrects = 4;
-    int *rects = (int *)malloc(sizeof(int) * 8);
-    rects[0] = P1_x;
-    rects[1] = P1_y;
-    rects[2] = P2_x;
-    rects[3] = P2_y;
-    rects[4] = P3_x;
-    rects[5] = P3_y;
-    rects[6] = P4_x;
-    rects[7] = P4_y;
-
-    return rects;
+    return max_countours;
 }
 
 /// @brief Apply a perspective transform to an image
@@ -2524,8 +2422,7 @@ Image *CV_ROTATE(const Image *src, float angle, bool resize, Uint32 background)
     float m[9] = {
         cos(rad), -sin(rad), src->w / 2.0f,
         sin(rad), cos(rad), src->h / 2.0f,
-        0, 0, 1
-    };
+        0, 0, 1};
 
     Matrix *M = matrix_init(3, 3, m);
 
@@ -2560,8 +2457,7 @@ Image *CV_SCALE(const Image *src, float factor, Uint32 background)
     float m[9] = {
         1.0f / factor, 0, 0,
         0, 1.0f / factor, 0,
-        0, 0, 1
-    };
+        0, 0, 1};
 
     Matrix *M = matrix_init(3, 3, m);
 
@@ -2593,8 +2489,7 @@ Image *CV_RESIZE(const Image *src, Tupple dsize, Uint32 background)
     float m[9] = {
         iy, 0, 0,
         0, ix, 0,
-        0, 0, 1
-    };
+        0, 0, 1};
 
     Matrix *M = matrix_init(3, 3, m);
 
@@ -2621,8 +2516,7 @@ Image *CV_ZOOM(const Image *src, float factor, Uint32 background)
     float m[9] = {
         factor, 0, (1 - factor) * src->w / 2.0f,
         0, factor, (1 - factor) * src->h / 2.0f,
-        0, 0, 1
-    };
+        0, 0, 1};
 
     Matrix *M = matrix_init(3, 3, m);
 
@@ -2648,8 +2542,7 @@ Image *CV_TRANSLATE(const Image *src, Tupple offset, Uint32 background)
     float m[9] = {
         1, 0, offset.x,
         0, 1, offset.y,
-        0, 0, 1
-    };
+        0, 0, 1};
 
     Matrix *M = matrix_init(3, 3, m);
 
@@ -2661,6 +2554,5 @@ Image *CV_TRANSLATE(const Image *src, Tupple offset, Uint32 background)
 
     return dst;
 }
-
 
 #pragma endregion Transform
