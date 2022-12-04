@@ -629,7 +629,7 @@ int test_cv_transform()
     dst[3] = pH;
 
     Matrix *M = matrix_transformation(src, dst);
-    Image * tf = CV_TRANSFORM(image, M, T(image->w, image->h), T(0, 0), CV_RGB(0, 0, 0));
+    Image *tf = CV_TRANSFORM(image, M, T(image->w, image->h), T(0, 0), CV_RGB(0, 0, 0));
 
     CV_SAVE(tf, "tests/out/test_cv_transform.png");
 
@@ -723,7 +723,7 @@ int test_cv_full()
     Tupple D = {points[6], points[7]};
 
     int dsize = 9 * 40; // output image size
-    int p = 4; // padding
+    int p = 4;          // padding
 
     Tupple E = {0, 0};
     Tupple F = {dsize, 0};
@@ -767,7 +767,6 @@ int test_cv_full()
             CV_FREE(&block);
         }
     }
-
 
     CV_SAVE(tf, "tests/out/test_cv_full.png");
     CV_SAVE(image, "tests/out/test_cv_full_image.png");

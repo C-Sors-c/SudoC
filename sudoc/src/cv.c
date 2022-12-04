@@ -2479,14 +2479,14 @@ int *CV_MIN_AREA_RECT(int *points, int npoints)
         int x = points[i * 2];
         int y = points[i * 2 + 1];
 
-        float dst =  sqrt((x - minx) * (x - minx) + (y - miny) * (y - miny));
+        float dst1 = sqrt((x - minx) * (x - minx) + (y - miny) * (y - miny));
         float dst2 = sqrt((x - maxx) * (x - maxx) + (y - miny) * (y - miny));
         float dst3 = sqrt((x - maxx) * (x - maxx) + (y - maxy) * (y - maxy));
         float dst4 = sqrt((x - minx) * (x - minx) + (y - maxy) * (y - maxy));
 
-        if (dst > tl)
+        if (dst1 > tl)
         {
-            tl = dst;
+            tl = dst1;
             tlx = x;
             tly = y;
         }

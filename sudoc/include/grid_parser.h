@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "solver.h"
+#include "sudoku_utils.h"
 
 void load_grid(char *filename, int res[][9]);
 

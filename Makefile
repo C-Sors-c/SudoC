@@ -2,7 +2,8 @@
 
 CC := gcc
 CPPFLAGS :=
-CFLAGS := -Wall -Wextra -Werror -Wno-unknown-pragmas -Wno-unused-variable -Wno-unused-parameter -std=c99 -O3 -fsanitize=address `pkg-config --cflags sdl2 SDL2_image`
+CFLAGS := -Wall -Wextra -Werror -Wno-unknown-pragmas -Wno-unused-variable -Wno-unused-parameter \
+		  -std=c99 -O3 -fsanitize=address `pkg-config --cflags sdl2 SDL2_image`
 LDFLAGS := -lm
 LDLIBS := -fsanitize=address `pkg-config --libs sdl2 SDL2_image`
 
@@ -38,33 +39,28 @@ build: ${OBJ}
 	@mkdir -p ${BUILD_DIR}
 	@mkdir -p ${DATA_DIR}
 	@mkdir -p ${BOX_DIR}
+	@mkdir -p ${TEST_DATA_DIR}
+	@mkdir -p ${TEST_BOX_DIR}
+	@mkdir -p ${TEST_BOX_DIR2}
 	@${CC} -o ${BUILD_DIR}/${EXEC} $^ ${LDFLAGS} ${LDLIBS}
 
 build-test: ${TEST_OBJ}
 	@mkdir -p ${BUILD_DIR}
+	@mkdir -p ${TEST_DATA_DIR}
+	@mkdir -p ${TEST_BOX_DIR}
+	@mkdir -p ${TEST_BOX_DIR2}
 	@${CC} -o ${BUILD_DIR}/${EXEC_TEST} $^ ${LDFLAGS} ${LDLIBS}
 
 build-solver: ${SOLVER_OBJ}
 	@mkdir -p ${BUILD_DIR}
 	@${CC} -o ${BUILD_DIR}/${EXEC_SOLVER} $^ ${LDFLAGS} ${LDLIBS}
 
-build-s1: build build-solver
-
 # RUN
 run: build clean-main
 	@./${BUILD_DIR}/${EXEC}
 
 test: build-test
-	@mkdir -p ${TEST_DATA_DIR}
-	@mkdir -p ${TEST_BOX_DIR}
-	@mkdir -p ${TEST_BOX_DIR2}
 	@./${BUILD_DIR}/${EXEC_TEST}
-
-# test with valgrind
-tv: build-test
-	@mkdir -p ${TEST_DATA_DIR}
-	@mkdir -p ${TEST_BOX_DIR2}
-	@valgrind --leak-check=full --show-leak-kinds=all ./${BUILD_DIR}/${EXEC_TEST}
 
 # CLEAN
 clean-main:

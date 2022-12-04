@@ -100,8 +100,6 @@ int main()
     test_count += test_cv_count;
     for (int i = 0; i < test_cv_count; i++)
         failed += test_cv[i]();
-
-    // failed += test_s1_cv_rotate(-35);
     printf("\n");
 
     // stop timer
