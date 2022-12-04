@@ -2729,7 +2729,7 @@ Image *CV_ZOOM(const Image *src, float factor, Uint32 background)
 
     Matrix *M = matrix_init(3, 3, m);
 
-    Tupple dsize = {src->w, src->h};
+    Tupple dsize = {src->h, src->w};
     Tupple offset = {0, 0};
 
     Image *dst = CV_TRANSFORM(src, M, dsize, offset, background);

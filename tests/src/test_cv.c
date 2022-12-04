@@ -709,13 +709,16 @@ int test_cv_full()
 
     CV_RGB_TO_GRAY(processed, processed);
     CV_GAUSSIAN_BLUR(processed, processed, 5, 1);
-    CV_SHARPEN(processed, processed, 5);
-    CV_ADAPTIVE_THRESHOLD(processed, processed, 5, 0.5, 0.5);
+    CV_SHARPEN(processed, processed, 15);
+    CV_ADAPTIVE_THRESHOLD(processed, processed, 5, 1.0/3.0, 0);
     CV_SOBEL(processed, processed);
     CV_DILATE(processed, processed, 3);
     CV_ERODE(processed, processed, 3);
 
-    int *points = CV_MAX_RECTANGLE(processed);
+    Image *zoomed = CV_ZOOM(processed, 1.02, CV_RGB(0, 0, 0));
+    Image *unzoomed = CV_ZOOM(zoomed, 0.98, CV_RGB(0, 0, 0));
+
+    int *points = CV_MAX_RECTANGLE(unzoomed);
 
     Tupple A = {points[0], points[1]};
     Tupple B = {points[2], points[3]};
@@ -770,9 +773,12 @@ int test_cv_full()
 
     CV_SAVE(tf, "tests/out/test_cv_full.png");
     CV_SAVE(image, "tests/out/test_cv_full_image.png");
+    CV_SAVE(unzoomed, "tests/out/test_cv_full_processed.png");
 
     CV_FREE(&image);
     CV_FREE(&processed);
+    CV_FREE(&zoomed);
+    CV_FREE(&unzoomed);
     CV_FREE(&tf);
 
     matrix_destroy(M);
