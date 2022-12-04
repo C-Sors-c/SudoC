@@ -15,6 +15,7 @@ DATA_DIR := out
 BOX_DIR := out/box
 TEST_DATA_DIR := ./tests/out
 TEST_BOX_DIR := ./tests/out/box
+TEST_BOX_DIR2 := ./tests/out/box2
 
 SRC :=	${wildcard ./sudoc/src/*.c} ${wildcard ./tests/src/*.c} ./sudoc/main.c
 
@@ -56,12 +57,13 @@ run: build clean-main
 test: build-test
 	@mkdir -p ${TEST_DATA_DIR}
 	@mkdir -p ${TEST_BOX_DIR}
+	@mkdir -p ${TEST_BOX_DIR2}
 	@./${BUILD_DIR}/${EXEC_TEST}
 
 # test with valgrind
 tv: build-test
 	@mkdir -p ${TEST_DATA_DIR}
-	@mkdir -p ${TEST_BOX_DIR}
+	@mkdir -p ${TEST_BOX_DIR2}
 	@valgrind --leak-check=full --show-leak-kinds=all ./${BUILD_DIR}/${EXEC_TEST}
 
 # CLEAN

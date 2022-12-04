@@ -548,7 +548,7 @@ int test_cv_save_boxes()
 
 int test_cv_find_largest_rect()
 {
-    Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", RGB);
+    Image *image = CV_LOAD("tests/samples/sudoku2.png", RGB);
     Image *processed = CV_COPY(image);
 
     CV_RGB_TO_GRAY(processed, processed);
@@ -559,8 +559,7 @@ int test_cv_find_largest_rect()
     CV_DILATE(processed, processed, 3);
     CV_ERODE(processed, processed, 3);
 
-    int n = 0;
-    int *points = CV_GET_MAX_RECTANGLE(processed, &n);
+    int *points = CV_MAX_RECTANGLE(processed);
 
     int Ax = points[0];
     int Ay = points[1];
@@ -703,3 +702,85 @@ int test_cv_translate()
     return assert(true, true, "test_cv_translate");
 }
 
+int test_cv_full()
+{
+    Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", RGB);
+    Image *processed = CV_COPY(image);
+
+    CV_RGB_TO_GRAY(processed, processed);
+    CV_GAUSSIAN_BLUR(processed, processed, 5, 1);
+    CV_SHARPEN(processed, processed, 5);
+    CV_ADAPTIVE_THRESHOLD(processed, processed, 5, 0.5, 0.5);
+    CV_SOBEL(processed, processed);
+    CV_DILATE(processed, processed, 3);
+    CV_ERODE(processed, processed, 3);
+
+    int *points = CV_MAX_RECTANGLE(processed);
+
+    Tupple A = {points[0], points[1]};
+    Tupple B = {points[2], points[3]};
+    Tupple C = {points[4], points[5]};
+    Tupple D = {points[6], points[7]};
+
+    int dsize = 9 * 40; // output image size
+    int p = 4; // padding
+
+    Tupple E = {0, 0};
+    Tupple F = {dsize, 0};
+    Tupple G = {dsize, dsize};
+    Tupple H = {0, dsize};
+
+    Tupple *src = malloc(sizeof(Tupple) * 4);
+    Tupple *dst = malloc(sizeof(Tupple) * 4);
+
+    src[0] = A;
+    src[1] = B;
+    src[2] = C;
+    src[3] = D;
+
+    dst[0] = E;
+    dst[1] = F;
+    dst[2] = G;
+    dst[3] = H;
+
+    Matrix *M = matrix_transformation(src, dst);
+    Image *tf = CV_TRANSFORM(image, M, T(dsize, dsize), T(0, 0), CV_RGB(0, 0, 0));
+
+    int bsize = dsize / 9;
+
+    for (int i = 0; i < 9; i++)
+    {
+        for (int j = 0; j < 9; j++)
+        {
+            int x = j * bsize;
+            int y = i * bsize;
+
+            int w = bsize;
+            int h = bsize;
+
+            Image *block = CV_COPY_REGION(tf, x + p, y + p, x + w - p, y + h - p);
+
+            char path[100];
+            snprintf(path, 100, "tests/out/box2/test_cv_full_%d_%d.png", i + 1, j + 1);
+
+            CV_SAVE(block, path);
+            CV_FREE(&block);
+        }
+    }
+
+
+    CV_SAVE(tf, "tests/out/test_cv_full.png");
+    CV_SAVE(image, "tests/out/test_cv_full_image.png");
+
+    CV_FREE(&image);
+    CV_FREE(&processed);
+    CV_FREE(&tf);
+
+    matrix_destroy(M);
+
+    FREE(points);
+    FREE(src);
+    FREE(dst);
+
+    return assert(true, true, "test_cv_full");
+}

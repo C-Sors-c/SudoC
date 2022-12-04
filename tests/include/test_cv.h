@@ -33,3 +33,4 @@ int test_cv_scale();
 int test_cv_resize();
 int test_cv_zoom();
 int test_cv_translate();
+int test_cv_full();

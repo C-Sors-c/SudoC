@@ -2513,19 +2513,24 @@ int *CV_MIN_AREA_RECT(int *points, int npoints)
         }
     }
 
-    rect[0] = tlx;
-    rect[1] = tly;
-    rect[2] = trx;
-    rect[3] = try;
-    rect[4] = brx;
-    rect[5] = bry;
-    rect[6] = blx;
-    rect[7] = bly;
+    // idk why but coordonates need to be reversed
+    rect[4] = tlx;
+    rect[5] = tly;
+    rect[6] = trx;
+    rect[7] = try;
+    rect[0] = brx;
+    rect[1] = bry;
+    rect[2] = blx;
+    rect[3] = bly;
 
     return rect;
 }
 
-int *CV_GET_MAX_RECTANGLE(const Image *src, int *n)
+/// @brief Find the 4 corners of the biggest rectangle in an image
+/// @param src The source image
+/// @param n The number of points in the rectangle
+/// @return An array of 4 points in the rectangle
+int *CV_MAX_RECTANGLE(const Image *src)
 {
     int *contours = NULL;
     int ncontours = 0;
@@ -2537,26 +2542,15 @@ int *CV_GET_MAX_RECTANGLE(const Image *src, int *n)
 
     contours = CV_FIND_CONTOURS(src, &ncontours);
     if (ncontours == 0)
-    {
-        *n = 0;
         return NULL;
-    }
 
     convex = CV_JARVIS_MARCH(contours, ncontours, &nconvex);
     if (nconvex == 0)
-    {
-        *n = 0;
         return NULL;
-    }
 
     rect = CV_MIN_AREA_RECT(convex, nconvex);
     if (rect == NULL)
-    {
-        *n = 0;
         return NULL;
-    }
-
-    *n = 8;
 
     FREE(contours);
     FREE(convex);

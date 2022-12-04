@@ -226,7 +226,7 @@ int *CV_GRID_BOXES(int *intersections, int nintersections, int *nboxes);
 int *CV_FIND_CONTOURS(const Image *src, int *nrects);
 int *CV_JARVIS_MARCH(int *points, int npoints, int *nconvex);
 int *CV_MIN_AREA_RECT(int *points, int n);
-int *CV_GET_MAX_RECTANGLE(const Image *src, int *n);
+int *CV_MAX_RECTANGLE(const Image *src);
 
 Image *CV_TRANSFORM(const Image *src, const Matrix *M, Tupple dsize, Tupple origin, Uint32 background);
 Image *CV_ROTATE(const Image *src, float angle, bool resize, Uint32 background);
