@@ -1,5 +1,8 @@
-#include "../include/solver.h"
+#include "../include/sudoku_utils.h"
 
+/// @brief Solve a Sudoku puzzle
+/// @param grid 9x9 Sudoku grid
+/// @return true if a solution exists, false otherwise
 bool SolveSudoku(int grid[N][N])
 {
     int row, col;
@@ -24,6 +27,11 @@ bool SolveSudoku(int grid[N][N])
     return false;
 }
 
+/// @brief Find an entry in the grid that is still unassigned
+/// @param grid 9x9 Sudoku grid
+/// @param row row of the unassigned cell
+/// @param col column of the unassigned cell
+/// @return true if an unassigned cell exists, false otherwise
 bool FindUnassignedLocation(int grid[N][N], int *row, int *col)
 {
     for (int x = 0; x < N; x++)
@@ -37,10 +45,11 @@ bool FindUnassignedLocation(int grid[N][N], int *row, int *col)
     return false;
 }
 
-/* Returns a boolean which indicates
-   whether an assigned entry
-   in the specified row matches the
-   given number. */
+/// @brief Returns a boolean which indicates whether an assigned entry in the specified row matches the given number.
+/// @param grid The grid to check.
+/// @param row The row to check.
+/// @param num The number to check.
+/// @return A boolean which indicates whether an assigned entry in the specified row matches the given number.
 bool UsedInRow(
     int grid[N][N], int row, int num)
 {
@@ -50,10 +59,11 @@ bool UsedInRow(
     return false;
 }
 
-/* Returns a boolean which indicates
-   whether an assigned entry
-   in the specified column matches
-   the given number. */
+/// @brief Returns a boolean which indicates whether an assigned entry in the specified column matches the given number.
+/// @param grid The grid to check.
+/// @param col The column to check.
+/// @param num The number to check.
+/// @return A boolean which indicates whether an assigned entry in the specified column matches the given number.
 bool UsedInCol(
     int grid[N][N], int col, int num)
 {
@@ -63,10 +73,12 @@ bool UsedInCol(
     return false;
 }
 
-/* Returns a boolean which indicates
-   whether an assigned entry
-   within the specified 3x3 box
-   matches the given number. */
+/// @brief Returns a boolean which indicates whether an assigned entry within the specified 3x3 box matches the given number.
+/// @param grid The grid to check.
+/// @param boxStartRow The row to start the box at.
+/// @param boxStartCol The column to start the box at.
+/// @param num The number to check.
+/// @return A boolean which indicates whether an assigned entry within the specified 3x3 box matches the given number.
 bool UsedInBox(
     int grid[N][N], int boxStartRow,
     int boxStartCol, int num)
@@ -81,9 +93,12 @@ bool UsedInBox(
     return false;
 }
 
-/* Returns a boolean which indicates
-   whether it will be legal to assign
-   num to the given row, col location. */
+/// @brief Returns a boolean which indicates whether it will be legal to assign num to the given row, col location.
+/// @param grid The grid to check.
+/// @param row The row to check.
+/// @param col The column to check.
+/// @param num The number to check.
+/// @return A boolean which indicates whether it will be legal to assign num to the given row, col location.
 bool isSafe(
     int grid[N][N], int row,
     int col, int num)
@@ -95,7 +110,8 @@ bool isSafe(
     return grid[row][col] == UNASSIGNED && !UsedInRow(grid, row, num) && !UsedInCol(grid, col, num) && !UsedInBox(grid, row - row % 3, col - col % 3, num);
 }
 
-/* A utility function to print grid  */
+/// @brief Prints the given grid to stdout.
+/// @param grid The grid to print.
 void printGrid(int grid[N][N])
 {
     for (int row = 0; row < N; row++)

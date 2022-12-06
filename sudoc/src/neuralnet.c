@@ -213,7 +213,8 @@ void nn_save(NN *neural_network, const char *basename)
     for (int i = 0; i < neural_network->num_fc_layers; i++)
     {
         char filename[256];
-        sprintf(filename, "%s/fc_%d.weights", basename, i);
+        // sprintf(filename, "%s/fc_%d.weights", basename, i); // sprintf is unsafe
+        snprintf(filename, sizeof(filename), "%s/fc_%d.weights", basename, i);
         fc_layer_save_weights(filename, neural_network->fc_layers[i]);
     }
 }
@@ -223,7 +224,8 @@ bool nn_load(NN *neural_network, const char *basename)
     for (int i = 0; i < neural_network->num_fc_layers; i++)
     {
         char filename[256];
-        sprintf(filename, "%s/fc_%d.weights", basename, i);
+        // sprintf(filename, "%s/fc_%d.weights", basename, i); // sprintf is unsafe
+        snprintf(filename, sizeof(filename), "%s/fc_%d.weights", basename, i);
         if (!fc_layer_load_weights(filename, neural_network->fc_layers[i]))
             return false;
     }

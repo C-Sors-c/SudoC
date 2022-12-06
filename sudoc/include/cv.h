@@ -20,6 +20,7 @@ typedef struct
     pixel_t *data;
 } Image;
 
+
 #define PI 3.14159265358979323846
 #define RGB 3
 #define GRAYSCALE 1
@@ -146,6 +147,7 @@ Image *CV_INIT(int channels, int height, int width);
 Image *CV_ZEROS(int channels, int height, int width);
 Image *CV_ONES(int channels, int height, int width);
 Image *CV_COPY(const Image *image);
+void CV_COPY_TO(const Image *src, Image *dst);
 Image *CV_COPY_REGION(const Image *image, int xstart, int ystart, int xend, int yend);
 
 void CV_SHOW(const Image *image, char *title);
@@ -195,9 +197,12 @@ Image *CV_OR(const Image *src1, Image *src2, Image *dst);
 Image *CV_AND(const Image *src1, Image *src2, Image *dst);
 Image *CV_XOR(const Image *src1, Image *src2, Image *dst);
 Image *CV_NOT(const Image *src, Image *dst);
+Image *CV_SUB(const Image *src1, Image *src2, Image *dst);
 
-Image *CV_DILATE(const Image *src, Image *dst, int kernel_size);
-Image *CV_ERODE(const Image *src, Image *dst, int kernel_size);
+Image *CV_DILATE(const Image *src, Image *dst, int k);
+Image *CV_ERODE(const Image *src, Image *dst, int k);
+Image *CV_OPEN(const Image *src, Image *dst, int k);
+Image *CV_CLOSE(const Image *src, Image *dst, int k);
 
 Uint32 CV_RGB(Uint8 r, Uint8 g, Uint8 b);
 pixel_t CV_COLOR(Uint32 color, int channel);
@@ -207,17 +212,25 @@ Image *CV_DRAW_RECT(const Image *src, Image *dst, int x, int y, int w, int h, in
 Image *CV_DRAW_CIRCLE(const Image *src, Image *dst, int x, int y, int r, int width, Uint32 color);
 Image *CV_DRAW_DIGIT(const Image *src, Image *dst, int x, int y, int digit, int size, Uint32 color);
 
-int *CV_HOUGH_LINES(const Image *src, int threshold, int *nlines);
+int *CV_HOUGH_TRANSFORM(const Image *src, int threshold, int *nlines);
 int *CV_MERGE_LINES(int *lines, int nlines, int threshold, int *nsimplified);
+int *CV_HOUGH_LINES(const Image *src, int intersection_threshold, int merge_threshold, int *nlines);
 Image *CV_DRAW_LINES(const Image *src, Image *dst, int *lines, int nlines, int weight, Uint32 color);
 float CV_ORIENTATION(int *lines, int nlines);
 
-int *CV_FIND_LARGEST_CONTOUR(const Image *src, int *nrects);
-
-int *CV_GRID_INTERSECTION(Image *src, int *lines, int nlines, int *nintersection);
-int *CV_SORT_INTERSECTIONS(int *intersections, int nintersections);
+int *CV_INTERSECTIONS_RAW(int *lines, int nlines, int *nintersection);
+int *CV_INTERSECTIONS_SORT(int *intersections, int nintersections);
+int *CV_INTERSECTIONS(int *lines, int nlines, int *nintersection);
 int *CV_GRID_BOXES(int *intersections, int nintersections, int *nboxes);
 
-Image *CV_ROTATE(const Image *src, Image *dst, float angle, Uint32 background);
-Image *CV_SCALE(const Image *src, Image *dst, float scale);
-Image *CV_ZOOM(const Image *src, Image *dst, float scale, Uint32 background);
+int *CV_FIND_CONTOURS(const Image *src, int *nrects);
+int *CV_JARVIS_MARCH(int *points, int npoints, int *nconvex);
+int *CV_MIN_AREA_RECT(int *points, int n);
+int *CV_MAX_RECTANGLE(const Image *src);
+
+Image *CV_TRANSFORM(const Image *src, const Matrix *M, Tupple dsize, Tupple origin, Uint32 background);
+Image *CV_ROTATE(const Image *src, float angle, bool resize, Uint32 background);
+Image *CV_SCALE(const Image *src, float scale, Uint32 background);
+Image *CV_RESIZE(const Image *src, Tupple dsize, Uint32 background);
+Image *CV_ZOOM(const Image *src, float zoom, Uint32 background);
+Image *CV_TRANSLATE(const Image *src, Tupple offset, Uint32 background);

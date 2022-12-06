@@ -83,6 +83,24 @@ Image *CV_COPY(const Image *src)
     return copy;
 }
 
+/// @brief Copy an image from src to dst.
+/// @param src The image to copy.
+/// @param dst The image to copy to.
+void CV_COPY_TO(const Image *src, Image *dst)
+{
+    ASSERT_IMG(src);
+
+    if (dst == NULL)
+    {
+        dst = CV_COPY(src);
+        return;
+    }
+
+    ASSERT_IMG(dst);
+    ASSERT_DIM(dst, src->c, src->h, src->w);
+    memcpy(dst->data, src->data, src->c * src->h * src->w * sizeof(pixel_t));
+}
+
 /// @brief Create a copy of a particlar region of an image.
 /// @param src The image to copy.
 /// @param xstart The x coordinate of the top left corner of the region.
@@ -369,7 +387,7 @@ char **CV_LIST_DIR(const char *path, int *count)
         if (entry->d_type == 8)
         {
             char *file = malloc(strlen(path) + strlen(entry->d_name) + 2);
-            sprintf(file, "%s/%s", path, entry->d_name);
+            snprintf(file, strlen(path) + strlen(entry->d_name) + 2, "%s/%s", path, entry->d_name);
 
             files[i] = file;
             i++;
@@ -403,7 +421,7 @@ Image **CV_LOAD_FOLDER(const char *path, int *count, int mode)
         if (entry->d_type == 8)
         {
             char *file = malloc(strlen(path) + strlen(entry->d_name) + 2);
-            sprintf(file, "%s/%s", path, entry->d_name);
+            snprintf(file, strlen(path) + strlen(entry->d_name) + 2, "%s/%s", path, entry->d_name);
 
             Image *image = CV_LOAD(file, mode);
             images = realloc(images, sizeof(Image *) * (*count + 1));
@@ -1220,7 +1238,6 @@ Image *CV_ADAPTIVE_THRESHOLD(const Image *src, Image *dst, int block_size, float
     float gaussian_weight = 1.0 - otsu_weight;
 
     Matrix *kernel = CV_GET_GAUSSIAN_KERNEL(block_size, 1);
-
     Image *mean = CV_APPLY_FILTER(tmp, NULL, kernel);
 
     for (int h = 0; h < src->h; h++)
@@ -1230,9 +1247,11 @@ Image *CV_ADAPTIVE_THRESHOLD(const Image *src, Image *dst, int block_size, float
             float p = PIXEL(tmp, 0, h, w);
             float m = PIXEL(mean, 0, h, w);
 
-            // float threshold = m + c * sqrt(v - m * m);
-            float local_threshold = otsu_weight * otsu + gaussian_weight * (m - c * sqrt(m));
-            float threshold = (local_threshold * gaussian_weight) + (otsu * otsu_weight);
+            float mcs = m - c * sqrt(m);
+            float g2 = gaussian_weight * gaussian_weight;
+
+            // magic formula i invented
+            float threshold = otsu_weight * (2 * otsu + (m - c * sqrt(m)) * (gaussian_weight * gaussian_weight));
 
             if (p > threshold)
                 PIXEL(dst, 0, h, w) = 1;
@@ -1407,6 +1426,47 @@ Image *CV_NOT(const Image *src, Image *dst)
     return dst;
 }
 
+/// @brief Apply a subtraction operation to two images
+/// @param src1 The first source image
+/// @param src2 The second source image
+/// @param dst The destination image
+/// @return The destination image (dst)
+Image *CV_SUB(const Image *src1, Image *src2, Image *dst)
+{
+    ASSERT_IMG(src1);
+    ASSERT_IMG(src2);
+
+    Image *tmp1 = CV_COPY(src1);
+    Image *tmp2 = CV_COPY(src2);
+
+    if (dst == NULL)
+        dst = CV_INIT(src1->c, src1->h, src1->w);
+    ASSERT_IMG(dst);
+    ASSERT_DIM(src2, src1->c, src1->h, src1->w);
+    ASSERT_DIM(dst, src1->c, src1->h, src1->w);
+
+    for (int c = 0; c < src1->c; c++)
+    {
+        for (int i = 0; i < src1->h; i++)
+        {
+            for (int j = 0; j < src1->w; j++)
+            {
+                float p1 = PIXEL(tmp1, c, i, j);
+                float p2 = PIXEL(tmp2, c, i, j);
+
+                if (p1 == 1 && p2 == 0)
+                    PIXEL(dst, c, i, j) = 1;
+                else
+                    PIXEL(dst, c, i, j) = 0;
+            }
+        }
+    }
+
+    CV_FREE(&tmp1);
+    CV_FREE(&tmp2);
+    return dst;
+}
+
 /// @brief Apply a dilation operation to an image
 /// @param src The source image
 /// @param dst The destination image
@@ -1501,6 +1561,54 @@ Image *CV_ERODE(const Image *src, Image *dst, int k)
     return dst;
 }
 
+/// @brief Apply an opening operation to an image
+/// @param src The source image
+/// @param dst The destination image
+/// @param k The kernel size
+/// @return The destination image (dst)
+Image *CV_OPEN(const Image *src, Image *dst, int k)
+{
+    ASSERT_IMG(src);
+    ASSERT_CHANNEL(src, 1);
+
+    Image *tmp = CV_COPY(src);
+
+    if (dst == NULL)
+        dst = CV_COPY(src);
+    ASSERT_IMG(dst);
+    ASSERT_DIM(dst, src->c, src->h, src->w);
+
+    CV_ERODE(tmp, tmp, k);
+    CV_DILATE(tmp, dst, k);
+
+    CV_FREE(&tmp);
+    return dst;
+}
+
+/// @brief Apply a closing operation to an image
+/// @param src The source image
+/// @param dst The destination image
+/// @param k The kernel size
+/// @return The destination image (dst)
+Image *CV_CLOSE(const Image *src, Image *dst, int k)
+{
+    ASSERT_IMG(src);
+    ASSERT_CHANNEL(src, 1);
+
+    Image *tmp = CV_COPY(src);
+
+    if (dst == NULL)
+        dst = CV_COPY(src);
+    ASSERT_IMG(dst);
+    ASSERT_DIM(dst, src->c, src->h, src->w);
+
+    CV_DILATE(tmp, tmp, k);
+    CV_ERODE(tmp, dst, k);
+
+    CV_FREE(&tmp);
+    return dst;
+}
+
 /// @brief Build a uint32 from r, g, b values. (0 <= r, g, b <= 255) and a is skipped
 /// @param r The red value
 /// @param g The green value
@@ -1553,8 +1661,7 @@ Image *CV_DRAW_POINT(const Image *src, Image *dst, int x, int y, int width, Uint
                 if (x + i < 0 || x + i >= dst->w || y + j < 0 || y + j >= dst->h)
                     continue;
 
-                int r = (color >> (16 - c * 8)) & 0xff;
-                PIXEL(dst, c, y + j, x + i) = r / 255.0;
+                PIXEL(dst, c, y + j, x + i) = CV_COLOR(color, c);
             }
         }
     }
@@ -1769,7 +1876,7 @@ Image *CV_DRAW_DIGIT(const Image *src, Image *dst, int x, int y, int digit, int 
 /// @param threshold The threshold value, representing the minimum number of intersections to detect a line
 /// @param nlines The number of lines that will be returned.
 /// @return An array of lines where 2n is rho and 2n+1 is theta.
-int *CV_HOUGH_LINES(const Image *src, int threshold, int *nlines)
+int *CV_HOUGH_TRANSFORM(const Image *src, int threshold, int *nlines)
 {
     ASSERT_IMG(src);
     ASSERT_CHANNEL(src, 1);
@@ -1780,8 +1887,8 @@ int *CV_HOUGH_LINES(const Image *src, int threshold, int *nlines)
     int w = src->w;
     int h = src->h;
 
-    int *accumulator = (int *)malloc(sizeof(int) * w * h * 180);
-    memset(accumulator, 0, sizeof(int) * w * h * 180);
+    int *accumulator = (int *)calloc(w * h * 180, sizeof(int));
+    ASSERT_PTR(accumulator);
 
     for (int y = 0; y < h; y++)
     {
@@ -1795,7 +1902,7 @@ int *CV_HOUGH_LINES(const Image *src, int threshold, int *nlines)
                 double theta = (double)t * PI / 180;            // theta in radian
                 double rho = (x * cos(theta) + y * sin(theta)); // rho in pixel
 
-                int r = (int)round(rho);
+                int r = (int)ceil(rho);
                 // smart workaround to avoid negative values
                 // since the accumulator is a 1D array
                 // we need to shift the values to the right
@@ -1805,54 +1912,58 @@ int *CV_HOUGH_LINES(const Image *src, int threshold, int *nlines)
         }
     }
 
-    // we count the number of lines to allocate the memory
-    int nb_lines = 0;
-    for (int i = 0; i < w * h * 180; i++)
-    {
-        if (accumulator[i] >= threshold)
-            nb_lines++;
-    }
-
-    // we 2 integers per line (rho and theta)
-    int *lines = (int *)malloc(sizeof(int) * nb_lines * 2);
-    memset(lines, 0, sizeof(int) * nb_lines * 2);
+    int *lines = (int *)malloc(sizeof(int) * w * h * 180 * 2);
+    ASSERT_PTR(lines);
 
     // we fill the lines array
-    int j = 0;
+    int n = 0;
     for (int i = 0; i < w * h * 180; i++)
     {
-        if (accumulator[i] >= threshold)
-        {
-            int rho = i % (w * h) - w * h / 2;
-            int theta = i / (w * h);
+        if (accumulator[i] < threshold)
+            continue;
 
-            lines[j] = rho;
-            lines[j + 1] = theta;
-
-            j += 2;
-        }
+        lines[n * 2] = i % (w * h) - w * h / 2; // rho
+        lines[n * 2 + 1] = i / (w * h);         // theta
+        n++;
     }
 
-    // sort the lines by rho
-    for (int i = 0; i < nb_lines * 2; i += 2)
+    if (n == 0)
     {
-        for (int j = i + 2; j < nb_lines * 2; j += 2)
-        {
-            if (lines[i] > lines[j])
-            {
-                int tmp = lines[i];
-                lines[i] = lines[j];
-                lines[j] = tmp;
+        FREE(accumulator);
+        FREE(lines);
+        return NULL;
+    }
 
-                tmp = lines[i + 1];
-                lines[i + 1] = lines[j + 1];
-                lines[j + 1] = tmp;
+    int *rlines = (int *)realloc(lines, sizeof(int) * n * 2);
+    if (rlines == NULL)
+    {
+        FREE(accumulator);
+        FREE(lines);
+        return NULL;
+    }
+    else
+        lines = rlines;
+
+    // sort the lines by rho
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = i + 1; j < n; j++)
+        {
+            if (lines[i * 2] > lines[j * 2])
+            {
+                int tmp = lines[i * 2];
+                lines[i * 2] = lines[j * 2];
+                lines[j * 2] = tmp;
+
+                tmp = lines[i * 2 + 1];
+                lines[i * 2 + 1] = lines[j * 2 + 1];
+                lines[j * 2 + 1] = tmp;
             }
         }
     }
 
     // cleanup and return
-    *nlines = nb_lines;
+    *nlines = n;
     FREE(accumulator);
     return lines;
 }
@@ -1865,18 +1976,14 @@ int *CV_HOUGH_LINES(const Image *src, int threshold, int *nlines)
 /// @return An array of simplified lines where 2n is rho and 2n+1 is theta.
 int *CV_MERGE_LINES(int *lines, int nlines, int threshold, int *n)
 {
-    ASSERT_PTR(lines);
     ASSERT_PTR(n);
-
     *n = 0;
+
+    if (lines == NULL)
+        return NULL;
 
     int *merged_lines = (int *)malloc(sizeof(int) * nlines * 2);
     memset(merged_lines, 0, sizeof(int) * nlines * 2);
-
-    // int tmp_rho = 0;
-    // int tmp_theta = 0;
-
-    // TODO: find a better way to merge lines
 
     int j = 0;
     for (int i = 0; i < nlines * 2; i += 2)
@@ -1889,47 +1996,41 @@ int *CV_MERGE_LINES(int *lines, int nlines, int threshold, int *n)
         {
             if (abs(rho - merged_lines[k]) < threshold && abs(theta - merged_lines[k + 1]) < threshold)
             {
-                // tmp_rho = rho;
-                // tmp_theta = theta;
                 found = true;
-                // printf("       rho=%d, theta=%d, merged_rho=%d, merged_theta=%d\n", rho, theta, merged_lines[k], merged_lines[k + 1]);
                 break;
             }
         }
 
         if (!found)
         {
-            if (j > 1)
-            {
-                // printf("rho=%d, theta=%d, merged_rho=%d, merged_theta=%d\n", rho, theta, merged_lines[j - 2], merged_lines[j - 1]);
-                // printf("tmp_rho=%d, tmp_theta=%d\n", tmp_rho, tmp_theta);
-
-                // int avg_rho = (tmp_rho + merged_lines[j - 2]) / 2;
-                // int avg_theta = (tmp_theta + merged_lines[j - 1]) / 2;
-
-                // merged_lines[j - 2] = avg_rho;
-                // merged_lines[j - 1] = avg_theta;
-            }
-
-            // start = i;
-            // end = i;
             merged_lines[j] = rho;
             merged_lines[j + 1] = theta;
-            // printf("------>: rho=%d, theta=%d\n", rho, theta);
             j += 2;
         }
     }
 
-    // if (j > 1)
-    // {
-    //     int avg_rho = (tmp_rho + merged_lines[j - 2]) / 2;
-    //     int avg_theta = (tmp_theta + merged_lines[j - 1]) / 2;
-
-    //     merged_lines[j - 2] = avg_rho;
-    //     merged_lines[j - 1] = avg_theta;
-    // }
-
     *n = j / 2;
+    return merged_lines;
+}
+
+/// @brief Return detected lines in an image.
+/// @param src The source image
+/// @param intersection_threshold The threshold value, representing the minimum number of intersections to detect a line
+/// @param merge_threshold The threshold value to eliminate lines that are too close to each other.
+/// @param nlines The number of lines that will be returned.
+/// @return An array of lines where 2n is rho and 2n+1 is theta.
+int *CV_HOUGH_LINES(const Image *src, int intersection_threshold, int merge_threshold, int *nlines)
+{
+    ASSERT_IMG(src);
+    ASSERT_CHANNEL(src, 1);
+
+    int *lines = CV_HOUGH_TRANSFORM(src, intersection_threshold, nlines);
+    if (lines == NULL)
+        return NULL;
+
+    int *merged_lines = CV_MERGE_LINES(lines, *nlines, merge_threshold, nlines);
+    FREE(lines);
+
     return merged_lines;
 }
 
@@ -2008,230 +2109,15 @@ float CV_ORIENTATION(int *lines, int nlines)
     return max_theta;
 }
 
-/// @brief Find the largest rectangle in an image.
-/// @param src The source image
-/// @param nrects The number of rectangles
-/// @return An array of rectangles.
-int *CV_FIND_LARGEST_CONTOUR(const Image *src, int *nrects)
-{
-    ASSERT_IMG(src);
-    ASSERT_CHANNEL(src, 1);
-
-    Image *p = CV_COPY(src);
-
-    int w = p->w;
-    int h = p->h;
-
-    int *contours = (int *)malloc(sizeof(int) * w * h * 2);
-    memset(contours, 0, sizeof(int) * w * h * 2);
-
-    int *visited = (int *)malloc(sizeof(int) * w * h * 2);
-    memset(visited, 0, sizeof(int) * w * h * 2);
-
-    int *max_contours;
-
-    int ncontours = 0;
-    int max_contour = 0;
-
-    int min_x = 0;
-    int min_y = 0;
-    int max_x = 0;
-    int max_y = 0;
-
-    int P1_x = 0, P1_y = 0, P2_x = 0, P2_y = 0, P3_x = 0, P3_y = 0,
-        P4_x = 0, P4_y = 0;
-
-    int max_area = 0;
-
-    for (int y = 0; y < h; y++)
-    {
-        for (int x = 0; x < w; x++)
-        {
-            if (PIXEL(p, 0, y, x) == 0)
-                continue;
-
-            if (visited[y * w + x])
-                continue;
-
-            int *stack = (int *)malloc(sizeof(int) * w * h * 2);
-            memset(stack, 0, sizeof(int) * w * h * 2);
-
-            int nstack = 0;
-
-            stack[nstack * 2] = x;
-            stack[nstack * 2 + 1] = y;
-            nstack++;
-
-            int xmin = x;
-            int xmax = x;
-            int ymin = y;
-            int ymax = y;
-
-            while (nstack > 0)
-            {
-                int x = stack[(nstack - 1) * 2];
-                int y = stack[(nstack - 1) * 2 + 1];
-                nstack--;
-
-                if (visited[y * w + x])
-                    continue;
-
-                visited[y * w + x] = 1;
-
-                contours[ncontours * 2] = x;
-                contours[ncontours * 2 + 1] = y;
-                ncontours++;
-
-                if (x < xmin)
-                    xmin = x;
-                if (x > xmax)
-                    xmax = x;
-                if (y < ymin)
-                    ymin = y;
-                if (y > ymax)
-                    ymax = y;
-
-                if (x > 0 && PIXEL(p, 0, y, x - 1) == 1 && !visited[y * w + x - 1])
-                {
-                    stack[nstack * 2] = x - 1;
-                    stack[nstack * 2 + 1] = y;
-                    nstack++;
-                }
-
-                if (x < w - 1 && PIXEL(p, 0, y, x + 1) == 1 && !visited[y * w + x + 1])
-                {
-                    stack[nstack * 2] = x + 1;
-                    stack[nstack * 2 + 1] = y;
-                    nstack++;
-                }
-
-                if (y > 0 && PIXEL(p, 0, y - 1, x) == 1 && !visited[(y - 1) * w + x])
-                {
-                    stack[nstack * 2] = x;
-                    stack[nstack * 2 + 1] = y - 1;
-                    nstack++;
-                }
-
-                if (y < h - 1 && PIXEL(p, 0, y + 1, x) == 1 && !visited[(y + 1) * w + x])
-                {
-                    stack[nstack * 2] = x;
-                    stack[nstack * 2 + 1] = y + 1;
-                    nstack++;
-                }
-            }
-
-            free(stack);
-
-            int p1_x = 0, p1_y = 0, p2_x = 0, p2_y = 0, p3_x = 0, p3_y = 0,
-                p4_x = 0, p4_y = 0;
-
-            for (int i = 0; i < ncontours; i++)
-            {
-                int x = contours[i * 2];
-                int y = contours[i * 2 + 1];
-
-                // P1
-                if (x == xmin)
-                {
-                    p1_x = x;
-                    p1_y = y;
-                }
-
-                // P2
-                else if (y == ymin)
-                {
-                    p2_x = x;
-                    p2_y = y;
-                }
-
-                // P3
-                else if (x == xmax)
-                {
-                    p3_x = x;
-                    p3_y = y;
-                }
-
-                // P4
-                else if (y == ymax)
-                {
-                    p4_x = x;
-                    p4_y = y;
-                }
-            }
-
-            // compute area from unsorted points
-            int width = (p3_x - p1_x);
-            int height = (p4_y - p2_y);
-            int area = abs(width * height);
-
-            if (ncontours > max_contour && area > max_area)
-            {
-                max_contour = ncontours;
-                max_area = area;
-
-                min_x = xmin;
-                min_y = ymin;
-                max_x = xmax;
-                max_y = ymax;
-
-                P1_x = p1_x;
-                P1_y = p1_y;
-                P2_x = p2_x;
-                P2_y = p2_y;
-                P3_x = p3_x;
-                P3_y = p3_y;
-                P4_x = p4_x;
-                P4_y = p4_y;
-
-                max_contours = (int *)malloc(sizeof(int) * max_contour * 2);
-                memcpy(max_contours, contours, sizeof(int) * max_contour * 2);
-            }
-
-            ncontours = 0;
-        }
-    }
-
-    free(visited);
-    free(contours);
-
-    CV_FREE(&p);
-
-    printf("min_x: %d, min_y: %d, max_x: %d, max_y: %d\n", min_x, min_y, max_x, max_y);
-
-    printf("P1(%d, %d)\n", P1_x, P1_y);
-    printf("P2(%d, %d)\n", P2_x, P2_y);
-    printf("P3(%d, %d)\n", P3_x, P3_y);
-    printf("P4(%d, %d)\n", P4_x, P4_y);
-
-    printf("max_contour: %d, max_area: %d\n", max_contour, max_area);
-
-    *nrects = 4;
-    int *rects = (int *)malloc(sizeof(int) * 8);
-    rects[0] = P1_x;
-    rects[1] = P1_y;
-    rects[2] = P2_x;
-    rects[3] = P2_y;
-    rects[4] = P3_x;
-    rects[5] = P3_y;
-    rects[6] = P4_x;
-    rects[7] = P4_y;
-
-    return rects;
-}
-
 /// @brief Find all intersections between two lines
-/// @param src Source image
+/// @param width Width of the image
+/// @param height Height of the image
 /// @param lines Lines to find intersections
 /// @param nlines Number of lines
 /// @param nintersection Number of intersections
 /// @return Array of intersections where 2n and 2n+1 are x and y coordinates
-int *CV_GRID_INTERSECTION(Image *src, int *lines, int nlines, int *nintersection)
+int *CV_INTERSECTIONS_RAW(int *lines, int nlines, int *nintersection)
 {
-    ASSERT_IMG(src);
-
-    int w = src->w;
-    int h = src->h;
-
     int *intersection = (int *)malloc(sizeof(int) * nlines * nlines * 2);
     memset(intersection, 0, sizeof(int) * nlines * nlines * 2);
 
@@ -2258,9 +2144,6 @@ int *CV_GRID_INTERSECTION(Image *src, int *lines, int nlines, int *nintersection
             float x = (d * rho1 - b * rho2) / det;
             float y = (-c * rho1 + a * rho2) / det;
 
-            if (x < 0 || x > w || y < 0 || y > h)
-                continue;
-
             intersection[j * 2] = (int)x;
             intersection[j * 2 + 1] = (int)y;
             j++;
@@ -2276,7 +2159,7 @@ int *CV_GRID_INTERSECTION(Image *src, int *lines, int nlines, int *nintersection
 /// @param intersections Intersections to sort
 /// @param nintersections Number of intersections
 /// @return Sorted intersections by x coordinate
-int *CV_SORT_INTERSECTIONS(int *intersections, int nintersections)
+int *CV_INTERSECTIONS_SORT(int *intersections, int nintersections)
 {
     int *sorted = (int *)malloc(sizeof(int) * nintersections * 2);
     memset(sorted, 0, sizeof(int) * nintersections * 2);
@@ -2304,6 +2187,21 @@ int *CV_SORT_INTERSECTIONS(int *intersections, int nintersections)
         sorted[j * 2] = x;
         sorted[j * 2 + 1] = y;
     }
+
+    return sorted;
+}
+
+/// @brief Find all intersections between two lines
+/// @param lines Lines to find intersections
+/// @param nlines Number of lines
+/// @param nintersection Number of intersections
+/// @return Array of intersections where 2n and 2n+1 are x and y coordinates
+int *CV_INTERSECTIONS(int *lines, int nlines, int *nintersection)
+{
+    int *intersections = CV_INTERSECTIONS_RAW(lines, nlines, nintersection);
+    int *sorted = CV_INTERSECTIONS_SORT(intersections, *nintersection);
+
+    FREE(intersections);
 
     return sorted;
 }
@@ -2342,134 +2240,527 @@ int *CV_GRID_BOXES(int *intersections, int nintersections, int *nboxes)
     return boxes;
 }
 
-/// @brief Rotate an image by a given angle in degrees
+/// @brief Find the largest connected component in a binary image
 /// @param src The source image
-/// @param dst The destination image
-/// @param angle The angle in degrees
-/// @param background The background color
-/// @return The rotated image (dst)
-Image *CV_ROTATE(const Image *src, Image *dst, float angle, Uint32 background)
+/// @param n The number of rectangles
+/// @return An array of rectangles.
+int *CV_FIND_CONTOURS(const Image *src, int *n)
+{
+    ASSERT_IMG(src);
+    ASSERT_CHANNEL(src, 1);
+
+    Image *p = CV_COPY(src);
+
+    int w = p->w;
+    int h = p->h;
+
+    int *contours = (int *)malloc(sizeof(int) * w * h * 2);
+    memset(contours, 0, sizeof(int) * w * h * 2);
+
+    int *visited = (int *)malloc(sizeof(int) * w * h * 2);
+    memset(visited, 0, sizeof(int) * w * h * 2);
+
+    int ncontours = 0;
+    int ncontours_max = 0;
+    int *max_countours = NULL;
+
+    for (int y = 0; y < h; y++)
+    {
+        for (int x = 0; x < w; x++)
+        {
+            if (PIXEL(p, 0, y, x) == 0)
+                continue;
+
+            if (visited[y * w + x])
+                continue;
+
+            int *stack = (int *)calloc(w * h, sizeof(int));
+            int nstack = 0;
+
+            stack[nstack * 2] = x;
+            stack[nstack * 2 + 1] = y;
+            nstack++;
+
+            while (nstack > 0)
+            {
+                int x = stack[(nstack - 1) * 2];
+                int y = stack[(nstack - 1) * 2 + 1];
+                nstack--;
+
+                if (visited[y * w + x])
+                    continue;
+
+                visited[y * w + x] = 1;
+
+                contours[ncontours * 2] = x;
+                contours[ncontours * 2 + 1] = y;
+                ncontours++;
+
+                if (x > 0 && PIXEL(p, 0, y, x - 1) == 1 && !visited[y * w + x - 1])
+                {
+                    stack[nstack * 2] = x - 1;
+                    stack[nstack * 2 + 1] = y;
+                    nstack++;
+                }
+
+                if (x < w - 1 && PIXEL(p, 0, y, x + 1) == 1 && !visited[y * w + x + 1])
+                {
+                    stack[nstack * 2] = x + 1;
+                    stack[nstack * 2 + 1] = y;
+                    nstack++;
+                }
+
+                if (y > 0 && PIXEL(p, 0, y - 1, x) == 1 && !visited[(y - 1) * w + x])
+                {
+                    stack[nstack * 2] = x;
+                    stack[nstack * 2 + 1] = y - 1;
+                    nstack++;
+                }
+
+                if (y < h - 1 && PIXEL(p, 0, y + 1, x) == 1 && !visited[(y + 1) * w + x])
+                {
+                    stack[nstack * 2] = x;
+                    stack[nstack * 2 + 1] = y + 1;
+                    nstack++;
+                }
+            }
+
+            FREE(stack);
+
+            if (ncontours > ncontours_max)
+            {
+                FREE(max_countours);
+                ncontours_max = ncontours;
+                max_countours = (int *)malloc(sizeof(int) * ncontours * 2);
+                memcpy(max_countours, contours, sizeof(int) * ncontours * 2);
+            }
+
+            ncontours = 0;
+        }
+    }
+
+    FREE(visited);
+    FREE(contours);
+    CV_FREE(&p);
+
+    *n = ncontours_max;
+
+    return max_countours;
+}
+
+/// @brief Apply the Jarvis March algorithm to find the convex hull of a set of points
+/// @param points The points to find the convex hull
+/// @param n The number of points
+/// @param nconvex The number of points in the convex hull
+/// @return An array of points in the convex hull
+int *CV_JARVIS_MARCH(int *points, int n, int *nconvex)
+{
+    *nconvex = n;
+
+    int *convex = (int *)malloc(sizeof(int) * n * 2);
+    memset(convex, 0, sizeof(int) * n * 2);
+
+    int *visited = (int *)malloc(sizeof(int) * n);
+    memset(visited, 0, sizeof(int) * n);
+
+    int x = points[0];
+    int y = points[1];
+
+    for (int i = 1; i < n; i++)
+    {
+        if (points[i * 2 + 1] < y || (points[i * 2 + 1] == y && points[i * 2] < x))
+        {
+            x = points[i * 2];
+            y = points[i * 2 + 1];
+        }
+    }
+
+    int j = 0;
+    int k = 0;
+
+    do
+    {
+        convex[j * 2] = x;
+        convex[j * 2 + 1] = y;
+        visited[k] = 1;
+        j++;
+
+        int x1 = points[0];
+        int y1 = points[1];
+        int k1 = 0;
+
+        for (int i = 1; i < n; i++)
+        {
+            if (visited[i])
+                continue;
+
+            int x2 = points[i * 2];
+            int y2 = points[i * 2 + 1];
+
+            int cross = (x2 - x) * (y1 - y) - (x1 - x) * (y2 - y);
+
+            if (cross < 0)
+            {
+                x1 = x2;
+                y1 = y2;
+                k1 = i;
+            }
+            else if (cross == 0)
+            {
+                if (sqrt((x2 - x) * (x2 - x) + (y2 - y) * (y2 - y)) > sqrt((x1 - x) * (x1 - x) + (y1 - y) * (y1 - y)))
+                {
+                    x1 = x2;
+                    y1 = y2;
+                    k1 = i;
+                }
+            }
+        }
+
+        x = x1;
+        y = y1;
+        k = k1;
+
+    } while (x != convex[0] || y != convex[1]);
+
+    *nconvex = j;
+
+    FREE(visited);
+
+    return convex;
+}
+
+/// @brief Find a rectangle that fits inside a convex hull
+/// @param points The points in the convex hull
+/// @param n The number of points in the convex hull
+/// @return An array of 4 points in the rectangle
+int *CV_MIN_AREA_RECT(int *points, int npoints)
+{
+    int *rect = (int *)malloc(sizeof(int) * 8);
+    memset(rect, 0, sizeof(int) * 8);
+
+    int minx = INT_MAX;
+    int miny = INT_MAX;
+    int maxx = 0;
+    int maxy = 0;
+
+    // Find the bounding box
+    for (int i = 0; i < npoints; i++)
+    {
+        int x = points[i * 2];
+        int y = points[i * 2 + 1];
+
+        if (x < minx)
+            minx = x;
+        if (x > maxx)
+            maxx = x;
+        if (y < miny)
+            miny = y;
+        if (y > maxy)
+            maxy = y;
+    }
+
+    int tlx = 0;
+    int tly = 0;
+    int trx = 0;
+    int try = 0;
+    int brx = 0;
+    int bry = 0;
+    int blx = 0;
+    int bly = 0;
+
+    float tl = 0;
+    float tr = 0;
+    float br = 0;
+    float bl = 0;
+
+    // Find the points that are closest to the corners of the bounding box
+    for (int i = 0; i < npoints; i++)
+    {
+        int x = points[i * 2];
+        int y = points[i * 2 + 1];
+
+        float dst1 = sqrt((x - minx) * (x - minx) + (y - miny) * (y - miny));
+        float dst2 = sqrt((x - maxx) * (x - maxx) + (y - miny) * (y - miny));
+        float dst3 = sqrt((x - maxx) * (x - maxx) + (y - maxy) * (y - maxy));
+        float dst4 = sqrt((x - minx) * (x - minx) + (y - maxy) * (y - maxy));
+
+        if (dst1 > tl)
+        {
+            tl = dst1;
+            tlx = x;
+            tly = y;
+        }
+
+        if (dst2 > tr)
+        {
+            tr = dst2;
+            trx = x;
+            try = y;
+        }
+
+        if (dst3 > br)
+        {
+            br = dst3;
+            brx = x;
+            bry = y;
+        }
+
+        if (dst4 > bl)
+        {
+            bl = dst4;
+            blx = x;
+            bly = y;
+        }
+    }
+
+    // idk why but coordonates need to be reversed
+    rect[4] = tlx;
+    rect[5] = tly;
+    rect[6] = trx;
+    rect[7] = try;
+    rect[0] = brx;
+    rect[1] = bry;
+    rect[2] = blx;
+    rect[3] = bly;
+
+    return rect;
+}
+
+/// @brief Find the 4 corners of the biggest rectangle in an image
+/// @param src The source image
+/// @param n The number of points in the rectangle
+/// @return An array of 4 points in the rectangle
+int *CV_MAX_RECTANGLE(const Image *src)
+{
+    int *contours = NULL;
+    int ncontours = 0;
+
+    int *convex = NULL;
+    int nconvex = 0;
+
+    int *rect = NULL;
+
+    contours = CV_FIND_CONTOURS(src, &ncontours);
+    if (ncontours == 0)
+        return NULL;
+
+    convex = CV_JARVIS_MARCH(contours, ncontours, &nconvex);
+    if (nconvex == 0)
+        return NULL;
+
+    rect = CV_MIN_AREA_RECT(convex, nconvex);
+    if (rect == NULL)
+        return NULL;
+
+    FREE(contours);
+    FREE(convex);
+
+    return rect;
+}
+
+/// @brief Apply a perspective transform to an image
+/// @param src Source image.
+/// @param M 3x3 perspective transformation matrix.
+/// @param dsize Size of the output image.
+/// @param offset Offset of the transformation in the destination image.
+/// @param background Background color in the destination image.
+/// @return Destination image.
+Image *CV_TRANSFORM(const Image *src, const Matrix *M, Tupple dsize, Tupple offset, Uint32 background)
 {
     ASSERT_IMG(src);
 
-    Image *tmp = CV_COPY(src);
+    Image *dst = CV_INIT(src->c, dsize.x, dsize.y);
 
-    if (dst == NULL)
-        dst = CV_INIT(src->c, src->h, src->w);
-    ASSERT_IMG(dst);
-    ASSERT_DIM(dst, src->c, src->h, src->w);
-
-    float radians = angle * PI / 180.0;
-    int hwidth = src->w / 2;
-    int hheight = src->h / 2;
-    double sinma = sin(-radians);
-    double cosma = cos(-radians);
-
-    for (int c = 0; c < src->c; c++)
+    ASSERT_MAT(M);
+    if (M->dim1 != 3 || M->dim2 != 3)
     {
-        for (int x = 0; x < src->w; x++)
+        DEBUG_INFO;
+        ERRX("Matrix must be 3x3");
+    }
+
+    float m11 = MAT(M, 0, 0);
+    float m12 = MAT(M, 0, 1);
+    float m13 = MAT(M, 0, 2);
+
+    float m21 = MAT(M, 1, 0);
+    float m22 = MAT(M, 1, 1);
+    float m23 = MAT(M, 1, 2);
+
+    float m31 = MAT(M, 2, 0);
+    float m32 = MAT(M, 2, 1);
+    float m33 = MAT(M, 2, 2);
+
+    for (int c = 0; c < dst->c; c++)
+    {
+        for (int y = 0; y < dst->h; y++)
         {
-            for (int y = 0; y < src->h; y++)
+            for (int x = 0; x < dst->w; x++)
             {
+                int xt = x - offset.x;
+                int yt = y - offset.y;
 
-                int xt = x - hwidth;
-                int yt = y - hheight;
+                float x1 = (m11 * xt + m12 * yt + m13) / (m31 * xt + m32 * yt + m33);
+                float y1 = (m21 * xt + m22 * yt + m23) / (m31 * xt + m32 * yt + m33);
 
-                int xs = (int)round((cosma * xt - sinma * yt) + hwidth);
-                int ys = (int)round((sinma * xt + cosma * yt) + hheight);
+                int x2 = (int)x1;
+                int y2 = (int)y1;
 
-                if (xs >= 0 && xs < src->w && ys >= 0 && ys < src->h)
-                    PIXEL(dst, c, y, x) = PIXEL(tmp, c, ys, xs);
-                else
+                if (x1 < 0 || x1 >= src->w || y1 < 0 || y1 >= src->h)
                     PIXEL(dst, c, y, x) = CV_COLOR(background, c);
+                else
+                    PIXEL(dst, c, y, x) = PIXEL(src, c, y2, x2);
             }
         }
     }
 
-    CV_FREE(&tmp);
     return dst;
 }
 
-/// @brief Rescale an image by a given factor
-/// @param src The source image
-/// @param dst The destination image
-/// @param scale The scale factor
-/// @return The resized image (dst)
-Image *CV_SCALE(const Image *src, Image *dst, float scale)
+/// @brief Rotate an image
+/// @param src Source image
+/// @param angle Angle of rotation in degrees
+/// @param resize Resize the image to fit the rotated image
+/// @param background Background color to fill the empty space
+/// @return Rotated image
+Image *CV_ROTATE(const Image *src, float angle, bool resize, Uint32 background)
 {
     ASSERT_IMG(src);
 
-    Image *tmp = CV_COPY(src);
+    float rad = angle * PI / 180.0f;
 
-    int nh = (int)round(src->h * scale);
-    int nw = (int)round(src->w * scale);
+    float m[9] = {
+        cos(rad), -sin(rad), src->w / 2.0f,
+        sin(rad), cos(rad), src->h / 2.0f,
+        0, 0, 1};
 
-    if (dst == NULL)
-        dst = CV_INIT(src->c, nh, nw);
-    ASSERT_IMG(dst);
-    ASSERT_DIM(dst, src->c, nh, nw);
+    Matrix *M = matrix_init(3, 3, m);
 
-    for (int c = 0; c < src->c; c++)
+    int w = src->w;
+    int h = src->h;
+
+    if (resize)
     {
-        for (int x = 0; x < dst->w; x++)
-        {
-            for (int y = 0; y < dst->h; y++)
-            {
-                int xs = (int)(x / scale);
-                int ys = (int)(y / scale);
-
-                if (xs >= 0 && xs < src->w && ys >= 0 && ys < src->h)
-                    PIXEL(dst, c, y, x) = PIXEL(tmp, c, ys, xs);
-                else
-                    PIXEL(dst, c, y, x) = 0;
-            }
-        }
+        w = (int)(src->w * fabs(cos(rad)) + src->h * fabs(sin(rad)));
+        h = (int)(src->w * fabs(sin(rad)) + src->h * fabs(cos(rad)));
     }
 
-    CV_FREE(&tmp);
+    Tupple dsize = {w, h};
+    Tupple offset = {w / 2.0f, h / 2.0f};
+
+    Image *dst = CV_TRANSFORM(src, M, dsize, offset, background);
+
+    matrix_destroy(M);
+
     return dst;
 }
 
-/// @brief Zoom in an image by a given factor
-/// @param src The source image
-/// @param dst The destination image
-/// @param scale The scale factor
-/// @param background The background color
-/// @return The zoomed image (dst)
-Image *CV_ZOOM(const Image *src, Image *dst, float scale, Uint32 background)
+/// @brief Scale an image
+/// @param src Source image
+/// @param factor Scale factor
+/// @param background Background color to fill the empty space
+/// @return Scaled image
+Image *CV_SCALE(const Image *src, float factor, Uint32 background)
 {
     ASSERT_IMG(src);
 
-    Image *tmp = CV_COPY(src);
+    float m[9] = {
+        1.0f / factor, 0, 0,
+        0, 1.0f / factor, 0,
+        0, 0, 1};
 
-    if (dst == NULL)
-        dst = CV_INIT(src->c, src->h, src->w);
-    ASSERT_IMG(dst);
-    ASSERT_DIM(dst, src->c, src->h, src->w);
+    Matrix *M = matrix_init(3, 3, m);
 
-    int hwidth = src->w / 2;
-    int hheight = src->h / 2;
-    int hwidth2 = dst->w / 2;
-    int hheight2 = dst->h / 2;
+    Tupple dsize = {src->w * factor, src->h * factor};
+    Tupple offset = {0, 0};
 
-    for (int c = 0; c < src->c; c++)
-    {
-        for (int x = 0; x < dst->w; x++)
-        {
-            for (int y = 0; y < dst->h; y++)
-            {
-                int xs = (int)((x - hwidth2) / scale) + hwidth;
-                int ys = (int)((y - hheight2) / scale) + hheight;
+    Image *dst = CV_TRANSFORM(src, M, dsize, offset, background);
 
-                if (xs >= 0 && xs < src->w && ys >= 0 && ys < src->h)
-                    PIXEL(dst, c, y, x) = PIXEL(tmp, c, ys, xs);
-                else
-                    PIXEL(dst, c, y, x) = CV_COLOR(background, c);
-            }
-        }
-    }
+    matrix_destroy(M);
 
-    CV_FREE(&tmp);
+    return dst;
+}
+
+/// @brief Resize an image to a given size
+/// @param src Source image
+/// @param dsize Destination size
+/// @param background Background color to fill the empty space
+/// @return Resized image
+Image *CV_RESIZE(const Image *src, Tupple dsize, Uint32 background)
+{
+    ASSERT_IMG(src);
+
+    float x_factor = (float)dsize.x / (float)src->w;
+    float y_factor = (float)dsize.y / (float)src->h;
+
+    float ix = 1.0f / x_factor;
+    float iy = 1.0f / y_factor;
+
+    float m[9] = {
+        iy, 0, 0,
+        0, ix, 0,
+        0, 0, 1};
+
+    Matrix *M = matrix_init(3, 3, m);
+
+    Tupple offset = {0, 0};
+
+    Image *dst = CV_TRANSFORM(src, M, dsize, offset, background);
+
+    matrix_destroy(M);
+
+    return dst;
+}
+
+/// @brief Zoom in/out an image without changing the image size
+/// @param src Source image
+/// @param factor Zoom factor
+/// @param background Background color to fill the empty space
+/// @return Zoomed image
+Image *CV_ZOOM(const Image *src, float factor, Uint32 background)
+{
+    ASSERT_IMG(src);
+
+    factor = 1.0f / factor;
+
+    float m[9] = {
+        factor, 0, (1 - factor) * src->w / 2.0f,
+        0, factor, (1 - factor) * src->h / 2.0f,
+        0, 0, 1};
+
+    Matrix *M = matrix_init(3, 3, m);
+
+    Tupple dsize = {src->h, src->w};
+    Tupple offset = {0, 0};
+
+    Image *dst = CV_TRANSFORM(src, M, dsize, offset, background);
+
+    matrix_destroy(M);
+
+    return dst;
+}
+
+/// @brief Translate an image
+/// @param src Source image
+/// @param offset Offset
+/// @param background Background color to fill the empty space
+/// @return Translated image
+Image *CV_TRANSLATE(const Image *src, Tupple offset, Uint32 background)
+{
+    ASSERT_IMG(src);
+
+    float m[9] = {
+        1, 0, offset.x,
+        0, 1, offset.y,
+        0, 0, 1};
+
+    Matrix *M = matrix_init(3, 3, m);
+
+    Tupple dsize = {src->w, src->h};
+
+    Image *dst = CV_TRANSFORM(src, M, dsize, offset, background);
+
+    matrix_destroy(M);
+
     return dst;
 }
 
