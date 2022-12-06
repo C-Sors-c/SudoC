@@ -176,10 +176,10 @@ int test_cnn()
 
     // define the layers
     ConvLayer **conv_layers = malloc(sizeof(ConvLayer));
-    conv_layers[0] = conv_layer_init(28, 28, 1, 8, 3, 2, 1, batchsize, relu, d_relu, "conv0");
+    conv_layers[0] = conv_layer_init(28, 28, 1, 8, 3, 2, 1, batchsize, leaky_relu, d_leaky_relu, "conv0");
 
     FCLayer **fc_layers = malloc(sizeof(FCLayer));
-    fc_layers[0] = fc_layer_init(14 * 14 * 8, 10, batchsize, leaky_relu, d_leaky_relu, "fc0");
+    fc_layers[0] = fc_layer_init(14 * 14 * 8, 10, batchsize, relu, d_relu, "fc0");
 
     ActivationLayer *output_layer = activation_layer_init(10, batchsize, softmax, d_softmax);
     int num_conv_layers = 1;
@@ -188,8 +188,34 @@ int test_cnn()
     CNN *network = cnn_init(conv_layers, num_conv_layers, fc_layers, num_fc_layers, output_layer);
 
 
-    // todo test the training
+    // create a dummy image batch filled with random values
+    Matrix4 *input = matrix4_init(batchsize, 1, 28, 28, NULL);
 
+
+    for (int i = 0; i < batchsize; i++)
+    {
+        for (int j = 0; j < 28; j++)
+        {
+            for (int k = 0; k < 28; k++)
+            {
+                m4_set(input, i, 0, j, k, (rand() % 255) / 255.0);
+            }
+        }
+    }
+
+    Matrix *expected = matrix_init(batchsize, 10, NULL);
+
+    // category 2
+    m_set(expected, 0, 2, 1);
+    m_set(expected, 1, 2, 1);
+    m_set(expected, 2, 2, 1);
+    m_set(expected, 3, 2, 1);
+    
+    int epochs = 10;
+    for (int i = 0; i < epochs; i++)
+    {
+        cnn_train_batch(network, input, expected, 0.000001);
+    }
 
 
     // free the memory

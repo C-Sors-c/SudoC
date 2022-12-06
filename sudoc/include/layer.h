@@ -122,4 +122,5 @@ Matrix *flatten_layer_forward(FlattenLayer *layer, Matrix4 *input);
 Matrix4 *flatten_layer_backward(FlattenLayer *layer, Matrix *previous_deltas);
 void flatten_layer_destroy(FlattenLayer *layer);
 
-float cross_entropy_loss(Matrix *predictions, Matrix *labels);
+double cross_entropy_loss(Matrix *predictions, Matrix *labels);
+double mean_squared_error(Matrix *predictions, Matrix *labels);

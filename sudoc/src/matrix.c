@@ -1095,9 +1095,6 @@ Matrix4 *matrix4_grad_input_convolve(Matrix4 *weights, Matrix4 *grad_output, Mat
     int height = dst->dim3;
     int width = dst->dim4;
 
-    int out_height = (height + 2 * padding - filter_height) / stride + 1;
-    int out_width = (width + 2 * padding - filter_width) / stride + 1;
-
     if (dst == NULL)
     {
         dst = matrix4_init(batch_size, channels, height, width, NULL);
@@ -1127,7 +1124,9 @@ Matrix4 *matrix4_grad_input_convolve(Matrix4 *weights, Matrix4 *grad_output, Mat
                                     continue;
 
                                 // calculate grad_in by summing over channels, filter height, and filter width
-                                // dst[b][c][in_h][in_w] += weights[f][c][fh][fw] * grad_out[b][f][h][w];
+                                dst->data[b * channels * height * width + c * height * width + in_h * width + in_w] +=
+                                    weights->data[f * channels * filter_height * filter_width + c * filter_height * filter_width + fh * filter_width + fw] *
+                                    grad_output->data[b * num_filters * out_height * out_width + f * out_height * out_width + h * out_width + w];
                             }
                         }
                     }
@@ -1135,6 +1134,8 @@ Matrix4 *matrix4_grad_input_convolve(Matrix4 *weights, Matrix4 *grad_output, Mat
             }
         }
     }
+
+    return dst;
 }
 
 // Function: matrix4_multiply_scalar

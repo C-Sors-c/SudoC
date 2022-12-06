@@ -34,10 +34,10 @@ void nn_backward(NN *neural_network, Matrix *input, Matrix *predictions, Matrix 
     matrix_destroy(loss_deltas);
 }
 
-float nn_train_batch(NN *neural_network, Matrix *input, Matrix *labels, float learning_rate)
+double nn_train_batch(NN *neural_network, Matrix *input, Matrix *labels, float learning_rate)
 {
     Matrix *predictions = nn_forward(neural_network, input);
-    float loss = cross_entropy_loss(predictions, labels);
+    double loss = cross_entropy_loss(predictions, labels);
     nn_backward(neural_network, input, predictions, labels, learning_rate);
     matrix_destroy(predictions);
     return loss;
@@ -80,16 +80,16 @@ CNN *cnn_init(ConvLayer **conv_layers, int num_conv_layers,
 // forward pass
 Matrix *cnn_forward(CNN *neural_network, Matrix4 *input)
 {
-    Matrix4 *x = conv_layer_forward(neural_network->conv_layers[0], input);
-    x = conv_layer_forward(neural_network->conv_layers[1], x);
+    for (int i = 0; i < neural_network->num_conv_layers; i++)
+        input = conv_layer_forward(neural_network->conv_layers[i], input);
 
-    // I think there will be mem leak here, need to move to a proper layer
-    Matrix *y = matrix4_flatten(x, NULL);
-    y = fc_layer_forward(neural_network->fc_layers[0], y);
-    y = fc_layer_forward(neural_network->fc_layers[1], y);
+    Matrix *y = matrix4_flatten(input, NULL);
+
+    for (int i = 0; i < neural_network->num_fc_layers; i++)
+        y = fc_layer_forward(neural_network->fc_layers[i], y);
+
     y = activation_layer_forward(neural_network->output_layer, y);
-
-    return y;
+    return matrix_copy(y, NULL);
 }
 
 void cnn_backward(CNN *neural_network, Matrix4 *input, Matrix *predictions, Matrix *labels, float learning_rate)
@@ -112,15 +112,15 @@ void cnn_backward(CNN *neural_network, Matrix4 *input, Matrix *predictions, Matr
 
     deltas4 = conv_layer_backward(neural_network->conv_layers[0], input, deltas4, learning_rate);
 
-    matrix_destroy(deltas);
     matrix_destroy(fc_input);
-    matrix4_destroy(deltas4);
 }
 
-float cnn_train_batch(CNN *neural_network, Matrix4 *input, Matrix *labels, float learning_rate)
+double cnn_train_batch(CNN *neural_network, Matrix4 *input, Matrix *labels, float learning_rate)
 {
     Matrix *predictions = cnn_forward(neural_network, input);
-    float loss = cross_entropy_loss(predictions, labels);
+    matrix_print(predictions);
+    double loss = mean_squared_error(predictions, labels);
+    printf("loss: %f\n", loss);
     cnn_backward(neural_network, input, predictions, labels, learning_rate);
     matrix_destroy(predictions);
     return loss;

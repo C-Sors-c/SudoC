@@ -205,12 +205,9 @@ Matrix4 *conv_layer_backward(ConvLayer *layer, Matrix4 *previous_activations, Ma
     matrix_multiply_scalar(layer->biases_gradient, -learning_rate);
     matrix4_add(layer->weights, layer->weights_gradient, layer->weights);
     matrix_add(layer->biases, layer->biases_gradient, layer->biases);
-
+    
     // calculate deltas for previous layer
-    matrix4_convolve(layer->weights, dZ, layer->deltas, layer->stride, layer->padding);
-
-    // free memory
-    matrix4_destroy(dZ);
+    matrix4_grad_input_convolve(layer->weights, dZ, layer->deltas, layer->stride, layer->padding);
 
     return layer->deltas;
 }
@@ -388,12 +385,30 @@ void flatten_layer_destroy(FlattenLayer *layer)
 
 #pragma region loss
 
-float cross_entropy_loss(Matrix *predictions, Matrix *labels)
+double cross_entropy_loss(Matrix *predictions, Matrix *labels)
 {
-    float loss = 0;
-    for (int i = 0; i < predictions->size; i++)
-        loss += labels->data[i] * log(predictions->data[i]);
+    double loss = 0;
+    for (int i = 0; i < predictions->dim1; i++)
+    {
+        for (int j = 0; j < predictions->dim2; j++)
+        {
+            loss += labels->data[i * predictions->dim2 + j] * log(predictions->data[i * predictions->dim2 + j]);
+        }
+    }
     return -loss / predictions->dim1;
+}
+
+double mean_squared_error(Matrix *predictions, Matrix *labels)
+{
+    double loss = 0;
+    for (int i = 0; i < predictions->dim1; i++)
+    {
+        for (int j = 0; j < predictions->dim2; j++)
+        {
+            loss += pow(labels->data[i * predictions->dim2 + j] - predictions->data[i * predictions->dim2 + j], 2);
+        }
+    }
+    return loss / predictions->dim1;
 }
 
 #pragma endregion loss
