@@ -34,10 +34,10 @@ void nn_backward(NN *neural_network, Matrix *input, Matrix *predictions, Matrix 
     matrix_destroy(loss_deltas);
 }
 
-float nn_train_batch(NN *neural_network, Matrix *input, Matrix *labels, float learning_rate)
+double nn_train_batch(NN *neural_network, Matrix *input, Matrix *labels, float learning_rate)
 {
     Matrix *predictions = nn_forward(neural_network, input);
-    float loss = cross_entropy_loss(predictions, labels);
+    double loss = cross_entropy_loss(predictions, labels);
     nn_backward(neural_network, input, predictions, labels, learning_rate);
     matrix_destroy(predictions);
     return loss;
@@ -80,46 +80,55 @@ CNN *cnn_init(ConvLayer **conv_layers, int num_conv_layers,
 // forward pass
 Matrix *cnn_forward(CNN *neural_network, Matrix4 *input)
 {
-    Matrix4 *x = conv_layer_forward(neural_network->conv_layers[0], input);
-    x = conv_layer_forward(neural_network->conv_layers[1], x);
+    for (int i = 0; i < neural_network->num_conv_layers; i++)
+        input = conv_layer_forward(neural_network->conv_layers[i], input);
 
-    // I think there will be mem leak here, need to move to a proper layer
-    Matrix *y = matrix4_flatten(x, NULL);
-    y = fc_layer_forward(neural_network->fc_layers[0], y);
-    y = fc_layer_forward(neural_network->fc_layers[1], y);
+    Matrix *flattenned = matrix4_flatten(input, NULL);
+    Matrix *y = flattenned; // keep track of the matrix so we can free it later
+
+    for (int i = 0; i < neural_network->num_fc_layers; i++)
+        y = fc_layer_forward(neural_network->fc_layers[i], y);
+
     y = activation_layer_forward(neural_network->output_layer, y);
 
-    return y;
+    matrix_destroy(flattenned);
+    return matrix_copy(y, NULL);
 }
 
-// TODO
-// backward pass
-// void cnn_backward(CNN *neural_network, Matrix4 *input, Matrix *predictions, Matrix *labels, float learning_rate)
-// {
-//     Matrix *loss_deltas = matrix_subtract(predictions, labels, NULL);
-//     Matrix *deltas = activation_layer_backward(neural_network->output_layer, loss_deltas);
+void cnn_backward(CNN *neural_network, Matrix4 *input, Matrix *predictions, Matrix *labels, float learning_rate)
+{
+    Matrix *loss_deltas = matrix_subtract(predictions, labels, NULL);
+    Matrix *deltas = activation_layer_backward(neural_network->output_layer, loss_deltas);
 
-//     for (int i = neural_network->num_fc_layers - 1; i > 0; i--)
-//         deltas = fc_layer_backward(neural_network->fc_layers[i], neural_network->fc_layers[i - 1]->activations, deltas, learning_rate);
-//     // deltas = fc_layer_backward(neural_network->fc_layers[0], fc_input, deltas, learning_rate);
+    for (int i = neural_network->num_fc_layers - 1; i > 0; i--)
+        deltas = fc_layer_backward(neural_network->fc_layers[i], neural_network->fc_layers[i - 1]->activations, deltas, learning_rate);
 
-//     // Matrix4 *deltas4 = matrix4_unflatten(deltas, NULL);
-//     // deltas4 = conv_layer_backward(neural_network->conv_layers[1], neural_network->conv_layers[0]->activations, deltas4, learning_rate);
-//     // deltas4 = conv_layer_backward(neural_network->conv_layers[0], neural_network->conv_layers[0]->activations, deltas4, learning_rate);
+    // fc_input is the output of conv layers forward
+    Matrix *fc_input = matrix4_flatten(neural_network->conv_layers[neural_network->num_conv_layers - 1]->activations, NULL);
+    deltas = fc_layer_backward(neural_network->fc_layers[0], fc_input, deltas, learning_rate);
 
-//     matrix_destroy(deltas);
-//     // matrix4_destroy(deltas4);
-// }
+    ConvLayer *last_conv_layer = neural_network->conv_layers[neural_network->num_conv_layers - 1];
 
-// TODO
-// float cnn_train_batch(CNN *neural_network, Matrix4 *input, Matrix *labels, float learning_rate)
-// {
-//     Matrix *predictions = cnn_forward(neural_network, input);
-//     float loss = cross_entropy_loss(predictions, labels);
-//     cnn_backward(neural_network, input, predictions, labels, learning_rate);
-//     matrix_destroy(predictions);
-//     return loss;
-// }
+    Matrix4 *deltas4 = matrix4_unflatten(deltas, last_conv_layer->outgrad);
+    for (int i = neural_network->num_conv_layers - 1; i > 0; i--)
+        deltas4 = conv_layer_backward(neural_network->conv_layers[i], neural_network->conv_layers[i - 1]->activations, deltas4, learning_rate);
+
+    deltas4 = conv_layer_backward(neural_network->conv_layers[0], input, deltas4, learning_rate);
+
+    matrix_destroy(fc_input);
+    matrix_destroy(loss_deltas);
+}
+
+double cnn_train_batch(CNN *neural_network, Matrix4 *input, Matrix *labels, float learning_rate)
+{
+    Matrix *predictions = cnn_forward(neural_network, input);
+    // matrix_print(predictions);
+    double loss = mean_squared_error(predictions, labels);
+    // printf("loss: %f\n", loss);
+    cnn_backward(neural_network, input, predictions, labels, learning_rate);
+    matrix_destroy(predictions);
+    return loss;
+}
 
 void cnn_destroy(CNN *neural_network)
 {
@@ -127,7 +136,8 @@ void cnn_destroy(CNN *neural_network)
     for (int i = 0; i < neural_network->num_conv_layers; i++)
         conv_layer_destroy(neural_network->conv_layers[i]);
     for (int i = 0; i < neural_network->num_fc_layers; i++)
-        activation_layer_destroy(neural_network->output_layer);
+        fc_layer_destroy(neural_network->fc_layers[i]);
+    activation_layer_destroy(neural_network->output_layer);
 
     free(neural_network->conv_layers);
     free(neural_network->fc_layers);
@@ -178,7 +188,70 @@ bool fc_layer_load_weights(const char *filename, FCLayer *layer)
 
     if (dim1 != layer->weights->dim1 || dim2 != layer->weights->dim2)
     {
-        errx(1, "load_weight: weights matrix dimensions do not match");
+        printf("dim1: %d, dim2: %d\n", dim1, dim2);
+        matrix_printshape(layer->weights);
+        errx(1, "fc_load_weight: weights matrix dimensions do not match");
+    }
+
+    // read the weight matrix
+    for (int i = 0; i < layer->weights->size; i++)
+    {
+        if (fscanf(fp, "%f", &layer->weights->data[i]) != 1)
+            return false;
+    }
+
+    // read the bias matrix
+    for (int i = 0; i < layer->biases->size; i++)
+    {
+        if (fscanf(fp, "%f", &layer->biases->data[i]) != 1)
+            return false;
+    }
+
+    fclose(fp);
+    return true;
+}
+
+void conv_layer_save_weigths(const char *filename, ConvLayer *layer)
+{
+    FILE *fp = fopen(filename, "w");
+    if (fp == NULL)
+    {
+        err(1, "save_weight: fopen");
+    }
+
+    fprintf(fp, "%d %d %d %d\n", layer->weights->dim1, layer->weights->dim2, layer->weights->dim3, layer->weights->dim4);
+
+    // write the weight matrix
+    for (int i = 0; i < layer->weights->size - 1; i++)
+    {
+        fprintf(fp, "%f ", layer->weights->data[i]);
+    }
+    fprintf(fp, "%f\n", layer->weights->data[layer->weights->size - 1]);
+
+    // write the bias matrix
+    for (int i = 0; i < layer->biases->size - 1; i++)
+    {
+        fprintf(fp, "%f ", layer->biases->data[i]);
+    }
+    fprintf(fp, "%f\n", layer->biases->data[layer->biases->size - 1]);
+
+    fclose(fp);
+}
+
+bool conv_layer_load_weights(const char *filename, ConvLayer *layer)
+{
+    FILE *fp = fopen(filename, "r");
+    if (fp == NULL)
+        return false;
+
+    int dim1, dim2, dim3, dim4;
+    int ret = fscanf(fp, "%d %d %d %d", &dim1, &dim2, &dim3, &dim4);
+    if (ret != 4)
+        return false;
+
+    if (dim1 != layer->weights->dim1 || dim2 != layer->weights->dim2 || dim3 != layer->weights->dim3 || dim4 != layer->weights->dim4)
+    {
+        errx(1, "conv_load_weight: weights matrix dimensions do not match");
     }
 
     // read the weight matrix
@@ -221,6 +294,51 @@ bool nn_load(NN *neural_network, const char *basename)
         // sprintf(filename, "%s/fc_%d.weights", basename, i); // sprintf is unsafe
         snprintf(filename, sizeof(filename), "%s/fc_%d.weights", basename, i);
         if (!fc_layer_load_weights(filename, neural_network->fc_layers[i]))
+            return false;
+    }
+    return true;
+}
+
+void cnn_save(CNN *cnn, const char *basename)
+{
+    // create the directory
+    mkdir(basename, 0777);
+
+    for (int i = 0; i < cnn->num_conv_layers; i++)
+    {
+        char filename[256];
+        // sprintf(filename, "%s/conv_%d.weights", basename, i); // sprintf is unsafe
+        snprintf(filename, sizeof(filename), "%s/conv_%d.weights", basename, i);
+        conv_layer_save_weigths(filename, cnn->conv_layers[i]);
+    }
+
+    for (int i = 0; i < cnn->num_fc_layers; i++)
+    {
+        char filename[256];
+        // sprintf(filename, "%s/fc_%d.weights", basename, i); // sprintf is unsafe
+        snprintf(filename, sizeof(filename), "%s/fc_%d.weights", basename, i);
+        fc_layer_save_weights(filename, cnn->fc_layers[i]);
+    }
+}
+
+
+bool cnn_load(CNN *cnn, const char *basename)
+{
+    for (int i = 0; i < cnn->num_conv_layers; i++)
+    {
+        char filename[256];
+        // sprintf(filename, "%s/conv_%d.weights", basename, i); // sprintf is unsafe
+        snprintf(filename, sizeof(filename), "%s/conv_%d.weights", basename, i);
+        if (!conv_layer_load_weights(filename, cnn->conv_layers[i]))
+            return false;
+    }
+
+    for (int i = 0; i < cnn->num_fc_layers; i++)
+    {
+        char filename[256];
+        // sprintf(filename, "%s/fc_%d.weights", basename, i); // sprintf is unsafe
+        snprintf(filename, sizeof(filename), "%s/fc_%d.weights", basename, i);
+        if (!fc_layer_load_weights(filename, cnn->fc_layers[i]))
             return false;
     }
     return true;

@@ -303,9 +303,10 @@ Matrix *matrix_elementwise_multiply(Matrix *m1, Matrix *m2, Matrix *dst)
     if (m1->dim1 != m2->dim1 || m1->dim2 != m2->dim2 || dst->dim1 != m1->dim1 || dst->dim2 != m1->dim2)
         errx(EXIT_FAILURE, "matrix_elementwise_multiply: matrix dimensions do not match\n");
 
-    for (int i = 0; i < dst->dim1; i++)
-        for (int j = 0; j < dst->dim2; j++)
-            dst->data[i * m1->dim2 + j] = m1->data[i * m1->dim2 + j] * m2->data[i * m2->dim2 + j];
+    for (int i = 0; i < dst->size; i++)
+    {
+        dst->data[i] = m1->data[i] * m2->data[i];
+    }
 
     return dst;
 }
@@ -339,6 +340,13 @@ void matrix_print(Matrix *m)
 
         printf("%f]\n", m->data[i * m->dim2 + m->dim2 - 1]);
     }
+}
+
+/// @brief Prints the shape of a matrix to the console.
+/// @param m pointer to the matrix
+void matrix_printshape(Matrix *m)
+{
+    printf("dim1:%i, dim2:%i\n", m->dim1, m->dim2);
 }
 
 /// @brief Computes the determinant of a matrix.
@@ -444,14 +452,70 @@ Matrix *matrix_transformation(const Tupple *src, const Tupple *dst)
         errx(EXIT_FAILURE, "matrix_transformation: src or dst is NULL\n");
 
     float a[64] = {
-        src[0].x, src[0].y, 1, 0, 0, 0, -dst[0].x * src[0].x, -dst[0].x * src[0].y,
-        0, 0, 0, src[0].x, src[0].y, 1, -dst[0].y * src[0].x, -dst[0].y * src[0].y,
-        src[1].x, src[1].y, 1, 0, 0, 0, -dst[1].x * src[1].x, -dst[1].x * src[1].y,
-        0, 0, 0, src[1].x, src[1].y, 1, -dst[1].y * src[1].x, -dst[1].y * src[1].y,
-        src[2].x, src[2].y, 1, 0, 0, 0, -dst[2].x * src[2].x, -dst[2].x * src[2].y,
-        0, 0, 0, src[2].x, src[2].y, 1, -dst[2].y * src[2].x, -dst[2].y * src[2].y,
-        src[3].x, src[3].y, 1, 0, 0, 0, -dst[3].x * src[3].x, -dst[3].x * src[3].y,
-        0, 0, 0, src[3].x, src[3].y, 1, -dst[3].y * src[3].x, -dst[3].y * src[3].y,
+        src[0].x,
+        src[0].y,
+        1,
+        0,
+        0,
+        0,
+        -dst[0].x * src[0].x,
+        -dst[0].x * src[0].y,
+        0,
+        0,
+        0,
+        src[0].x,
+        src[0].y,
+        1,
+        -dst[0].y * src[0].x,
+        -dst[0].y * src[0].y,
+        src[1].x,
+        src[1].y,
+        1,
+        0,
+        0,
+        0,
+        -dst[1].x * src[1].x,
+        -dst[1].x * src[1].y,
+        0,
+        0,
+        0,
+        src[1].x,
+        src[1].y,
+        1,
+        -dst[1].y * src[1].x,
+        -dst[1].y * src[1].y,
+        src[2].x,
+        src[2].y,
+        1,
+        0,
+        0,
+        0,
+        -dst[2].x * src[2].x,
+        -dst[2].x * src[2].y,
+        0,
+        0,
+        0,
+        src[2].x,
+        src[2].y,
+        1,
+        -dst[2].y * src[2].x,
+        -dst[2].y * src[2].y,
+        src[3].x,
+        src[3].y,
+        1,
+        0,
+        0,
+        0,
+        -dst[3].x * src[3].x,
+        -dst[3].x * src[3].y,
+        0,
+        0,
+        0,
+        src[3].x,
+        src[3].y,
+        1,
+        -dst[3].y * src[3].x,
+        -dst[3].y * src[3].y,
     };
 
     float b[8] = {
@@ -470,9 +534,15 @@ Matrix *matrix_transformation(const Tupple *src, const Tupple *dst)
     Matrix *M = matrix_solve(A, B);
 
     float m[9] = {
-        M->data[0], M->data[1], M->data[2],
-        M->data[3], M->data[4], M->data[5],
-        M->data[6], M->data[7], 1,
+        M->data[0],
+        M->data[1],
+        M->data[2],
+        M->data[3],
+        M->data[4],
+        M->data[5],
+        M->data[6],
+        M->data[7],
+        1,
     };
 
     Matrix *H = matrix_init(3, 3, m);
@@ -562,8 +632,12 @@ void matrix4_zero(Matrix4 *m)
 //   dst - pointer to the destination matrix
 //
 
-void matrix4_copy(Matrix4 *m, Matrix4 *dst)
+Matrix4 *matrix4_copy(Matrix4 *m, Matrix4 *dst)
 {
+
+    if (dst == NULL)
+        dst = matrix4_init(m->dim1, m->dim2, m->dim3, m->dim4, NULL);
+
     if (m->dim1 != dst->dim1 || m->dim2 != dst->dim2 || m->dim3 != dst->dim3 || m->dim4 != dst->dim4)
     {
         errx(EXIT_FAILURE, "matrix4_copy: matrix dimensions do not match\n");
@@ -571,6 +645,8 @@ void matrix4_copy(Matrix4 *m, Matrix4 *dst)
 
     for (int i = 0; i < m->size; i++)
         dst->data[i] = m->data[i];
+
+    return dst;
 }
 
 // Function: m4_get
@@ -706,10 +782,10 @@ Matrix *matrix4_flatten(Matrix4 *m, Matrix *dst)
 {
     if (dst == NULL)
     {
-        dst = matrix_init(m->dim1 * m->dim2 * m->dim3, m->dim4, NULL);
+        dst = matrix_init(m->dim1, m->dim2 * m->dim3 * m->dim4, NULL);
     }
 
-    if (m->dim1 * m->dim2 * m->dim3 != dst->dim1 || m->dim4 != dst->dim2)
+    if (m->dim1 != dst->dim1 || m->dim2 * m->dim3 * m->dim4 != dst->dim2)
     {
         errx(EXIT_FAILURE, "matrix4_flatten: matrix dimensions do not match\n");
     }
@@ -733,18 +809,13 @@ Matrix *matrix4_flatten(Matrix4 *m, Matrix *dst)
 
 Matrix4 *matrix4_unflatten(Matrix *m, Matrix4 *dst)
 {
-    if (dst == NULL)
-    {
-        dst = matrix4_init(m->dim1, m->dim2 / (dst->dim3 * dst->dim4), dst->dim3, dst->dim4, NULL);
-    }
-
     for (int i = 0; i < m->size; i++)
         dst->data[i] = m->data[i];
 
     return dst;
 }
 
-// Function: matrix4_sum_rows
+// Function: matrix4_sum_channels
 // ---------------------------------
 // Calculates the bias gradient from 4d delta matrix.
 //
@@ -756,7 +827,7 @@ Matrix4 *matrix4_unflatten(Matrix *m, Matrix4 *dst)
 //   pointer to the resulting matrix
 //
 
-Matrix *matrix4_sum_rows(Matrix4 *m, Matrix *dst)
+Matrix *matrix4_sum_channels(Matrix4 *m, Matrix *dst)
 {
     if (dst == NULL)
     {
@@ -765,7 +836,7 @@ Matrix *matrix4_sum_rows(Matrix4 *m, Matrix *dst)
 
     if (m->dim2 != dst->dim1)
     {
-        errx(EXIT_FAILURE, "matrix4_sum_rows: matrix dimensions do not match\n");
+        errx(EXIT_FAILURE, "matrix4_sum_channels: matrix dimensions do not match\n");
     }
 
     for (int i = 0; i < m->dim1; i++)
@@ -858,6 +929,40 @@ Matrix4 *matrix4_transpose(Matrix4 *m)
     return t;
 }
 
+// Function: matrix_elementwise_multiply
+// -------------------------------------
+// Multiplies two matrices elementwise.
+//
+// Parameters:
+//   m1 - pointer to the first matrix
+//   m2 - pointer to the second matrix
+//   dst - pointer to the destination matrix
+//
+// Returns:
+//   a pointer to the result matrix
+//
+
+Matrix4 *matrix4_elementwise_multiply(Matrix4 *m1, Matrix4 *m2, Matrix4 *dst)
+{
+    if (dst == NULL)
+    {
+        dst = matrix4_init(m1->dim1, m1->dim2, m1->dim3, m1->dim4, NULL);
+    }
+
+    if (m1->dim1 != m2->dim1 || m1->dim2 != m2->dim2 || m1->dim3 != m2->dim3 || m1->dim4 != m2->dim4 ||
+        m1->dim1 != dst->dim1 || m1->dim2 != dst->dim2 || m1->dim3 != dst->dim3 || m1->dim4 != dst->dim4)
+    {
+        errx(EXIT_FAILURE, "matrix4_elementwise_multiply: matrix dimensions do not match\n");
+    }
+
+    for (int i = 0; i < dst->size; i++)
+    {
+        dst->data[i] = m1->data[i] * m2->data[i];
+    }
+
+    return dst;
+}
+
 // Function: matrix4_convolve
 // --------------------------
 // Convolves a 4D matrix with a 4D kernel.
@@ -893,6 +998,8 @@ Matrix4 *matrix4_convolve(Matrix4 *weights, Matrix4 *input, Matrix4 *dst, int st
 
     if (weights->dim2 != in_channels)
     {
+        printf("weights: %d %d %d %d\n", weights->dim1, weights->dim2, weights->dim3, weights->dim4);
+        printf("input: %d %d %d %d\n", input->dim1, input->dim2, input->dim3, input->dim4);
         errx(EXIT_FAILURE, "matrix4_convolve: input channels do not match\n");
     }
 
@@ -953,11 +1060,87 @@ Matrix4 *matrix4_convolve(Matrix4 *weights, Matrix4 *input, Matrix4 *dst, int st
 Matrix4 *matrix4_convolve_transpose(Matrix4 *weights, Matrix4 *input, Matrix4 *dst, int stride, int padding)
 {
     // Transpose by 180 degrees the weights
-    Matrix4 *weights_t = matrix4_transpose(matrix4_transpose(weights));
-    return matrix4_convolve(weights_t, input, dst, stride, padding);
+    Matrix4 *weights_t = matrix4_transpose(weights);
+    Matrix4 *weights_tt = matrix4_transpose(weights_t);
+    dst = matrix4_convolve(weights_tt, input, dst, stride, padding);
+    matrix4_destroy(weights_t);
+    matrix4_destroy(weights_tt);
+    return dst;
 }
 
-// Function: matrix4_scalar_multiply
+// Function: matrix4_grad_input_convolve
+// -------------------------------------
+// Computes the gradient of the input of a convolution.
+//
+// Parameters:
+//   weights - pointer to the weights of shape: (out_channels, in_channels, kernel_height, kernel_width)
+//   grad_output - pointer to the gradient of the output of shape: (batch_size, out_channels, out_height, out_width)
+//   dst - pointer to the destination matrix
+//   stride - stride of the convolution
+//   padding - padding of the convolution
+// Returns:
+//   pointer to the resulting matrix
+
+Matrix4 *matrix4_grad_input_convolve(Matrix4 *weights, Matrix4 *grad_output, Matrix4 *dst, int stride, int padding)
+{
+
+    int batch_size = grad_output->dim1;
+    int out_channels = grad_output->dim2;
+    int out_height = grad_output->dim3;
+    int out_width = grad_output->dim4;
+
+    int num_filters = weights->dim1;
+    int channels = weights->dim2;
+    int filter_height = weights->dim3;
+    int filter_width = weights->dim4;
+
+    int height = dst->dim3;
+    int width = dst->dim4;
+
+    if (dst == NULL)
+    {
+        dst = matrix4_init(batch_size, channels, height, width, NULL);
+    }
+
+    for (int b = 0; b < batch_size; b++)
+    {
+        for (int f = 0; f < num_filters; f++)
+        {
+            for (int h = 0; h < out_height; h++)
+            {
+                for (int w = 0; w < out_width; w++)
+                {
+                    // calculate input height and width for current output
+                    int in_h = h * stride - padding;
+                    int in_w = w * stride - padding;
+
+                    // loop over channels, filter height and filter width
+                    for (int c = 0; c < channels; c++)
+                    {
+                        for (int fh = 0; fh < filter_height; fh++)
+                        {
+                            for (int fw = 0; fw < filter_width; fw++)
+                            {
+                                // skip entries that are out of bounds
+                                if (in_h < 0 || in_h >= height || in_w < 0 || in_w >= width)
+                                    continue;
+
+                                // calculate grad_in by summing over channels, filter height, and filter width
+                                dst->data[b * channels * height * width + c * height * width + in_h * width + in_w] +=
+                                    weights->data[f * channels * filter_height * filter_width + c * filter_height * filter_width + fh * filter_width + fw] *
+                                    grad_output->data[b * num_filters * out_height * out_width + f * out_height * out_width + h * out_width + w];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return dst;
+}
+
+// Function: matrix4_multiply_scalar
 // ---------------------------------
 // Multiplies a matrix by a scalar.
 //
@@ -965,7 +1148,7 @@ Matrix4 *matrix4_convolve_transpose(Matrix4 *weights, Matrix4 *input, Matrix4 *d
 //   m - pointer to the matrix
 //   s - scalar
 //
-void matrix4_scalar_multiply(Matrix4 *m, float s)
+void matrix4_multiply_scalar(Matrix4 *m, float s)
 {
     for (int i = 0; i < m->size; i++)
         m->data[i] *= s;
@@ -1032,6 +1215,7 @@ void matrix4_destroy(Matrix4 *m)
 //
 void matrix4_print(Matrix4 *m)
 {
+    printf("dim1:%i, dim2:%i, dim3:%i, dim4:%i\n", m->dim1, m->dim2, m->dim3, m->dim4);
 
     printf("[\n");
     for (int i = 0; i < m->dim1; i++)
@@ -1054,6 +1238,11 @@ void matrix4_print(Matrix4 *m)
         printf("    ]\n");
     }
     printf("]\n");
+}
+
+void matrix4_printshape(Matrix4 *m)
+{
+    printf("dim1:%i, dim2:%i, dim3:%i, dim4:%i\n", m->dim1, m->dim2, m->dim3, m->dim4);
 }
 
 #pragma endregion matrix4
