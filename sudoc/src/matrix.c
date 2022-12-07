@@ -1060,8 +1060,12 @@ Matrix4 *matrix4_convolve(Matrix4 *weights, Matrix4 *input, Matrix4 *dst, int st
 Matrix4 *matrix4_convolve_transpose(Matrix4 *weights, Matrix4 *input, Matrix4 *dst, int stride, int padding)
 {
     // Transpose by 180 degrees the weights
-    Matrix4 *weights_t = matrix4_transpose(matrix4_transpose(weights));
-    return matrix4_convolve(weights_t, input, dst, stride, padding);
+    Matrix4 *weights_t = matrix4_transpose(weights);
+    Matrix4 *weights_tt = matrix4_transpose(weights_t);
+    dst = matrix4_convolve(weights_tt, input, dst, stride, padding);
+    matrix4_destroy(weights_t);
+    matrix4_destroy(weights_tt);
+    return dst;
 }
 
 // Function: matrix4_grad_input_convolve
@@ -1079,8 +1083,6 @@ Matrix4 *matrix4_convolve_transpose(Matrix4 *weights, Matrix4 *input, Matrix4 *d
 
 Matrix4 *matrix4_grad_input_convolve(Matrix4 *weights, Matrix4 *grad_output, Matrix4 *dst, int stride, int padding)
 {
-
-    // quel enfer, still some work to do
 
     int batch_size = grad_output->dim1;
     int out_channels = grad_output->dim2;

@@ -58,6 +58,7 @@ struct ConvLayer
     Matrix *biases;
     Matrix4 *activations;
     Matrix4 *deltas;
+    Matrix4 *outgrad;
     Matrix4 *weights_gradient;
     Matrix *biases_gradient;
 };

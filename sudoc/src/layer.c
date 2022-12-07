@@ -168,7 +168,8 @@ ConvLayer *conv_layer_init(
 
     // initialize activations and deltas
     layer->activations = matrix4_init(batch_size, n_filters, layer->output_height, layer->output_width, NULL);
-    layer->deltas = matrix4_init(batch_size, n_filters, layer->output_height, layer->output_width, NULL);
+    layer->deltas = matrix4_init(batch_size, layer->input_depth, layer->input_height, layer->input_width, NULL);
+    layer->outgrad = matrix4_init(batch_size, n_filters, layer->output_height, layer->output_width, NULL);
 
     // initialize gradients
     layer->weights_gradient = matrix4_init(n_filters, input_depth, kernel_size, kernel_size, NULL);
@@ -209,6 +210,9 @@ Matrix4 *conv_layer_backward(ConvLayer *layer, Matrix4 *previous_activations, Ma
     // calculate deltas for previous layer
     matrix4_grad_input_convolve(layer->weights, dZ, layer->deltas, layer->stride, layer->padding);
 
+    // free
+    matrix4_destroy(dZ);
+
     return layer->deltas;
 }
 
@@ -229,6 +233,7 @@ void conv_layer_destroy(ConvLayer *layer)
     matrix_destroy(layer->biases);
     matrix4_destroy(layer->activations);
     matrix4_destroy(layer->deltas);
+    matrix4_destroy(layer->outgrad);
     matrix4_destroy(layer->weights_gradient);
     matrix_destroy(layer->biases_gradient);
     free(layer);

@@ -69,6 +69,7 @@ int (*tests_nn[])() = {
     test_nnxor,
     test_nnxor_load,
     test_cnn,
+    test_cnn_load,
 };
 
 int main()

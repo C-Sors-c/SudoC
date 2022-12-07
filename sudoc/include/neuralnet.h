@@ -22,6 +22,10 @@ Matrix *cnn_forward(CNN *network, Matrix4 *input);
 void cnn_backward(CNN *network, Matrix4 *input, Matrix *predictions, Matrix *labels, float learning_rate);
 double cnn_train_batch(CNN *network, Matrix4 *input, Matrix *expected, float learning_rate);
 void cnn_destroy(CNN *network);
+void conv_layer_save_weigths(const char *filename, ConvLayer *layer);
+bool conv_layer_load_weights(const char *filename, ConvLayer *layer);
+void cnn_save(CNN *network, const char *basename);
+bool cnn_load(CNN *network, const char *basename);
 
 struct NN
 {
