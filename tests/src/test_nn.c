@@ -216,7 +216,7 @@ int test_cnn()
     for (int i = 0; i < epochs; i++)
     {
         double loss = cnn_train_batch(network, input, expected, 0.0001);
-        printf("Epoch %d, loss: %f\n", i, loss);
+        // printf("Epoch %d, loss: %f\n", i, loss);
     }
 
     // save weights
