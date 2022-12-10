@@ -146,6 +146,8 @@ void CV_FREE(Image **image);
 Image *CV_INIT(int channels, int height, int width);
 Image *CV_ZEROS(int channels, int height, int width);
 Image *CV_ONES(int channels, int height, int width);
+bool CV_IS_ZERO(const Image *image);
+bool CV_IS_ONE(const Image *image);
 Image *CV_COPY(const Image *image);
 void CV_COPY_TO(const Image *src, Image *dst);
 Image *CV_COPY_REGION(const Image *image, int xstart, int ystart, int xend, int yend);
@@ -198,11 +200,13 @@ Image *CV_AND(const Image *src1, Image *src2, Image *dst);
 Image *CV_XOR(const Image *src1, Image *src2, Image *dst);
 Image *CV_NOT(const Image *src, Image *dst);
 Image *CV_SUB(const Image *src1, Image *src2, Image *dst);
+Image *CV_ADD(const Image *src1, Image *src2, Image *dst);
 
 Image *CV_DILATE(const Image *src, Image *dst, int k);
 Image *CV_ERODE(const Image *src, Image *dst, int k);
 Image *CV_OPEN(const Image *src, Image *dst, int k);
 Image *CV_CLOSE(const Image *src, Image *dst, int k);
+Image *CV_MORPHOLOGICAL_SKELETON(const Image *src, Image *dst);
 
 Uint32 CV_RGB(Uint8 r, Uint8 g, Uint8 b);
 pixel_t CV_COLOR(Uint32 color, int channel);
@@ -224,9 +228,9 @@ int *CV_INTERSECTIONS(int *lines, int nlines, int *nintersection);
 int *CV_GRID_BOXES(int *intersections, int nintersections, int *nboxes);
 
 int *CV_FIND_CONTOURS(const Image *src, int *nrects);
-int *CV_JARVIS_MARCH(int *points, int npoints, int *nconvex);
+int *CV_CONVEX_HULL(int *points, int npoints, int *nconvex);
 int *CV_MIN_AREA_RECT(int *points, int n);
-int *CV_MAX_RECTANGLE(const Image *src);
+int *CV_MAX_RECTANGLE(const Image *src, bool full);
 
 Image *CV_TRANSFORM(const Image *src, const Matrix *M, Tupple dsize, Tupple origin, Uint32 background);
 Image *CV_ROTATE(const Image *src, float angle, bool resize, Uint32 background);
