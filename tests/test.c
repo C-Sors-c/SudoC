@@ -47,26 +47,29 @@ int (*test_cv[])() = {
 
 // lists of all matrix tests
 int (*tests_matrix[])() = {
-    // test_matrix_add,
-    // test_matrix_subtract,
-    // test_matrix_multiply,
-    // test_matrix_multiply_scalar,
-    // test_matrix_transpose,
-    // test_matrix_map_function,
-    // test_matrix4_init,
-    // test_matrix4_add,
-    // test_matrix4_subtract,
-    // test_matrix4_multiply_scalar,
-    // test_matrix4_transpose,
-    // test_matrix4_map_function,
-    // test_matrix4_convolve,
-    // test_matrix4_add_bias,
-    // test_matrix4_sum_rows,
+    test_matrix_add,
+    test_matrix_subtract,
+    test_matrix_multiply,
+    test_matrix_multiply_scalar,
+    test_matrix_transpose,
+    test_matrix_map_function,
+    test_matrix4_init,
+    test_matrix4_add,
+    test_matrix4_subtract,
+    test_matrix4_multiply_scalar,
+    test_matrix4_transpose,
+    test_matrix4_map_function,
+    test_matrix4_convolve,
+    test_matrix4_add_bias,
+    test_matrix4_sum_rows,
+    test_matrix4_copy,
 };
 
 int (*tests_nn[])() = {
-    // test_nnxor,
-    // test_nnxor_load,
+    test_nnxor,
+    test_nnxor_load,
+    test_cnn,
+    test_cnn_load,
 };
 
 int main()

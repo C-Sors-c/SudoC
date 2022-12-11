@@ -20,3 +20,4 @@ int test_matrix4_map_function();
 int test_matrix4_convolve();
 int test_matrix4_add_bias();
 int test_matrix4_sum_rows();
+int test_matrix4_copy();

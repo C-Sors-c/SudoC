@@ -58,6 +58,7 @@ struct ConvLayer
     Matrix *biases;
     Matrix4 *activations;
     Matrix4 *deltas;
+    Matrix4 *outgrad;
     Matrix4 *weights_gradient;
     Matrix *biases_gradient;
 };
@@ -69,7 +70,7 @@ ConvLayer *conv_layer_init(
     int input_height, int input_width, int input_depth,
     int n_filters, int kernel_size, int stride, int padding, int batch_size,
     float (*activation_func)(float), float (*d_activation_func)(float),
-    bool load_weights, char *name);
+    char *name);
 Matrix4 *conv_layer_forward(ConvLayer *layer, Matrix4 *input);
 Matrix4 *conv_layer_backward(ConvLayer *layer, Matrix4 *previous_activations, Matrix4 *previous_deltas, float learning_rate);
 void conv_layer_print(ConvLayer *layer);
@@ -122,4 +123,5 @@ Matrix *flatten_layer_forward(FlattenLayer *layer, Matrix4 *input);
 Matrix4 *flatten_layer_backward(FlattenLayer *layer, Matrix *previous_deltas);
 void flatten_layer_destroy(FlattenLayer *layer);
 
-float cross_entropy_loss(Matrix *predictions, Matrix *labels);
+double cross_entropy_loss(Matrix *predictions, Matrix *labels);
+double mean_squared_error(Matrix *predictions, Matrix *labels);

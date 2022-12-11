@@ -6,3 +6,5 @@
 
 int test_nnxor();
 int test_nnxor_load();
+int test_cnn();
+int test_cnn_load();
