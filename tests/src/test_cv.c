@@ -860,7 +860,7 @@ int test_cv_full()
 
     // CV_SAVE(tf, "tests/out/test_cv_full.png");
     // CV_SAVE(image, "tests/out/test_cv_full_image.png");
-
+    
     // -------------------- Free --------------------
     CV_FREE(&image);
     CV_FREE(&proc);
@@ -882,29 +882,9 @@ int test_cv_full()
     return assert(true, true, "test_cv_full");
 }
 
-int test_cv_reconstruct()
+int test_cv_reconstruct(int grid[][9], int cells[][9])
 {
-    int grid[][9] = {
-        {1, 2, 3, 4, 5, 6, 7, 8, 9},
-        {1, 2, 3, 4, 5, 6, 7, 8, 9},
-        {1, 2, 3, 4, 5, 6, 7, 8, 9},
-        {1, 2, 3, 4, 5, 6, 7, 8, 9},
-        {1, 2, 3, 4, 5, 6, 7, 8, 9},
-        {1, 2, 3, 4, 5, 6, 7, 8, 9},
-        {1, 2, 3, 4, 5, 6, 7, 8, 9},
-        {1, 2, 3, 4, 5, 6, 7, 8, 9},
-        {1, 2, 3, 4, 5, 6, 7, 8, 9}};
-
-    int cells[][9] = {
-        {0, 0, 0, 0, 0, 1, 0, 0, 0},
-        {0, 0, 0, 0, 0, 1, 0, 0, 0},
-        {0, 0, 0, 0, 0, 1, 0, 0, 0},
-        {0, 0, 0, 0, 0, 1, 0, 0, 0},
-        {0, 0, 0, 0, 0, 1, 0, 0, 0},
-        {0, 0, 0, 0, 0, 1, 0, 0, 0},
-        {0, 0, 0, 0, 0, 1, 0, 0, 0},
-        {0, 0, 0, 0, 0, 1, 0, 0, 0},
-        {0, 0, 0, 0, 0, 1, 0, 0, 0}};
+    
 
     Image *image = CV_LOAD("tests/samples/sudoku_crop.png", RGB);
     // resize the image to 252x252

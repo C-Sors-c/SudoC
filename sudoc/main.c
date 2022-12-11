@@ -215,6 +215,23 @@ NN *build_nn2(int batchsize)
     NN *network = nn_init(fc_layers, num_fc_layers, output_layer);
     return network;
 }
+
+
+//same as to_cells8 but working
+void to_cells8(int sudoku[][9], int new_sudoku[][9])
+{
+    for (int i = 0; i < 9; i++)
+    {
+        for (int j = 0; j < 9; j++)
+        {
+            if (sudoku[i][j] == 0)
+                new_sudoku[i][j] = 1;
+            else
+                new_sudoku[i][j] = 0;
+        }
+    }
+}
+
 void on_output_button_clicked(GtkButton *button, gpointer user_data)
 {
 
@@ -314,6 +331,7 @@ void on_output_button_clicked(GtkButton *button, gpointer user_data)
 
     // list of 81 Matrices
     int sudoku[9][9];
+    int new_sudoku[9][9];
 
     // -------------------- Get blocks --------------------
     for (int i = 0; i < 9; i++)
@@ -331,7 +349,6 @@ void on_output_button_clicked(GtkButton *button, gpointer user_data)
 
             int *prediction = nn_predict(network, b);
             sudoku[i][j] = prediction[0];
-            SolveSudoku(sudoku);
             
 
 
@@ -344,7 +361,8 @@ void on_output_button_clicked(GtkButton *button, gpointer user_data)
             matrix_destroy(b);
         }
     }
-
+    to_cells8(sudoku, new_sudoku);
+    SolveSudoku(sudoku);
     for (int i = 0; i < 9; i++)
     {
         for (int j = 0; j < 9; j++)
@@ -372,6 +390,20 @@ void on_output_button_clicked(GtkButton *button, gpointer user_data)
 
     // CV_SAVE(tf, "tests/out/test_cv_full.png");
     // CV_SAVE(image, "tests/out/test_cv_full_image.png");
+
+    // resize the image to 252x252
+    Tupple size = {
+        252,
+        252,
+    };
+
+    Image *reconstruct = CV_RECONSTRUCT_IMAGE(tf2, sudoku, new_sudoku);
+    convert_step(10, reconstruct, ui);
+
+    CV_SAVE(reconstruct, "tests/out/test_cv_reconstruct.png");
+
+    CV_FREE(&image);
+    CV_FREE(&reconstruct);
 
     // -------------------- Free --------------------
     CV_FREE(&image);
@@ -407,7 +439,7 @@ void on_processing_steps_value_changed(GtkSpinButton *range, gpointer user_data)
 {
     UserInterface *ui = user_data;
     gtk_spin_button_set_value(range,\
-            (int)CLAMP(gtk_spin_button_get_value(range), 1, 10));
+            (int)CLAMP(gtk_spin_button_get_value(range), 1, 11));
 
     int value = gtk_spin_button_get_value_as_int(range);
 
@@ -508,7 +540,7 @@ int main(int argc, char **argv)
     GtkSpinButton *processing_steps = GTK_SPIN_BUTTON(gtk_builder_get_object(builder, "processing_steps"));
     // enable the spin button
     //set its value from 1 to 6
-    gtk_spin_button_set_range(processing_steps, 1, 10);
+    gtk_spin_button_set_range(processing_steps, 1, 11);
     //set its default value to 1
     gtk_spin_button_set_value(processing_steps, 1);
 
