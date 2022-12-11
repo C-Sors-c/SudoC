@@ -161,6 +161,7 @@ SDL_Surface *CV_IMG_TO_SURFACE(const Image *image);
 SDL_Surface *CV_LOAD_SURFACE(const char *path);
 
 Matrix4 *CV_IMG_TO_MAT4(const Image *src, Matrix4 *dst, int index);
+Matrix *CV_IMG_TO_MAT(const Image *src, Matrix *dst, int index);
 Image *CV_MAT4_TO_IMG(const Matrix4 *src, Image *dst, int index);
 
 void CV_SAVE(const Image *image, char *path);
@@ -170,6 +171,7 @@ char **CV_LIST_DIR(const char *path, int *count);
 Image **CV_LOAD_FOLDER(const char *path, int *count, int mode);
 Matrix4 *CV_LOAD_FOLDER_MAT4(const char *path, int *count, int mode);
 Matrix4 *CV_LOAD_MAT4(const char *path, Matrix4 *matrix, int index, int batch_size, int mode);
+Matrix *CV_LOAD_MAT(const char *path, Matrix *matrix, int index, int batch_size, int mode);
 
 Image *CV_RGB_TO_GRAY(const Image *src, Image *dst);
 Image *CV_GRAY_TO_RGB(const Image *src, Image *dst);

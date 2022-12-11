@@ -325,6 +325,32 @@ Matrix4 *CV_IMG_TO_MAT4(const Image *src, Matrix4 *dst, int index)
     return dst;
 }
 
+/// @brief Convert an image to a matrix.
+/// @param image The image to convert.
+/// @param matrix The matrix to fill.
+/// @param index The index in the matrix where to put the image.
+/// @return The new matrix.
+Matrix *CV_IMG_TO_MAT(const Image *src, Matrix *dst, int index)
+{
+    ASSERT_IMG(src);
+
+    if (dst == NULL)
+    {
+        dst = matrix_init(1, src->c * src->h * src->w, NULL);
+        index = 0;
+    }
+
+    ASSERT_MAT(dst);
+    ASSERT_MAT4_INDEX(dst, index);
+
+    size_t size = src->c * src->h * src->w;
+    float *dst_data = dst->data + index * size;
+    float *src_data = src->data;
+    memcpy(dst_data, src_data, size * sizeof(float));
+
+    return dst;
+}
+
 /// @brief Convert a matrix4 to an image.
 /// @param matrix The matrix4 to convert.
 /// @param dst The image to fill.
@@ -512,6 +538,27 @@ Matrix4 *CV_LOAD_MAT4(const char *path, Matrix4 *matrix, int index, int batch_si
     ASSERT_MAT(matrix);
 
     matrix = CV_IMG_TO_MAT4(image, matrix, index);
+
+    CV_FREE(&image);
+    return matrix;
+}
+
+Matrix *CV_LOAD_MAT(const char *path, Matrix *matrix, int index, int batch_size, int mode)
+{
+    ASSERT_PTR(path);
+
+    Image *image = CV_LOAD(path, mode);
+    ASSERT_IMG(image);
+
+    if (matrix == NULL)
+    {
+        matrix = matrix_init(batch_size, mode * image->h * image->w, NULL);
+        index = 0;
+    }
+
+    ASSERT_MAT(matrix);
+
+    matrix = CV_IMG_TO_MAT(image, matrix, index);
 
     CV_FREE(&image);
     return matrix;
