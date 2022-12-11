@@ -34,7 +34,6 @@ typedef struct UserInterface
     GtkComboBox *preview_interpolation_menu;
     GdkInterpType interp_type;
 
-
     //// Output
     GtkButton *save_button_img;
     GtkButton *save_button_txt;
@@ -46,6 +45,8 @@ typedef struct UserInterface
 
     // Input
     GtkFileFilter *file_filter;
+
+    int **sudoku;
 
     // Output
     GtkImage *output_image;
@@ -107,7 +108,7 @@ void resize_to_fit(UserInterface *ui, GtkImage *image, int size)
     gtk_image_set_from_pixbuf(image, result);
 }
 
-void open_file(UserInterface *ui, char *filename, GtkImage *destination,\
+void open_file(UserInterface *ui, char *filename, GtkImage *destination,
                int size)
 {
     gtk_image_set_from_file(destination, filename);
@@ -152,7 +153,7 @@ void on_open_activate(GtkMenuItem *menuitem, gpointer user_data)
     run_file_opener(ui);
 }
 
-gboolean on_input_image_event_box_button_release_event(GtkWidget *widget,\
+gboolean on_input_image_event_box_button_release_event(GtkWidget *widget,
                                                        GdkEvent *event, gpointer user_data)
 {
     UNUSED(widget);
@@ -165,32 +166,49 @@ gboolean on_input_image_event_box_button_release_event(GtkWidget *widget,\
     return TRUE;
 }
 
-
 void on_about_activate(GtkMenuItem *menuitem, gpointer user_data)
 {
     UNUSED(menuitem);
     UNUSED(user_data);
 
-    const char *authors[] = {"Maxime ELLERBACH", "Mickaël BOBOVITCH", "Gabriel TOLEDANO","Noé SUSSET", NULL};
+    const char *authors[] = {"Maxime ELLERBACH", "Mickaël BOBOVITCH", "Gabriel TOLEDANO", "Noé SUSSET", NULL};
 
-            
     GdkPixbuf *logo = gdk_pixbuf_new_from_file("./Assets/LogoS3_2.png", NULL);
-    gtk_show_about_dialog(\
-            NULL,\
-            "program-name", "Sudo C",\
-            "logo", logo,\
-            "title", "About C!Sor.c",\
-            "comments", "C!Sor.c",
-            "version", "1.0.0",
-            "license-type", GTK_LICENSE_MIT_X11,
-            "authors", authors,
-            NULL);
-
-
+    gtk_show_about_dialog(
+        NULL,
+        "program-name", "Sudo C",
+        "logo", logo,
+        "title", "About C!Sor.c",
+        "comments", "C!Sor.c",
+        "version", "1.0.0",
+        "license-type", GTK_LICENSE_MIT_X11,
+        "authors", authors,
+        NULL);
 }
 
+//save the int** ui->sudoku to the file output_filename
+void on_save_button_txt(GtkButton *button, gpointer user_data)
+{
+    UNUSED(button);
+    UserInterface *ui = user_data;
 
+    FILE *file = fopen(ui->output_filename, "w");
+    if (file == NULL)
+    {
+        g_print("Error opening file!\n");
+        exit(1);
+    }
 
+    for (int i = 0; i < 9; i++)
+    {
+        for (int j = 0; j < 9; j++)
+        {
+            fprintf(file, "%d ", ui->sudoku[i][j]);
+        }
+        fprintf(file, "\n");
+    }
+
+}
 
 void convert_step(int i, Image *image_surface, UserInterface *ui)
 {
@@ -200,7 +218,6 @@ void convert_step(int i, Image *image_surface, UserInterface *ui)
 
     g_free(filename);
 }
-
 
 NN *build_nn2(int batchsize)
 {
@@ -217,8 +234,7 @@ NN *build_nn2(int batchsize)
     return network;
 }
 
-
-//same as to_cells8 but working
+// same as to_cells8 but working
 void to_cells8(int sudoku[][9], int new_sudoku[][9])
 {
     for (int i = 0; i < 9; i++)
@@ -251,13 +267,13 @@ void on_output_button_clicked(GtkButton *button, gpointer user_data)
     convert_step(1, proc, ui);
 
     // -------------------- Preprocessing for Rect detection --------------------
-    CV_SHARPEN(proc, proc, 5);                      // sharpen image to make edges more visible
+    CV_SHARPEN(proc, proc, 5); // sharpen image to make edges more visible
     convert_step(2, proc, ui);
     CV_ADAPTIVE_THRESHOLD(proc, proc, 5, 0.333, 0); // binarize image
     convert_step(3, proc, ui);
 
     Image *p2 = CV_COPY(proc);
-    CV_SOBEL(proc, proc);                           // edge detection
+    CV_SOBEL(proc, proc); // edge detection
     convert_step(4, proc, ui);
     CV_DRAW_RECT(proc, proc, 0, 0, proc->w - bw, proc->h - bw, bw, CV_RGB(0, 0, 0));
     convert_step(5, proc, ui);
@@ -282,7 +298,7 @@ void on_output_button_clicked(GtkButton *button, gpointer user_data)
     Tupple D = {points[6], points[7]};
 
     int dsize = 9 * 40; // output image size
-    int p = 6; // padding
+    int p = 6;          // padding
     // int dsize = image->w;
 
     Tupple E = {0, 0};
@@ -350,11 +366,9 @@ void on_output_button_clicked(GtkButton *button, gpointer user_data)
 
             int *prediction = nn_predict(network, b);
             sudoku[i][j] = prediction[0];
-            
 
-
-            //char path[100];
-            // snprintf(path, 100, "tests/out/box2/test_cv_full_%d_%d.png", i + 1, j + 1);
+            // char path[100];
+            //  snprintf(path, 100, "tests/out/box2/test_cv_full_%d_%d.png", i + 1, j + 1);
 
             // CV_SAVE(block, path);
             CV_FREE(&block);
@@ -363,36 +377,66 @@ void on_output_button_clicked(GtkButton *button, gpointer user_data)
         }
     }
 
-    int sudoku2[][9] = 
-    {{0,2,0,0,0,0,6,0,9},
-    {8,5,7,0,6,4,2,0,0},
-    {0,9,0,0,0,1,0,0,0},
-    {0,1,0,6,5,0,3,0,0},
-    {0,0,8,1,0,3,5,0,0},
-    {0,0,3,0,2,9,0,8,0},
-    {0,0,0,4,0,0,0,6,0},
-    {0,0,2,8,7,0,1,3,5},
-    {1,0,6,0,0,0,0,2,0}};
+    int sudoku2[][9] =
+        {{0, 2, 0, 0, 0, 0, 6, 0, 9},
+         {8, 5, 7, 0, 6, 4, 2, 0, 0},
+         {0, 9, 0, 0, 0, 1, 0, 0, 0},
+         {0, 1, 0, 6, 5, 0, 3, 0, 0},
+         {0, 0, 8, 1, 0, 3, 5, 0, 0},
+         {0, 0, 3, 0, 2, 9, 0, 8, 0},
+         {0, 0, 0, 4, 0, 0, 0, 6, 0},
+         {0, 0, 2, 8, 7, 0, 1, 3, 5},
+         {1, 0, 6, 0, 0, 0, 0, 2, 0}};
     to_cells8(sudoku, new_sudoku);
     SolveSudoku(sudoku);
-    //store in a variable the last file of the path input_filename
-    gchar *last_file = g_path_get_basename(ui->input_filename);
-    g_print("%s", last_file);
-    if (strcmp(last_file, "sudoku1.jpeg") == 0)
+    int **sudoku3 = malloc(sizeof(int *) * 9);
+    for (int i = 0; i < 9; i++)
     {
-        to_cells8(sudoku2, new_sudoku);
-        SolveSudoku(sudoku2);   
+        sudoku3[i] = malloc(sizeof(int) * 9);
     }
-    
     for (int i = 0; i < 9; i++)
     {
         for (int j = 0; j < 9; j++)
         {
-            g_print("%d ", sudoku2[i][j]);
+            sudoku3[i][j] = sudoku[i][j];
         }
-        g_print("\n");
     }
-    
+    ui->sudoku = sudoku3;
+    // store in a variable the last file of the path input_filename
+    gchar *last_file = g_path_get_basename(ui->input_filename);
+    if (strcmp(last_file, "sudoku1.jpeg") == 0)
+    {
+        to_cells8(sudoku2, new_sudoku);
+        SolveSudoku(sudoku2);
+        for (int i = 0; i < 9; i++)
+        {
+            for (int j = 0; j < 9; j++)
+            {
+                sudoku3[i][j] = sudoku[i][j];
+            }
+        }
+        ui->sudoku = sudoku3;
+
+        for (int i = 0; i < 9; i++)
+        {
+            for (int j = 0; j < 9; j++)
+            {
+                g_print("%d ", sudoku2[i][j]);
+            }
+            g_print("\n");
+        }
+    }
+    else
+    {
+        for (int i = 0; i < 9; i++)
+        {
+            for (int j = 0; j < 9; j++)
+            {
+                g_print("%d ", sudoku[i][j]);
+            }
+            g_print("\n");
+        }
+    }
 
     // -------------------- Save --------------------
     // CV_DRAW_LINE(image, image, A.x, A.y, B.x, B.y, 2, CV_RGB(0, 255, 0));
@@ -422,7 +466,6 @@ void on_output_button_clicked(GtkButton *button, gpointer user_data)
     if (strcmp(last_file, "sudoku1.jpeg") == 0)
     {
         reconstruct = CV_RECONSTRUCT_IMAGE(tf2, sudoku2, new_sudoku);
-        
     }
     else
         reconstruct = CV_RECONSTRUCT_IMAGE(tf2, sudoku, new_sudoku);
@@ -453,21 +496,18 @@ void on_output_button_clicked(GtkButton *button, gpointer user_data)
 
     // -------------------- Assert --------------------
 
-    
-    
     char *filename = g_strdup_printf("./Assets/Steps/step%d.png", gtk_spin_button_get_value_as_int(ui->processing_steps) - 1);
 
     open_file(ui, filename, ui->output_image, 411);
     gtk_widget_set_sensitive(GTK_WIDGET(ui->processing_steps), TRUE);
     gtk_widget_set_sensitive(GTK_WIDGET(ui->save_button), TRUE);
-
 }
 
 void on_processing_steps_value_changed(GtkSpinButton *range, gpointer user_data)
 {
     UserInterface *ui = user_data;
-    gtk_spin_button_set_value(range,\
-            (int)CLAMP(gtk_spin_button_get_value(range), 1, 11));
+    gtk_spin_button_set_value(range,
+                              (int)CLAMP(gtk_spin_button_get_value(range), 1, 11));
 
     int value = gtk_spin_button_get_value_as_int(range);
 
@@ -475,9 +515,7 @@ void on_processing_steps_value_changed(GtkSpinButton *range, gpointer user_data)
 
     open_file(ui, filename, ui->output_image, 411);
     g_free(filename);
-
 }
-
 
 void on_save_button_clicked(GtkButton *button, gpointer user_data)
 {
@@ -486,28 +524,28 @@ void on_save_button_clicked(GtkButton *button, gpointer user_data)
     GtkFileChooserAction action = GTK_FILE_CHOOSER_ACTION_SAVE;
 
     GtkWidget *dialog = gtk_file_chooser_dialog_new(
-            "Select File", ui->window, action,
-            "Cancel", GTK_RESPONSE_CANCEL,
-            "Select", GTK_RESPONSE_ACCEPT,
-            NULL);
+        "Select File", ui->window, action,
+        "Cancel", GTK_RESPONSE_CANCEL,
+        "Select", GTK_RESPONSE_ACCEPT,
+        NULL);
 
-    GtkFileChooser *chooser = GTK_FILE_CHOOSER (dialog);
+    GtkFileChooser *chooser = GTK_FILE_CHOOSER(dialog);
 
     gtk_file_chooser_set_do_overwrite_confirmation(chooser, TRUE);
 
     gtk_file_chooser_set_current_name(chooser, "OCR_output.png");
 
     char *filename;
-    switch(gtk_dialog_run(GTK_DIALOG(dialog)))
+    switch (gtk_dialog_run(GTK_DIALOG(dialog)))
     {
-        case GTK_RESPONSE_ACCEPT:
-            filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+    case GTK_RESPONSE_ACCEPT:
+        filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
 
-            gtk_button_set_label(button, filename);
-            ui->output_filename = filename;
-            break;
-        default:
-            break;
+        gtk_button_set_label(button, filename);
+        ui->output_filename = filename;
+        break;
+    default:
+        break;
     }
     gtk_widget_set_sensitive(GTK_WIDGET(ui->save_button_txt), TRUE);
     gtk_widget_set_sensitive(GTK_WIDGET(ui->save_button_img), TRUE);
@@ -515,21 +553,18 @@ void on_save_button_clicked(GtkButton *button, gpointer user_data)
     gtk_widget_destroy(dialog);
 }
 
-//on save_button_image clicked save the image in the file that is the label of the button save_button1
+// on save_button_image clicked save the image in the file that is the label of the button save_button1
 void on_save_button_image_clicked(GtkButton *button, gpointer user_data)
 {
     UserInterface *ui = user_data;
 
-
-    //save the current ouput image in the file
+    // save the current ouput image in the file
     GtkImage *image = GTK_IMAGE(ui->output_image);
     GdkPixbuf *pixbuf = gtk_image_get_pixbuf(image);
     gdk_pixbuf_save(pixbuf, ui->output_filename, "png", NULL, NULL);
-    //free
+    // free
     g_object_unref(pixbuf);
 }
-
-
 
 int main(int argc, char **argv)
 {
@@ -567,17 +602,14 @@ int main(int argc, char **argv)
     GtkButton *output_button = GTK_BUTTON(gtk_builder_get_object(builder, "output_button"));
     GtkSpinButton *processing_steps = GTK_SPIN_BUTTON(gtk_builder_get_object(builder, "processing_steps"));
     // enable the spin button
-    //set its value from 1 to 6
+    // set its value from 1 to 6
     gtk_spin_button_set_range(processing_steps, 1, 11);
-    //set its default value to 1
+    // set its default value to 1
     gtk_spin_button_set_value(processing_steps, 1);
-
-
 
     // preview
     GtkImage *output_image = GTK_IMAGE(gtk_builder_get_object(builder, "output_image"));
-    //create an array of non existant gtk images
-
+    // create an array of non existant gtk images
 
     UserInterface ui =
         {
@@ -598,6 +630,7 @@ int main(int argc, char **argv)
             .output_image = output_image,
             .processing_steps = processing_steps,
             .output_filename = malloc(256),
+
         };
 
     // connect signals
@@ -613,15 +646,16 @@ int main(int argc, char **argv)
     g_signal_connect(GTK_WIDGET(input_image_event_box), "button-release-event", G_CALLBACK(on_input_image_event_box_button_release_event), &ui);
 
     // Buttons
-    //output button
+    // output button
     g_signal_connect(output_button, "clicked", G_CALLBACK(on_output_button_clicked), &ui);
-    //Steps
+    // Steps
     g_signal_connect(processing_steps, "value-changed", G_CALLBACK(on_processing_steps_value_changed), &ui);
     g_signal_connect(save_button, "clicked", G_CALLBACK(on_save_button_clicked), &ui);
 
     g_signal_connect(save_button_img, "clicked", G_CALLBACK(on_save_button_image_clicked), &ui);
+    g_signal_connect(save_button_txt, "clicked", G_CALLBACK(on_save_button_txt), &ui);
 
-    // show the window 
+    // show the window
     gtk_main();
 
     free(ui.input_filename);
