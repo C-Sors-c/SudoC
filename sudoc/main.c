@@ -331,6 +331,7 @@ void on_output_button_clicked(GtkButton *button, gpointer user_data)
 
             int *prediction = nn_predict(network, b);
             sudoku[i][j] = prediction[0];
+            SolveSudoku(sudoku);
             
 
 
