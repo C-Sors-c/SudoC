@@ -714,7 +714,7 @@ int test_cv_full()
     CV_RGB_TO_GRAY(p1, p1);
     CV_GAUSSIAN_BLUR(p1, p1, 5, 1);
     // Image *p2 = CV_COPY(p1);
-    
+
     // -------------------- Preprocessing for Line detection --------------------
     // CV_SHARPEN(p2, p2, 1);
     // float t = CV_OTSU_THRESHOLD(p2); // general image threshold
@@ -723,9 +723,9 @@ int test_cv_full()
     // CV_SAVE(p2, "tests/out/test_cv_full_processed_2.png");
 
     // -------------------- Preprocessing for Rect detection --------------------
-    CV_SHARPEN(p1, p1, 5); // sharpen image to make edges more visible
+    CV_SHARPEN(p1, p1, 5);                      // sharpen image to make edges more visible
     CV_ADAPTIVE_THRESHOLD(p1, p1, 5, 0.333, 0); // binarize image
-    CV_SOBEL(p1, p1); // edge detection
+    CV_SOBEL(p1, p1);                           // edge detection
     CV_DRAW_RECT(p1, p1, 0, 0, p1->w - bw, p1->h - bw, bw, CV_RGB(0, 0, 0));
     CV_CLOSE(p1, p1, 5); // close small holes
     CV_SAVE(p1, "tests/out/test_cv_full_processed_1.png");
@@ -747,7 +747,7 @@ int test_cv_full()
     Tupple D = {points[6], points[7]};
 
     // int dsize = 9 * 34; // output image size
-    int p = 0;          // padding
+    int p = 0; // padding
     int dsize = image->w;
 
     Tupple E = {0, 0};
@@ -827,4 +827,46 @@ int test_cv_full()
 
     // -------------------- Assert --------------------
     return assert(true, true, "test_cv_full");
+}
+
+int test_cv_reconstruct()
+{
+    int grid[][9] = {
+        {1, 2, 3, 4, 5, 6, 7, 8, 9},
+        {1, 2, 3, 4, 5, 6, 7, 8, 9},
+        {1, 2, 3, 4, 5, 6, 7, 8, 9},
+        {1, 2, 3, 4, 5, 6, 7, 8, 9},
+        {1, 2, 3, 4, 5, 6, 7, 8, 9},
+        {1, 2, 3, 4, 5, 6, 7, 8, 9},
+        {1, 2, 3, 4, 5, 6, 7, 8, 9},
+        {1, 2, 3, 4, 5, 6, 7, 8, 9},
+        {1, 2, 3, 4, 5, 6, 7, 8, 9}};
+
+    int cells[][9] = {{0, 0, 0, 0, 0, 1, 0, 0, 0},
+                      {0, 0, 0, 0, 0, 1, 0, 0, 0},
+                      {0, 0, 0, 0, 0, 1, 0, 0, 0},
+                      {0, 0, 0, 0, 0, 1, 0, 0, 0},
+                      {0, 0, 0, 0, 0, 1, 0, 0, 0},
+                      {0, 0, 0, 0, 0, 1, 0, 0, 0},
+                      {0, 0, 0, 0, 0, 1, 0, 0, 0},
+                      {0, 0, 0, 0, 0, 1, 0, 0, 0},
+                      {0, 0, 0, 0, 0, 1, 0, 0, 0}};
+
+    Image *image = CV_LOAD("tests/samples/sudoku_crop.png", RGB);
+    // resize the image to 252x252
+    Tupple size = {
+        252,
+        252,
+    };
+
+    Image *resized = CV_RESIZE(image, size, CV_RGB(0, 0, 0));
+    Image *reconstruct = CV_RECONSTRUCT_IMAGE(resized, grid, cells);
+
+    CV_SAVE(reconstruct, "tests/out/test_cv_reconstruct.png");
+
+    CV_FREE(&image);
+    CV_FREE(&resized);
+    CV_FREE(&reconstruct);
+
+    return assert(true, true, "test_cv_reconstruct");
 }
