@@ -722,19 +722,22 @@ NN *build_nn(int batchsize)
 int test_cv_full()
 {
     // -------------------- Init --------------------
-    Image *image = CV_LOAD("tests/samples/sudoku3.png", RGB);
+    Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", RGB);
     Image *proc = CV_COPY(image);
     int bw = 5; // border width
 
     // -------------------- Blur --------------------
     CV_RGB_TO_GRAY(proc, proc);
     CV_GAUSSIAN_BLUR(proc, proc, 5, 1);
+    
+    Image *p2 = CV_COPY(proc);
+    CV_SHARPEN(p2, p2, 15);                      // sharpen image to make edges more visible
+    CV_ADAPTIVE_THRESHOLD(p2, p2, 5, 0.5, 0.5); // binarize image
 
     // -------------------- Preprocessing for Rect detection --------------------
     CV_SHARPEN(proc, proc, 5);                      // sharpen image to make edges more visible
     CV_ADAPTIVE_THRESHOLD(proc, proc, 5, 0.333, 0); // binarize image
 
-    Image *p2 = CV_COPY(proc);
     CV_SOBEL(proc, proc);                           // edge detection
     CV_DRAW_RECT(proc, proc, 0, 0, proc->w - bw, proc->h - bw, bw, CV_RGB(0, 0, 0));
     CV_CLOSE(proc, proc, 5); // close small holes
@@ -781,8 +784,10 @@ int test_cv_full()
     // -------------------- Transform --------------------
     Matrix *M = matrix_transformation(src, dst);
     Image *tf = CV_TRANSFORM(p2, M, T(dsize, dsize), T(0, 0), CV_RGB(0, 0, 0));
+    Image *tf2 = CV_TRANSFORM(image, M, T(dsize, dsize), T(0, 0), CV_RGB(0, 0, 0));
 
     CV_SAVE(tf, "tests/out/test_cv_full_transformed.png");
+    CV_SAVE(tf2, "tests/out/test_cv_full_transformed_colored.png");
 
     int bsize = dsize / 9;
 
@@ -823,10 +828,10 @@ int test_cv_full()
             int *prediction = nn_predict(network, b);
             sudoku[i * 9 + j] = prediction[0];
 
-            // char path[100];
-            // snprintf(path, 100, "tests/out/box2/test_cv_full_%d_%d.png", i + 1, j + 1);
+            char path[100];
+            snprintf(path, 100, "tests/out/box2/test_cv_full_%d_%d.png", i + 1, j + 1);
 
-            // CV_SAVE(block, path);
+            CV_SAVE(block, path);
             CV_FREE(&block);
             FREE(prediction);
             matrix_destroy(b);
@@ -865,6 +870,7 @@ int test_cv_full()
     CV_FREE(&image);
     CV_FREE(&proc);
     CV_FREE(&tf);
+    CV_FREE(&tf2);
     CV_FREE(&p2);
 
     matrix_destroy(M);
