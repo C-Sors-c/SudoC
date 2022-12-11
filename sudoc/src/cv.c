@@ -2359,34 +2359,62 @@ int *CV_GRID_BOXES(int *intersections, int nintersections, int *nboxes)
 }
 
 /// @brief Find the largest connected component in a binary image
+/// @param poly The polygon
+/// @param npoly Number of points in the polygon
+/// @return The area of the polygon
+float CV_POLY_AREA(int *poly, int npoly)
+{
+    float area = 0.0;
+
+    for (int i = 0; i < npoly; i++)
+    {
+        int j = (i + 1) % npoly;
+
+        area += poly[i * 2] * poly[j * 2 + 1];
+        area -= poly[j * 2] * poly[i * 2 + 1];
+    }
+
+    area /= 2.0;
+    
+    if (area < 0)
+        area = -area;
+    
+    return area;
+}
+
+/// @brief Find the largest connected component in a binary image
 /// @param src The source image
 /// @param n The number of rectangles
 /// @return An array of rectangles.
-int *CV_FIND_CONTOURS(const Image *src, int *n)
+int *CV_FIND_MAX_CONTOUR(const Image *src, int *n)
 {
     ASSERT_IMG(src);
     ASSERT_CHANNEL(src, 1);
 
-    Image *p = CV_COPY(src);
+    Image *tmp = CV_COPY(src);
 
-    int w = p->w;
-    int h = p->h;
+    int w = tmp->w;
+    int h = tmp->h;
 
+    int ncontours = 0;
     int *contours = (int *)malloc(sizeof(int) * w * h * 2);
     memset(contours, 0, sizeof(int) * w * h * 2);
 
     int *visited = (int *)malloc(sizeof(int) * w * h * 2);
     memset(visited, 0, sizeof(int) * w * h * 2);
 
-    int ncontours = 0;
-    int ncontours_max = 0;
-    int *max_countours = NULL;
+    int ncontours_out = 0;
+    int *contours_out = NULL;
+
+    int maxarea = 0;
+    int realarea = 0;
+    int nconvex_out = 0;
 
     for (int y = 0; y < h; y++)
     {
         for (int x = 0; x < w; x++)
         {
-            if (PIXEL(p, 0, y, x) == 0)
+            if (PIXEL(tmp, 0, y, x) == 0)
                 continue;
 
             if (visited[y * w + x])
@@ -2414,28 +2442,28 @@ int *CV_FIND_CONTOURS(const Image *src, int *n)
                 contours[ncontours * 2 + 1] = y;
                 ncontours++;
 
-                if (x > 0 && PIXEL(p, 0, y, x - 1) == 1 && !visited[y * w + x - 1])
+                if (x > 0 && PIXEL(tmp, 0, y, x - 1) == 1 && !visited[y * w + x - 1])
                 {
                     stack[nstack * 2] = x - 1;
                     stack[nstack * 2 + 1] = y;
                     nstack++;
                 }
 
-                if (x < w - 1 && PIXEL(p, 0, y, x + 1) == 1 && !visited[y * w + x + 1])
+                if (x < w - 1 && PIXEL(tmp, 0, y, x + 1) == 1 && !visited[y * w + x + 1])
                 {
                     stack[nstack * 2] = x + 1;
                     stack[nstack * 2 + 1] = y;
                     nstack++;
                 }
 
-                if (y > 0 && PIXEL(p, 0, y - 1, x) == 1 && !visited[(y - 1) * w + x])
+                if (y > 0 && PIXEL(tmp, 0, y - 1, x) == 1 && !visited[(y - 1) * w + x])
                 {
                     stack[nstack * 2] = x;
                     stack[nstack * 2 + 1] = y - 1;
                     nstack++;
                 }
 
-                if (y < h - 1 && PIXEL(p, 0, y + 1, x) == 1 && !visited[(y + 1) * w + x])
+                if (y < h - 1 && PIXEL(tmp, 0, y + 1, x) == 1 && !visited[(y + 1) * w + x])
                 {
                     stack[nstack * 2] = x;
                     stack[nstack * 2 + 1] = y + 1;
@@ -2444,26 +2472,33 @@ int *CV_FIND_CONTOURS(const Image *src, int *n)
             }
 
             FREE(stack);
+            
+            int nconvex = 0;
+            int *convex = CV_CONVEX_HULL(contours, ncontours, &nconvex);
+            int polygon_area = CV_POLY_AREA(convex, nconvex);
 
-            if (ncontours > ncontours_max)
+            if (polygon_area > maxarea || ncontours > realarea)
             {
-                FREE(max_countours);
-                ncontours_max = ncontours;
-                max_countours = (int *)malloc(sizeof(int) * ncontours * 2);
-                memcpy(max_countours, contours, sizeof(int) * ncontours * 2);
+                maxarea = polygon_area;
+                realarea = ncontours;
+                nconvex_out = nconvex;
+
+                FREE(contours_out);
+                contours_out = (int *)malloc(sizeof(int) * nconvex * 2);
+                memcpy(contours_out, convex, sizeof(int) * nconvex * 2);
             }
 
             ncontours = 0;
+            FREE(convex);
         }
     }
 
     FREE(visited);
     FREE(contours);
-    CV_FREE(&p);
+    CV_FREE(&tmp);
 
-    *n = ncontours_max;
-
-    return max_countours;
+    *n = nconvex_out;
+    return contours_out;
 }
 
 /// @brief Apply the Jarvis March algorithm to find the convex hull of a set of points
@@ -2551,7 +2586,7 @@ int *CV_CONVEX_HULL(int *points, int n, int *nconvex)
 /// @param points The points in the convex hull
 /// @param n The number of points in the convex hull
 /// @return An array of 4 points in the rectangle
-int *CV_MIN_AREA_RECT(int *points, int npoints)
+int *CV_GET_RECT_FROM_CONTOUR(int *points, int npoints)
 {
     int *rect = (int *)malloc(sizeof(int) * 8);
     memset(rect, 0, sizeof(int) * 8);
@@ -2645,94 +2680,70 @@ int *CV_MIN_AREA_RECT(int *points, int npoints)
 }
 
 /// @brief Find the 4 corners of the biggest rectangle in an image
-/// @param src The source image
-/// @param n The number of points in the rectangle
-/// @param full If true, it will use Houh transform for more precision, but it will be slower
+/// @param src1 The source image that will be used to find the contours
+/// @param src2 The source image that will be used to find the intersections
 /// @return An array of 4 points in the rectangle
-int *CV_MAX_RECTANGLE(const Image *src, bool full)
+int *CV_FIND_SUDOKU_RECT(const Image *src1, const Image *src2)
 {
-    ASSERT_IMG(src);
-    ASSERT_CHANNEL(src, 1);
+    ASSERT_IMG(src1);
+    ASSERT_IMG(src2);
+    ASSERT_CHANNEL(src1, 1);
+    ASSERT_CHANNEL(src2, 1);
+    ASSERT_DIM(src1, src2->c, src2->h, src2->w);
 
-    int *contours = NULL;
+    // Find the biggest contour
     int ncontours = 0;
-
-    int *convex = NULL;
-    int nconvex = 0;
-
-    int *rect = NULL;
-
-    contours = CV_FIND_CONTOURS(src, &ncontours);
+    int *contours = CV_FIND_MAX_CONTOUR(src1, &ncontours);
     if (ncontours == 0)
         return NULL;
 
-    convex = CV_CONVEX_HULL(contours, ncontours, &nconvex);
-    if (nconvex == 0)
+    // Detect lines
+    int nlines = 0;
+    int s = min(src2->w, src2->h); // get smaller dimension
+    int lt = clamp(s / 6, 200, 350); // line threshold
+    int *lines = CV_HOUGH_LINES(src2, lt, 25, &nlines); // detect lines
+    if (nlines == 0)
         return NULL;
 
-    if (full)
+    // Find intersections
+    int nintersections = 0;
+    int *intersections = CV_INTERSECTIONS(lines, nlines, &nintersections);
+    if (nintersections == 0)
+        return NULL;
+
+    // Find the points that are close to an intersection
+    int *newcontours = (int *)calloc(ncontours * 2, sizeof(int));
+    int npoints = 0;
+    for (int i = 0; i < ncontours; i++)
     {
-        // int treshold = min(min(src->w, src->h) / 3, 260);
+        int x = contours[i * 2];
+        int y = contours[i * 2 + 1];
 
-        int nlines = 0;
-        int *lines = CV_HOUGH_LINES(src, 300, 35, &nlines);
-        if (nlines == 0)
-            return NULL;
-
-        int nintersec = 0;
-        int *intersections = CV_INTERSECTIONS(lines, nlines, &nintersec);
-        if (nintersec == 0)
-            return NULL;
-
-        // keep only convex hull points that are near intersections
-        int *newconvex = (int *)calloc(nconvex * 2, sizeof(int));
-        int npoints = 0;
-
-        for (int i = 0; i < nconvex; i++)
+        for (int j = 0; j < nintersections; j++)
         {
-            int x = convex[i * 2];
-            int y = convex[i * 2 + 1];
+            int x2 = intersections[j * 2];
+            int y2 = intersections[j * 2 + 1];
 
-            int minx = INT_MAX;
-            int miny = INT_MAX;
-
-            for (int k = 0; k < nintersec; k++)
+            if (sqrt((x2 - x) * (x2 - x) + (y2 - y) * (y2 - y)) < 20)
             {
-                int x2 = intersections[k * 2];
-                int y2 = intersections[k * 2 + 1];
-
-                if (sqrt((x2 - x) * (x2 - x) + (y2 - y) * (y2 - y)) < 10)
-                {
-                    if (x2 < minx)
-                        minx = x2;
-                    if (y2 < miny)
-                        miny = y2;
-                }
-            }
-
-            if (minx != INT_MAX && miny != INT_MAX)
-            {
-                newconvex[npoints * 2] = minx;
-                newconvex[npoints * 2 + 1] = miny;
+                newcontours[npoints * 2] = x;
+                newcontours[npoints * 2 + 1] = y;
                 npoints++;
-
-                printf("x: %d, y: %d, minx: %d, miny: %d\n", x, y, minx, miny);
+                break;
             }
         }
-
-        FREE(lines);
-        FREE(intersections);
-        FREE(convex);
-        convex = newconvex;
-        nconvex = npoints;
     }
 
-    rect = CV_MIN_AREA_RECT(convex, nconvex);
+    // Find the 4 corners of the biggest rectangle
+    int *rect = NULL;
+    rect = CV_GET_RECT_FROM_CONTOUR(newcontours, npoints);
     if (rect == NULL)
         return NULL;
 
     FREE(contours);
-    FREE(convex);
+    FREE(newcontours);
+    FREE(lines);
+    FREE(intersections);
 
     return rect;
 }

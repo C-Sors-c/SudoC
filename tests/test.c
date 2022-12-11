@@ -30,7 +30,7 @@ int (*test_cv[])() = {
     // test_cv_dilate,
     // test_cv_erode,
     // test_cv_hough_lines,
-    test_cv_hough_lines_merged,
+    // test_cv_hough_lines_merged,
     // test_cv_intersections,
     // test_cv_boxes,
     // test_cv_save_boxes,
@@ -42,7 +42,7 @@ int (*test_cv[])() = {
     // test_cv_resize,
     // test_cv_zoom,
     // test_cv_translate,
-    // test_cv_full,
+    test_cv_full,
 };
 
 // lists of all matrix tests

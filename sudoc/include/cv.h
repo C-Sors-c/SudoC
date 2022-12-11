@@ -45,6 +45,8 @@ typedef struct
 
 #define norm(x) min(max((x), 0), 1)
 
+#define clamp(x, mi, ma) min(max((x), mi), ma)
+
 // print info about an error
 #define DEBUG_INFO                                                            \
     printf("============================================================\n"); \
@@ -227,10 +229,11 @@ int *CV_INTERSECTIONS_SORT(int *intersections, int nintersections);
 int *CV_INTERSECTIONS(int *lines, int nlines, int *nintersection);
 int *CV_GRID_BOXES(int *intersections, int nintersections, int *nboxes);
 
-int *CV_FIND_CONTOURS(const Image *src, int *nrects);
+float CV_POLY_AREA(int *poly, int npoly);
+int *CV_FIND_MAX_CONTOUR(const Image *src, int *nrects);
 int *CV_CONVEX_HULL(int *points, int npoints, int *nconvex);
-int *CV_MIN_AREA_RECT(int *points, int n);
-int *CV_MAX_RECTANGLE(const Image *src, bool full);
+int *CV_GET_RECT_FROM_CONTOUR(int *points, int n);
+int *CV_FIND_SUDOKU_RECT(const Image *src1, const Image *src2);
 
 Image *CV_TRANSFORM(const Image *src, const Matrix *M, Tupple dsize, Tupple origin, Uint32 background);
 Image *CV_ROTATE(const Image *src, float angle, bool resize, Uint32 background);

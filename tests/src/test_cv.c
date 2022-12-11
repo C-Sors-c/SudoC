@@ -356,7 +356,7 @@ int test_cv_hough_lines()
 
 int test_cv_hough_lines_merged()
 {
-    Image *image = CV_LOAD("tests/samples/sudoku.png", RGB);
+    Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", RGB);
     Image *processed = CV_COPY(image);
 
     CV_RGB_TO_GRAY(processed, processed);
@@ -364,16 +364,15 @@ int test_cv_hough_lines_merged()
     CV_SHARPEN(processed, processed, 1);
 
     float t = CV_OTSU_THRESHOLD(processed);
-    CV_CANNY(processed, processed, 0, 1.0 - t);
-
+    CV_CANNY(processed, processed, 1, 1.0 - t);
     int bw = 5;
     CV_DRAW_RECT(processed, processed, 0, 0, processed->w - bw, processed->h - bw, bw, CV_RGB(0, 0, 0));
 
     int n = 0;
     int s = min(processed->w, processed->h);
-    int *lines = CV_HOUGH_LINES(processed, s/3, 40, &n);
+    int threshold = clamp(s / 6, 135, 350);
+    int *lines = CV_HOUGH_LINES(processed, threshold, 25, &n);
 
-    // CV_DILATE(processed, processed, 7);
     CV_SAVE(processed, "tests/out/test_cv_hough_lines_merged_processed.png");
 
     CV_DRAW_LINES(image, image, lines, n, 1, CV_RGB(255, 0, 0));
@@ -388,36 +387,33 @@ int test_cv_hough_lines_merged()
 
 int test_cv_intersections()
 {
-    Image *image = CV_LOAD("tests/samples/sudoku4.png", RGB);
+    Image *image = CV_LOAD("tests/samples/sudoku2.png", RGB);
     Image *processed = CV_COPY(image);
 
     CV_RGB_TO_GRAY(processed, processed);
-    CV_GAUSSIAN_BLUR(processed, processed, 7, 1);
-    CV_SHARPEN(processed, processed, 15);
-    CV_ADAPTIVE_THRESHOLD(processed, processed, 7, 0.33333, 0.5);
-    CV_SOBEL(processed, processed);
-    CV_DILATE(processed, processed, 3);
-    CV_ERODE(processed, processed, 3);
+    CV_GAUSSIAN_BLUR(processed, processed, 5, 1);
+    CV_SHARPEN(processed, processed, 1);
 
-    Image *zoomed = CV_ZOOM(processed, 1.02, CV_RGB(0, 0, 0));
-    Image *unzoomed = CV_ZOOM(zoomed, 0.98, CV_RGB(0, 0, 0));
-
-    CV_SAVE(unzoomed, "tests/out/test_cv_intersections_processed.png");
+    float t = CV_OTSU_THRESHOLD(processed);
+    CV_CANNY(processed, processed, 1, 1.0 - t);
+    int bw = 5;
+    CV_DRAW_RECT(processed, processed, 0, 0, processed->w - bw, processed->h - bw, bw, CV_RGB(0, 0, 0));
 
     int n = 0;
-    int *lines = CV_HOUGH_LINES(unzoomed, 210, 35, &n);
+    int s = min(processed->w, processed->h);
+    int threshold = clamp(s / 6, 135, 350);
+    int *lines = CV_HOUGH_LINES(processed, threshold, 25, &n);
+
+    CV_DRAW_LINES(image, image, lines, n, 1, CV_RGB(255, 0, 0));
 
     int ni = 0;
     int *intersections = CV_INTERSECTIONS(lines, n, &ni);
-
-    if (ni < 100)
-        return assert(ni, 100, "test_cv_intersections");
 
     for (int i = 0; i < ni; i++)
     {
         int x = intersections[i * 2];
         int y = intersections[i * 2 + 1];
-        CV_DRAW_POINT(image, image, x, y, 5, CV_RGB(255, 0, 0));
+        CV_DRAW_POINT(image, image, x, y, 5, CV_RGB(0, 255, 0));
     }
 
     CV_SAVE(image, "tests/out/test_cv_intersections.png");
@@ -427,8 +423,6 @@ int test_cv_intersections()
 
     CV_FREE(&image);
     CV_FREE(&processed);
-    CV_FREE(&zoomed);
-    CV_FREE(&unzoomed);
 
     return assert(true, true, "test_cv_intersections");
 }
@@ -560,18 +554,18 @@ int test_cv_find_largest_rect()
 
     CV_RGB_TO_GRAY(processed, processed);
     CV_GAUSSIAN_BLUR(processed, processed, 5, 1);
-    CV_SHARPEN(processed, processed, 5);
-    CV_ADAPTIVE_THRESHOLD(processed, processed, 5, 0.5, 0.5);
+    CV_SHARPEN(processed, processed, 15);
+    CV_ADAPTIVE_THRESHOLD(processed, processed, 5, 0.333, 0);
     CV_SOBEL(processed, processed);
     CV_DILATE(processed, processed, 3);
     CV_ERODE(processed, processed, 3);
 
     int n = 0;
     int c = 0;
-    int *pts = CV_FIND_CONTOURS(processed, &n);
+    int *pts = CV_FIND_MAX_CONTOUR(processed, &n);
     int *cvx = CV_CONVEX_HULL(pts, n, &c);
 
-    int *points = CV_MAX_RECTANGLE(processed, false);
+    int *points = CV_FIND_SUDOKU_RECT(processed, false);
 
     int Ax = points[0];
     int Ay = points[1];
@@ -728,30 +722,42 @@ int test_cv_translate()
 
 int test_cv_full()
 {
-    Image *image = CV_LOAD("tests/samples/sudoku.jpeg", RGB);
-    Image *processed = CV_COPY(image);
+    // -------------------- Init --------------------
+    Image *image = CV_LOAD("tests/samples/sudoku4.png", RGB);
+    Image *p1 = CV_COPY(image);
+    int bw = 5; // border width
 
-    CV_RGB_TO_GRAY(processed, processed);
-    CV_GAUSSIAN_BLUR(processed, processed, 5, 1);
-    CV_SHARPEN(processed, processed, 15);
-    CV_ADAPTIVE_THRESHOLD(processed, processed, 5, 0.35, 0);
-    CV_SOBEL(processed, processed);
-    CV_DILATE(processed, processed, 3);
-    CV_ERODE(processed, processed, 3);
+    // -------------------- Blur --------------------
+    CV_RGB_TO_GRAY(p1, p1);
+    CV_GAUSSIAN_BLUR(p1, p1, 5, 1);
+    // Image *p2 = CV_COPY(p1);
+    
+    // -------------------- Preprocessing for Line detection --------------------
+    // CV_SHARPEN(p2, p2, 1);
+    // float t = CV_OTSU_THRESHOLD(p2); // general image threshold
+    // CV_CANNY(p2, p2, 1, 1.0 - t);
+    // CV_DRAW_RECT(p2, p2, 0, 0, p2->w - bw, p2->h - bw, bw, CV_RGB(0, 0, 0));
+    // CV_SAVE(p2, "tests/out/test_cv_full_processed_2.png");
 
-    Image *zoomed = CV_ZOOM(processed, 1.02, CV_RGB(0, 0, 0));
-    Image *unzoomed = CV_ZOOM(zoomed, 0.98, CV_RGB(0, 0, 0));
+    // -------------------- Preprocessing for Rect detection --------------------
+    CV_SHARPEN(p1, p1, 5); // sharpen image to make edges more visible
+    CV_ADAPTIVE_THRESHOLD(p1, p1, 5, 0.333, 0); // binarize image
+    CV_SOBEL(p1, p1); // edge detection
+    CV_DRAW_RECT(p1, p1, 0, 0, p1->w - bw, p1->h - bw, bw, CV_RGB(0, 0, 0));
+    CV_CLOSE(p1, p1, 5); // close small holes
+    CV_SAVE(p1, "tests/out/test_cv_full_processed_1.png");
 
-    int *points = CV_MAX_RECTANGLE(unzoomed, true);
+    // -------------------- Rect detection --------------------
+    int *points = CV_FIND_SUDOKU_RECT(p1, p1);
     if (points == NULL)
     {
         CV_FREE(&image);
-        CV_FREE(&processed);
-        CV_FREE(&zoomed);
-        CV_FREE(&unzoomed);
+        CV_FREE(&p1);
+        // CV_FREE(&p2);
         return assert(true, false, "test_cv_full");
     }
 
+    // -------------------- Get rect points --------------------
     Tupple A = {points[0], points[1]};
     Tupple B = {points[2], points[3]};
     Tupple C = {points[4], points[5]};
@@ -759,7 +765,6 @@ int test_cv_full()
 
     // int dsize = 9 * 34; // output image size
     int p = 0;          // padding
-
     int dsize = image->w;
 
     Tupple E = {0, 0};
@@ -780,46 +785,55 @@ int test_cv_full()
     dst[2] = G;
     dst[3] = H;
 
-    for (int i = 0; i < 4; i++)
-    {
-        printf("src[%d] = (%d, %d)\n", i, src[i].x, src[i].y);
-        printf("dst[%d] = (%d, %d)\n", i, dst[i].x, dst[i].y);
-    }
-
-    CV_SAVE(unzoomed, "tests/out/test_cv_full_processed.png");
-
+    // -------------------- Transform --------------------
     Matrix *M = matrix_transformation(src, dst);
     Image *tf = CV_TRANSFORM(image, M, T(dsize, dsize), T(0, 0), CV_RGB(0, 0, 0));
 
     int bsize = dsize / 9;
 
-    for (int i = 0; i < 9; i++)
+    // -------------------- Get blocks --------------------
+    // for (int i = 0; i < 9; i++)
+    // {
+    //     for (int j = 0; j < 9; j++)
+    //     {
+    //         int x = j * bsize;
+    //         int y = i * bsize;
+
+    //         int w = bsize;
+    //         int h = bsize;
+
+    //         Image *block = CV_COPY_REGION(tf, x + p, y + p, x + w - p, y + h - p);
+
+    //         char path[100];
+    //         snprintf(path, 100, "tests/out/box2/test_cv_full_%d_%d.png", i + 1, j + 1);
+
+    //         CV_SAVE(block, path);
+    //         CV_FREE(&block);
+    //     }
+    // }
+
+    // -------------------- Save --------------------
+    CV_DRAW_LINE(image, image, A.x, A.y, B.x, B.y, 2, CV_RGB(0, 255, 0));
+    CV_DRAW_LINE(image, image, B.x, B.y, C.x, C.y, 2, CV_RGB(0, 255, 0));
+    CV_DRAW_LINE(image, image, C.x, C.y, D.x, D.y, 2, CV_RGB(0, 255, 0));
+    CV_DRAW_LINE(image, image, D.x, D.y, A.x, A.y, 2, CV_RGB(0, 255, 0));
+
+    for (int i = 0; i < 4; i++)
     {
-        for (int j = 0; j < 9; j++)
-        {
-            int x = j * bsize;
-            int y = i * bsize;
+        int x = points[i * 2];
+        int y = points[i * 2 + 1];
 
-            int w = bsize;
-            int h = bsize;
-
-            Image *block = CV_COPY_REGION(tf, x + p, y + p, x + w - p, y + h - p);
-
-            char path[100];
-            snprintf(path, 100, "tests/out/box2/test_cv_full_%d_%d.png", i + 1, j + 1);
-
-            CV_SAVE(block, path);
-            CV_FREE(&block);
-        }
+        CV_DRAW_POINT(image, image, x, y, 10, CV_RGB(255, 0, 0));
+        printf("Point %d: %d, %d\n", i, x, y);
     }
 
     CV_SAVE(tf, "tests/out/test_cv_full.png");
     CV_SAVE(image, "tests/out/test_cv_full_image.png");
 
+    // -------------------- Free --------------------
     CV_FREE(&image);
-    CV_FREE(&processed);
-    CV_FREE(&zoomed);
-    CV_FREE(&unzoomed);
+    CV_FREE(&p1);
+    // CV_FREE(&p2);
     CV_FREE(&tf);
 
     matrix_destroy(M);
@@ -828,5 +842,6 @@ int test_cv_full()
     FREE(src);
     FREE(dst);
 
+    // -------------------- Assert --------------------
     return assert(true, true, "test_cv_full");
 }
