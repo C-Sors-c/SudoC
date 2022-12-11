@@ -482,9 +482,6 @@ Matrix *matrix_transformation(const Tupple *src, const Tupple *dst)
         M->data[6], M->data[7], 1};
 
     Matrix *H = matrix_init(3, 3, m);
-
-    matrix_print(H);
-
     Matrix *H_inv = matrix_inverse(H);
 
     matrix_destroy(M);
