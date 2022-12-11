@@ -549,7 +549,7 @@ int test_cv_save_boxes()
 
 int test_cv_find_largest_rect()
 {
-    Image *image = CV_LOAD("tests/samples/sudoku5.png", RGB);
+    Image *image = CV_LOAD("tests/samples/sudoku3.png", RGB);
     Image *processed = CV_COPY(image);
 
     CV_RGB_TO_GRAY(processed, processed);
@@ -560,12 +560,7 @@ int test_cv_find_largest_rect()
     CV_DILATE(processed, processed, 3);
     CV_ERODE(processed, processed, 3);
 
-    int n = 0;
-    int c = 0;
-    int *pts = CV_FIND_MAX_CONTOUR(processed, &n);
-    int *cvx = CV_CONVEX_HULL(pts, n, &c);
-
-    int *points = CV_FIND_SUDOKU_RECT(processed, false);
+    int *points = CV_FIND_SUDOKU_RECT(processed, processed);
 
     int Ax = points[0];
     int Ay = points[1];
@@ -581,24 +576,12 @@ int test_cv_find_largest_rect()
     CV_DRAW_LINE(image, image, Cx, Cy, Dx, Dy, 2, CV_RGB(255, 255, 0));
     CV_DRAW_LINE(image, image, Dx, Dy, Ax, Ay, 2, CV_RGB(255, 255, 0));
 
-
-    for (int i = 0; i < c; i++)
-    {
-        int x = cvx[i * 2 + 0];
-        int y = cvx[i * 2 + 1];
-
-        CV_DRAW_POINT(image, image, x, y, 3, CV_RGB(255, 0, 0));
-    }
-
-    
     CV_SAVE(image, "tests/out/test_cv_find_largest_rect.png");
 
     CV_FREE(&image);
     CV_FREE(&processed);
 
     FREE(points);
-    FREE(pts);
-    FREE(cvx);
 
     return assert(true, true, "test_cv_find_largest_rect");
 }
@@ -792,25 +775,25 @@ int test_cv_full()
     int bsize = dsize / 9;
 
     // -------------------- Get blocks --------------------
-    // for (int i = 0; i < 9; i++)
-    // {
-    //     for (int j = 0; j < 9; j++)
-    //     {
-    //         int x = j * bsize;
-    //         int y = i * bsize;
+    for (int i = 0; i < 9; i++)
+    {
+        for (int j = 0; j < 9; j++)
+        {
+            int x = j * bsize;
+            int y = i * bsize;
 
-    //         int w = bsize;
-    //         int h = bsize;
+            int w = bsize;
+            int h = bsize;
 
-    //         Image *block = CV_COPY_REGION(tf, x + p, y + p, x + w - p, y + h - p);
+            Image *block = CV_COPY_REGION(tf, x + p, y + p, x + w - p, y + h - p);
 
-    //         char path[100];
-    //         snprintf(path, 100, "tests/out/box2/test_cv_full_%d_%d.png", i + 1, j + 1);
+            char path[100];
+            snprintf(path, 100, "tests/out/box2/test_cv_full_%d_%d.png", i + 1, j + 1);
 
-    //         CV_SAVE(block, path);
-    //         CV_FREE(&block);
-    //     }
-    // }
+            CV_SAVE(block, path);
+            CV_FREE(&block);
+        }
+    }
 
     // -------------------- Save --------------------
     CV_DRAW_LINE(image, image, A.x, A.y, B.x, B.y, 2, CV_RGB(0, 255, 0));
@@ -824,7 +807,7 @@ int test_cv_full()
         int y = points[i * 2 + 1];
 
         CV_DRAW_POINT(image, image, x, y, 10, CV_RGB(255, 0, 0));
-        printf("Point %d: %d, %d\n", i, x, y);
+        // printf("Point %d: %d, %d\n", i, x, y);
     }
 
     CV_SAVE(tf, "tests/out/test_cv_full.png");
