@@ -22,10 +22,10 @@ Matrix *nn_forward(NN *neural_network, Matrix *input)
     return matrix_copy(y, NULL);
 }
 
-int nn_predict(NN *neural_network, Matrix *input)
+int *nn_predict(NN *neural_network, Matrix *input)
 {
     Matrix *predictions = nn_forward(neural_network, input);
-    int pred = matrix_argmax(predictions);
+    int *pred = matrix_argmax(predictions);
     matrix_destroy(predictions);
     return pred;
 }
@@ -47,7 +47,7 @@ void nn_backward(NN *neural_network, Matrix *input, Matrix *predictions, Matrix 
 double nn_train_batch(NN *neural_network, Matrix *input, Matrix *labels, float learning_rate)
 {
     Matrix *predictions = nn_forward(neural_network, input);
-    matrix_print(predictions);
+    // matrix_print(predictions);
     double loss = cross_entropy_loss(predictions, labels);
     nn_backward(neural_network, input, predictions, labels, learning_rate);
     matrix_destroy(predictions);
@@ -133,7 +133,7 @@ void cnn_backward(CNN *neural_network, Matrix4 *input, Matrix *predictions, Matr
 double cnn_train_batch(CNN *neural_network, Matrix4 *input, Matrix *labels, float learning_rate)
 {
     Matrix *predictions = cnn_forward(neural_network, input);
-    matrix_print(predictions);
+    // matrix_print(predictions);
     double loss = mean_squared_error(predictions, labels);
     // printf("loss: %f\n", loss);
     cnn_backward(neural_network, input, predictions, labels, learning_rate);
@@ -200,7 +200,7 @@ bool fc_layer_load_weights(const char *filename, FCLayer *layer)
     if (dim1 != layer->weights->dim1 || dim2 != layer->weights->dim2)
     {
         printf("dim1: %d, dim2: %d\n", dim1, dim2);
-        matrix_printshape(layer->weights);
+        // matrix_printshape(layer->weights);
         errx(1, "fc_load_weight: weights matrix dimensions do not match");
     }
 
