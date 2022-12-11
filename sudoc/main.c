@@ -201,38 +201,198 @@ void convert_step(int i, Image *image_surface, UserInterface *ui)
 }
 
 
+NN *build_nn2(int batchsize)
+{
+    // define the layers
+    FCLayer **fc_layers = malloc(sizeof(FCLayer) * 2);
+    fc_layers[0] = fc_layer_init(28 * 28, 256, batchsize, relu, d_relu, "fc0");
+    fc_layers[1] = fc_layer_init(256, 128, batchsize, relu, d_relu, "fc1");
+    fc_layers[2] = fc_layer_init(128, 10, batchsize, relu, d_relu, "fc2");
+
+    ActivationLayer *output_layer = activation_layer_init(10, batchsize, softmax, d_softmax);
+    int num_fc_layers = 3;
+
+    NN *network = nn_init(fc_layers, num_fc_layers, output_layer);
+    return network;
+}
 void on_output_button_clicked(GtkButton *button, gpointer user_data)
 {
+
     UNUSED(button);
     UserInterface *ui = user_data;
 
-    Image *image_surface = CV_LOAD(ui->input_filename, 3);
+    Image *image = CV_LOAD(ui->input_filename, 3);
+    // -------------------- Init --------------------
+    Image *proc = CV_COPY(image);
+    int bw = 5; // border width
 
-    // convert to grayscale
-    CV_RGB_TO_GRAY(image_surface, image_surface);
-    convert_step(0, image_surface, ui);
+    // -------------------- Blur --------------------
+    CV_RGB_TO_GRAY(proc, proc);
+    convert_step(0, proc, ui);
+    CV_GAUSSIAN_BLUR(proc, proc, 5, 1);
+    convert_step(1, proc, ui);
 
-    // apply gaussian blur
-    CV_GAUSSIAN_BLUR(image_surface, image_surface, 5, 1);
-    convert_step(1, image_surface, ui);
+    // -------------------- Preprocessing for Rect detection --------------------
+    CV_SHARPEN(proc, proc, 5);                      // sharpen image to make edges more visible
+    convert_step(2, proc, ui);
+    CV_ADAPTIVE_THRESHOLD(proc, proc, 5, 0.333, 0); // binarize image
+    convert_step(3, proc, ui);
 
-    // apply sharpen
-    CV_SHARPEN(image_surface, image_surface, 15);
-    convert_step(2, image_surface, ui);
+    Image *p2 = CV_COPY(proc);
+    CV_SOBEL(proc, proc);                           // edge detection
+    convert_step(4, proc, ui);
+    CV_DRAW_RECT(proc, proc, 0, 0, proc->w - bw, proc->h - bw, bw, CV_RGB(0, 0, 0));
+    convert_step(5, proc, ui);
+    CV_CLOSE(proc, proc, 5); // close small holes
+    convert_step(6, proc, ui);
+    CV_SAVE(proc, "tests/out/test_cv_full_processed_1.png");
 
-    // apply adaptive threshold
-    CV_ADAPTIVE_THRESHOLD(image_surface, image_surface, 5, 1.0/3.0, 0);
-    convert_step(3, image_surface, ui);
+    // -------------------- Rect detection --------------------
+    int *points = CV_FIND_SUDOKU_RECT(proc, proc);
+    convert_step(7, proc, ui);
+    if (points == NULL)
+    {
+        CV_FREE(&image);
+        CV_FREE(&proc);
+        // CV_FREE(&p2);
+    }
 
-    // aplly sobel
-    CV_SOBEL(image_surface, image_surface);
-    convert_step(4, image_surface, ui);
+    // -------------------- Get rect points --------------------
+    Tupple A = {points[0], points[1]};
+    Tupple B = {points[2], points[3]};
+    Tupple C = {points[4], points[5]};
+    Tupple D = {points[6], points[7]};
 
-    // apply dilate
-    CV_DILATE(image_surface, image_surface, 3);
-    //apply erode
-    CV_ERODE(image_surface, image_surface, 3);
-    convert_step(5, image_surface, ui);
+    int dsize = 9 * 40; // output image size
+    int p = 6; // padding
+    // int dsize = image->w;
+
+    Tupple E = {0, 0};
+    Tupple F = {dsize, 0};
+    Tupple G = {dsize, dsize};
+    Tupple H = {0, dsize};
+
+    Tupple *src = malloc(sizeof(Tupple) * 4);
+    Tupple *dst = malloc(sizeof(Tupple) * 4);
+
+    src[0] = A;
+    src[1] = B;
+    src[2] = C;
+    src[3] = D;
+
+    dst[0] = E;
+    dst[1] = F;
+    dst[2] = G;
+    dst[3] = H;
+
+    // -------------------- Transform --------------------
+    Matrix *M = matrix_transformation(src, dst);
+    Image *tf = CV_TRANSFORM(p2, M, T(dsize, dsize), T(0, 0), CV_RGB(0, 0, 0));
+    convert_step(8, tf, ui);
+    Image *tf2 = CV_TRANSFORM(image, M, T(dsize, dsize), T(0, 0), CV_RGB(0, 0, 0));
+    convert_step(9, tf2, ui);
+
+    CV_SAVE(tf, "tests/out/test_cv_full_transformed.png");
+
+    int bsize = dsize / 9;
+
+    // -------------------- Load model --------------------
+
+    init_rand();
+    int batchsize = 1;
+
+    NN *network = build_nn2(batchsize);
+    Matrix *input = matrix_init(batchsize, 28 * 28, NULL);
+
+    bool loaded = nn_load(network, "weights");
+    if (!loaded)
+    {
+        printf("Failed to load the weights \n");
+    }
+
+    int *max_index = nn_predict(network, input);
+
+    // list of 81 Matrices
+    int sudoku[9][9];
+
+    // -------------------- Get blocks --------------------
+    for (int i = 0; i < 9; i++)
+    {
+        for (int j = 0; j < 9; j++)
+        {
+            int x = j * bsize;
+            int y = i * bsize;
+
+            int w = bsize;
+            int h = bsize;
+
+            Image *block = CV_COPY_REGION(tf, x + p, y + p, x + w - p, y + h - p);
+            Matrix *b = CV_IMG_TO_MAT(block, NULL);
+
+            int *prediction = nn_predict(network, b);
+            sudoku[i][j] = prediction[0];
+            
+
+
+            //char path[100];
+            // snprintf(path, 100, "tests/out/box2/test_cv_full_%d_%d.png", i + 1, j + 1);
+
+            // CV_SAVE(block, path);
+            CV_FREE(&block);
+            FREE(prediction);
+            matrix_destroy(b);
+        }
+    }
+
+    for (int i = 0; i < 9; i++)
+    {
+        for (int j = 0; j < 9; j++)
+        {
+            g_print("%d ", sudoku[i][j]);
+        }
+        g_print("\n");
+    }
+    
+
+    // -------------------- Save --------------------
+    // CV_DRAW_LINE(image, image, A.x, A.y, B.x, B.y, 2, CV_RGB(0, 255, 0));
+    // CV_DRAW_LINE(image, image, B.x, B.y, C.x, C.y, 2, CV_RGB(0, 255, 0));
+    // CV_DRAW_LINE(image, image, C.x, C.y, D.x, D.y, 2, CV_RGB(0, 255, 0));
+    // CV_DRAW_LINE(image, image, D.x, D.y, A.x, A.y, 2, CV_RGB(0, 255, 0));
+
+    // for (int i = 0; i < 4; i++)
+    // {
+    //     int x = points[i * 2];
+    //     int y = points[i * 2 + 1];
+
+    //     CV_DRAW_POINT(image, image, x, y, 10, CV_RGB(255, 0, 0));
+    //     printf("Point %d: %d, %d\n", i, x, y);
+    // }
+
+    // CV_SAVE(tf, "tests/out/test_cv_full.png");
+    // CV_SAVE(image, "tests/out/test_cv_full_image.png");
+
+    // -------------------- Free --------------------
+    CV_FREE(&image);
+    CV_FREE(&proc);
+    CV_FREE(&tf);
+    CV_FREE(&p2);
+    CV_FREE(&tf2);
+
+    matrix_destroy(M);
+
+    FREE(points);
+    FREE(src);
+    FREE(dst);
+
+    // free the memory
+    nn_destroy(network);
+    matrix_destroy(input);
+    FREE(max_index);
+
+    // -------------------- Assert --------------------
+
+    
     
     char *filename = g_strdup_printf("./Assets/Steps/step%d.png", gtk_spin_button_get_value_as_int(ui->processing_steps) - 1);
 
@@ -246,7 +406,7 @@ void on_processing_steps_value_changed(GtkSpinButton *range, gpointer user_data)
 {
     UserInterface *ui = user_data;
     gtk_spin_button_set_value(range,\
-            (int)CLAMP(gtk_spin_button_get_value(range), 1, 6));
+            (int)CLAMP(gtk_spin_button_get_value(range), 1, 10));
 
     int value = gtk_spin_button_get_value_as_int(range);
 
@@ -347,7 +507,7 @@ int main(int argc, char **argv)
     GtkSpinButton *processing_steps = GTK_SPIN_BUTTON(gtk_builder_get_object(builder, "processing_steps"));
     // enable the spin button
     //set its value from 1 to 6
-    gtk_spin_button_set_range(processing_steps, 1, 6);
+    gtk_spin_button_set_range(processing_steps, 1, 10);
     //set its default value to 1
     gtk_spin_button_set_value(processing_steps, 1);
 

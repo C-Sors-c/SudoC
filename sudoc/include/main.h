@@ -8,3 +8,4 @@
 #include "../../tests/include/test_cv.h"
 #include <gtk/gtk.h>
 #include "matrix.h"
+#include "sudoku_utils.h"
