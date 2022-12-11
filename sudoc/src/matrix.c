@@ -452,71 +452,14 @@ Matrix *matrix_transformation(const Tupple *src, const Tupple *dst)
         errx(EXIT_FAILURE, "matrix_transformation: src or dst is NULL\n");
 
     float a[64] = {
-        src[0].x,
-        src[0].y,
-        1,
-        0,
-        0,
-        0,
-        -dst[0].x * src[0].x,
-        -dst[0].x * src[0].y,
-        0,
-        0,
-        0,
-        src[0].x,
-        src[0].y,
-        1,
-        -dst[0].y * src[0].x,
-        -dst[0].y * src[0].y,
-        src[1].x,
-        src[1].y,
-        1,
-        0,
-        0,
-        0,
-        -dst[1].x * src[1].x,
-        -dst[1].x * src[1].y,
-        0,
-        0,
-        0,
-        src[1].x,
-        src[1].y,
-        1,
-        -dst[1].y * src[1].x,
-        -dst[1].y * src[1].y,
-        src[2].x,
-        src[2].y,
-        1,
-        0,
-        0,
-        0,
-        -dst[2].x * src[2].x,
-        -dst[2].x * src[2].y,
-        0,
-        0,
-        0,
-        src[2].x,
-        src[2].y,
-        1,
-        -dst[2].y * src[2].x,
-        -dst[2].y * src[2].y,
-        src[3].x,
-        src[3].y,
-        1,
-        0,
-        0,
-        0,
-        -dst[3].x * src[3].x,
-        -dst[3].x * src[3].y,
-        0,
-        0,
-        0,
-        src[3].x,
-        src[3].y,
-        1,
-        -dst[3].y * src[3].x,
-        -dst[3].y * src[3].y,
-    };
+        src[0].x, src[0].y, 1, 0, 0, 0, -dst[0].x * src[0].x, -dst[0].x * src[0].y,
+        0, 0, 0, src[0].x, src[0].y, 1, -dst[0].y * src[0].x, -dst[0].y * src[0].y,
+        src[1].x, src[1].y, 1, 0, 0, 0, -dst[1].x * src[1].x, -dst[1].x * src[1].y,
+        0, 0, 0, src[1].x, src[1].y, 1, -dst[1].y * src[1].x, -dst[1].y * src[1].y,
+        src[2].x, src[2].y, 1, 0, 0, 0, -dst[2].x * src[2].x, -dst[2].x * src[2].y,
+        0, 0, 0, src[2].x, src[2].y, 1, -dst[2].y * src[2].x, -dst[2].y * src[2].y,
+        src[3].x, src[3].y, 1, 0, 0, 0, -dst[3].x * src[3].x, -dst[3].x * src[3].y,
+        0, 0, 0, src[3].x, src[3].y, 1, -dst[3].y * src[3].x, -dst[3].y * src[3].y};
 
     float b[8] = {
         dst[0].x,
@@ -534,21 +477,11 @@ Matrix *matrix_transformation(const Tupple *src, const Tupple *dst)
     Matrix *M = matrix_solve(A, B);
 
     float m[9] = {
-        M->data[0],
-        M->data[1],
-        M->data[2],
-        M->data[3],
-        M->data[4],
-        M->data[5],
-        M->data[6],
-        M->data[7],
-        1,
-    };
+        M->data[0], M->data[1], M->data[2],
+        M->data[3], M->data[4], M->data[5],
+        M->data[6], M->data[7], 1};
 
     Matrix *H = matrix_init(3, 3, m);
-
-    matrix_print(H);
-
     Matrix *H_inv = matrix_inverse(H);
 
     matrix_destroy(M);
