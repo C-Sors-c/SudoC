@@ -819,12 +819,15 @@ int test_cv_reconstruct()
         252,
         252,
     };
-    image = CV_RESIZE(image, size, CV_RGB(0, 0, 0));
-    image = CV_RECONSTRUCT_IMAGE(image, grid, cells);
 
-    CV_SAVE(image, "tests/out/test_cv_reconstruct.png");
+    Image *resized = CV_RESIZE(image, size, CV_RGB(0, 0, 0));
+    Image *reconstruct = CV_RECONSTRUCT_IMAGE(resized, grid, cells);
+
+    CV_SAVE(reconstruct, "tests/out/test_cv_reconstruct.png");
 
     CV_FREE(&image);
+    CV_FREE(&resized);
+    CV_FREE(&reconstruct);
 
     return assert(true, true, "test_cv_reconstruct");
 }
