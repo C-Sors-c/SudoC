@@ -361,21 +361,21 @@ int test_cv_hough_lines_merged()
 
     CV_RGB_TO_GRAY(processed, processed);
     CV_GAUSSIAN_BLUR(processed, processed, 5, 1);
+    CV_SHARPEN(processed, processed, 1);
 
-    CV_SHARPEN(processed, processed, 10);
-    CV_ADAPTIVE_THRESHOLD(processed, processed, 5, 0.5, 0.5);
-
-    CV_NOT(processed, processed);
-
-    CV_DILATE(processed, processed, 3);
-
-    CV_ERODE(processed, processed, 3);
-    CV_SOBEL(processed, processed);
+    float t = CV_OTSU_THRESHOLD(processed);
+    CV_CANNY(processed, processed, 1, 1.0 - t);
+    int bw = 5;
+    CV_DRAW_RECT(processed, processed, 0, 0, processed->w - bw, processed->h - bw, bw, CV_RGB(0, 0, 0));
 
     int n = 0;
-    int *lines = CV_HOUGH_LINES(processed, 300, 35, &n);
+    int s = min(processed->w, processed->h);
+    int threshold = clamp(s / 6, 135, 350);
+    int *lines = CV_HOUGH_LINES(processed, threshold, 25, &n);
 
-    CV_DRAW_LINES(image, image, lines, n, 2, CV_RGB(255, 0, 0));
+    CV_SAVE(processed, "tests/out/test_cv_hough_lines_merged_processed.png");
+
+    CV_DRAW_LINES(image, image, lines, n, 1, CV_RGB(255, 0, 0));
     CV_SAVE(image, "tests/out/test_cv_test_cv_hough_lines_merged.png");
 
     CV_FREE(&image);
@@ -387,32 +387,33 @@ int test_cv_hough_lines_merged()
 
 int test_cv_intersections()
 {
-    Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", RGB);
+    Image *image = CV_LOAD("tests/samples/sudoku2.png", RGB);
     Image *processed = CV_COPY(image);
 
     CV_RGB_TO_GRAY(processed, processed);
     CV_GAUSSIAN_BLUR(processed, processed, 5, 1);
-    CV_SHARPEN(processed, processed, 10);
-    CV_ADAPTIVE_THRESHOLD(processed, processed, 5, 0.5, 0.5);
-    CV_NOT(processed, processed);
-    CV_DILATE(processed, processed, 3);
-    CV_ERODE(processed, processed, 3);
-    CV_SOBEL(processed, processed);
+    CV_SHARPEN(processed, processed, 1);
+
+    float t = CV_OTSU_THRESHOLD(processed);
+    CV_CANNY(processed, processed, 1, 1.0 - t);
+    int bw = 5;
+    CV_DRAW_RECT(processed, processed, 0, 0, processed->w - bw, processed->h - bw, bw, CV_RGB(0, 0, 0));
 
     int n = 0;
-    int *lines = CV_HOUGH_LINES(processed, 300, 35, &n);
+    int s = min(processed->w, processed->h);
+    int threshold = clamp(s / 6, 135, 350);
+    int *lines = CV_HOUGH_LINES(processed, threshold, 25, &n);
+
+    CV_DRAW_LINES(image, image, lines, n, 1, CV_RGB(255, 0, 0));
 
     int ni = 0;
     int *intersections = CV_INTERSECTIONS(lines, n, &ni);
-
-    if (ni < 100)
-        return assert(ni, 100, "test_cv_intersections");
 
     for (int i = 0; i < ni; i++)
     {
         int x = intersections[i * 2];
         int y = intersections[i * 2 + 1];
-        CV_DRAW_POINT(image, image, x, y, 5, CV_RGB(255, 0, 0));
+        CV_DRAW_POINT(image, image, x, y, 5, CV_RGB(0, 255, 0));
     }
 
     CV_SAVE(image, "tests/out/test_cv_intersections.png");
@@ -548,18 +549,18 @@ int test_cv_save_boxes()
 
 int test_cv_find_largest_rect()
 {
-    Image *image = CV_LOAD("tests/samples/sudoku2.png", RGB);
+    Image *image = CV_LOAD("tests/samples/sudoku3.png", RGB);
     Image *processed = CV_COPY(image);
 
     CV_RGB_TO_GRAY(processed, processed);
     CV_GAUSSIAN_BLUR(processed, processed, 5, 1);
-    CV_SHARPEN(processed, processed, 5);
-    CV_ADAPTIVE_THRESHOLD(processed, processed, 5, 0.5, 0.5);
+    CV_SHARPEN(processed, processed, 15);
+    CV_ADAPTIVE_THRESHOLD(processed, processed, 5, 0.333, 0);
     CV_SOBEL(processed, processed);
     CV_DILATE(processed, processed, 3);
     CV_ERODE(processed, processed, 3);
 
-    int *points = CV_MAX_RECTANGLE(processed);
+    int *points = CV_FIND_SUDOKU_RECT(processed, processed);
 
     int Ax = points[0];
     int Ay = points[1];
@@ -570,10 +571,10 @@ int test_cv_find_largest_rect()
     int Dx = points[6];
     int Dy = points[7];
 
-    CV_DRAW_LINE(image, image, Ax, Ay, Bx, By, 1, CV_RGB(0, 255, 0));
-    CV_DRAW_LINE(image, image, Bx, By, Cx, Cy, 1, CV_RGB(0, 255, 0));
-    CV_DRAW_LINE(image, image, Cx, Cy, Dx, Dy, 1, CV_RGB(0, 255, 0));
-    CV_DRAW_LINE(image, image, Dx, Dy, Ax, Ay, 1, CV_RGB(0, 255, 0));
+    CV_DRAW_LINE(image, image, Ax, Ay, Bx, By, 2, CV_RGB(255, 255, 0));
+    CV_DRAW_LINE(image, image, Bx, By, Cx, Cy, 2, CV_RGB(255, 255, 0));
+    CV_DRAW_LINE(image, image, Cx, Cy, Dx, Dy, 2, CV_RGB(255, 255, 0));
+    CV_DRAW_LINE(image, image, Dx, Dy, Ax, Ay, 2, CV_RGB(255, 255, 0));
 
     CV_SAVE(image, "tests/out/test_cv_find_largest_rect.png");
 
@@ -704,29 +705,50 @@ int test_cv_translate()
 
 int test_cv_full()
 {
-    Image *image = CV_LOAD("tests/samples/sudoku1.jpeg", RGB);
-    Image *processed = CV_COPY(image);
+    // -------------------- Init --------------------
+    Image *image = CV_LOAD("tests/samples/sudoku4.png", RGB);
+    Image *p1 = CV_COPY(image);
+    int bw = 5; // border width
 
-    CV_RGB_TO_GRAY(processed, processed);
-    CV_GAUSSIAN_BLUR(processed, processed, 5, 1);
-    CV_SHARPEN(processed, processed, 15);
-    CV_ADAPTIVE_THRESHOLD(processed, processed, 5, 1.0 / 3.0, 0);
-    CV_SOBEL(processed, processed);
-    CV_DILATE(processed, processed, 3);
-    CV_ERODE(processed, processed, 3);
+    // -------------------- Blur --------------------
+    CV_RGB_TO_GRAY(p1, p1);
+    CV_GAUSSIAN_BLUR(p1, p1, 5, 1);
+    // Image *p2 = CV_COPY(p1);
 
-    Image *zoomed = CV_ZOOM(processed, 1.02, CV_RGB(0, 0, 0));
-    Image *unzoomed = CV_ZOOM(zoomed, 0.98, CV_RGB(0, 0, 0));
+    // -------------------- Preprocessing for Line detection --------------------
+    // CV_SHARPEN(p2, p2, 1);
+    // float t = CV_OTSU_THRESHOLD(p2); // general image threshold
+    // CV_CANNY(p2, p2, 1, 1.0 - t);
+    // CV_DRAW_RECT(p2, p2, 0, 0, p2->w - bw, p2->h - bw, bw, CV_RGB(0, 0, 0));
+    // CV_SAVE(p2, "tests/out/test_cv_full_processed_2.png");
 
-    int *points = CV_MAX_RECTANGLE(unzoomed);
+    // -------------------- Preprocessing for Rect detection --------------------
+    CV_SHARPEN(p1, p1, 5);                      // sharpen image to make edges more visible
+    CV_ADAPTIVE_THRESHOLD(p1, p1, 5, 0.333, 0); // binarize image
+    CV_SOBEL(p1, p1);                           // edge detection
+    CV_DRAW_RECT(p1, p1, 0, 0, p1->w - bw, p1->h - bw, bw, CV_RGB(0, 0, 0));
+    CV_CLOSE(p1, p1, 5); // close small holes
+    CV_SAVE(p1, "tests/out/test_cv_full_processed_1.png");
 
+    // -------------------- Rect detection --------------------
+    int *points = CV_FIND_SUDOKU_RECT(p1, p1);
+    if (points == NULL)
+    {
+        CV_FREE(&image);
+        CV_FREE(&p1);
+        // CV_FREE(&p2);
+        return assert(true, false, "test_cv_full");
+    }
+
+    // -------------------- Get rect points --------------------
     Tupple A = {points[0], points[1]};
     Tupple B = {points[2], points[3]};
     Tupple C = {points[4], points[5]};
     Tupple D = {points[6], points[7]};
 
-    int dsize = 9 * 40; // output image size
-    int p = 4;          // padding
+    // int dsize = 9 * 34; // output image size
+    int p = 0; // padding
+    int dsize = image->w;
 
     Tupple E = {0, 0};
     Tupple F = {dsize, 0};
@@ -746,11 +768,13 @@ int test_cv_full()
     dst[2] = G;
     dst[3] = H;
 
+    // -------------------- Transform --------------------
     Matrix *M = matrix_transformation(src, dst);
     Image *tf = CV_TRANSFORM(image, M, T(dsize, dsize), T(0, 0), CV_RGB(0, 0, 0));
 
     int bsize = dsize / 9;
 
+    // -------------------- Get blocks --------------------
     for (int i = 0; i < 9; i++)
     {
         for (int j = 0; j < 9; j++)
@@ -771,14 +795,28 @@ int test_cv_full()
         }
     }
 
+    // -------------------- Save --------------------
+    CV_DRAW_LINE(image, image, A.x, A.y, B.x, B.y, 2, CV_RGB(0, 255, 0));
+    CV_DRAW_LINE(image, image, B.x, B.y, C.x, C.y, 2, CV_RGB(0, 255, 0));
+    CV_DRAW_LINE(image, image, C.x, C.y, D.x, D.y, 2, CV_RGB(0, 255, 0));
+    CV_DRAW_LINE(image, image, D.x, D.y, A.x, A.y, 2, CV_RGB(0, 255, 0));
+
+    for (int i = 0; i < 4; i++)
+    {
+        int x = points[i * 2];
+        int y = points[i * 2 + 1];
+
+        CV_DRAW_POINT(image, image, x, y, 10, CV_RGB(255, 0, 0));
+        // printf("Point %d: %d, %d\n", i, x, y);
+    }
+
     CV_SAVE(tf, "tests/out/test_cv_full.png");
     CV_SAVE(image, "tests/out/test_cv_full_image.png");
-    CV_SAVE(unzoomed, "tests/out/test_cv_full_processed.png");
 
+    // -------------------- Free --------------------
     CV_FREE(&image);
-    CV_FREE(&processed);
-    CV_FREE(&zoomed);
-    CV_FREE(&unzoomed);
+    CV_FREE(&p1);
+    // CV_FREE(&p2);
     CV_FREE(&tf);
 
     matrix_destroy(M);
@@ -787,6 +825,7 @@ int test_cv_full()
     FREE(src);
     FREE(dst);
 
+    // -------------------- Assert --------------------
     return assert(true, true, "test_cv_full");
 }
 
