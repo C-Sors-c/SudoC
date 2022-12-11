@@ -62,11 +62,14 @@ int (*tests_matrix[])() = {
     test_matrix4_convolve,
     test_matrix4_add_bias,
     test_matrix4_sum_rows,
+    test_matrix4_copy,
 };
 
 int (*tests_nn[])() = {
     test_nnxor,
     test_nnxor_load,
+    test_cnn,
+    test_cnn_load,
 };
 
 int main()

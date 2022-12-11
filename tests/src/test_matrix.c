@@ -242,7 +242,7 @@ int test_matrix4_multiply_scalar()
 
     Matrix4 *m1 = matrix4_init(1, 1, 2, 2, a);
 
-    matrix4_scalar_multiply(m1, 2.0);
+    matrix4_multiply_scalar(m1, 2.0);
     Matrix4 *expected = matrix4_init(1, 1, 2, 2, c);
 
     bool diff = matrix4_element_wise_equal(m1, expected);
@@ -385,7 +385,7 @@ int test_matrix4_sum_rows()
     };
 
     Matrix4 *m1 = matrix4_init(1, 1, 2, 2, a);
-    Matrix *m2 = matrix4_sum_rows(m1, NULL);
+    Matrix *m2 = matrix4_sum_channels(m1, NULL);
     Matrix *expected = matrix_init(1, 1, c);
 
     bool diff = matrix_element_wise_equal(m2, expected);
@@ -395,6 +395,19 @@ int test_matrix4_sum_rows()
     matrix_destroy(expected);
 
     return assert(diff, true, "test_matrix4_sum_rows");
+}
+
+int test_matrix4_copy()
+{
+    Matrix4 *m1 = matrix4_init(1, 1, 2, 2, a);
+    Matrix4 *m2 = matrix4_copy(m1, NULL);
+
+    bool diff = matrix4_element_wise_equal(m1, m2);
+
+    matrix4_destroy(m1);
+    matrix4_destroy(m2);
+
+    return assert(diff, true, "test_matrix4_copy");
 }
 
 // TODO: more tests on the new matrix functions
