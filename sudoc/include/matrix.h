@@ -31,7 +31,7 @@ float m_get(Matrix *m, int i, int j);
 void m_set(Matrix *m, int dim1, int dim2, float value);
 
 Matrix *matrix_add(Matrix *m1, Matrix *m2, Matrix *dst);
-int matrix_argmax(Matrix *m);
+int* matrix_argmax(Matrix *m);
 Matrix *matrix_add_bias(Matrix *m1, Matrix *m2, Matrix *dst);
 Matrix *matrix_sum_rows(Matrix *m1, Matrix *dst);
 Matrix *matrix_subtract(Matrix *m1, Matrix *m2, Matrix *dst);

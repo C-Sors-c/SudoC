@@ -140,19 +140,26 @@ Matrix *matrix_add(Matrix *m1, Matrix *m2, Matrix *dst)
 
 /// @brief returns the maximum index from the matrix'
 /// @param m a pointer to the matrix
-/// @return the max index
-int matrix_argmax(Matrix *m)
+/// @return the max index array
+int *matrix_argmax(Matrix *m)
 {
-    float max = m->data[0];
-    int max_index = 0;
-    for (int i = 0; i < m->size; i++)
+    int *max_index = malloc(m->dim1 * sizeof(int));
+    for (int i = 0; i < m->dim1; i++)
     {
-        if (m->data[i] > max)
+        float max = m->data[i * m->dim2];
+        int idx = 0;
+        for (int j = 0; j < m->dim2; j++)
         {
-            max = m->data[i];
-            max_index = i;
+            if (m->data[i * m->dim2 + j] > max)
+            {
+                max = m->data[i * m->dim2 + j];
+                idx = j;
+            }
         }
+
+        max_index[i] = idx;
     }
+
     return max_index;
 }
 

@@ -62,7 +62,7 @@ int main()
         int digit = rand() % 10;
         int file = rand() % data_count[digit];
 
-        CV_LOAD_MAT(filepaths[digit][file], input, 0, batchsize, 1);
+        CV_LOAD_MAT(filepaths[digit][file], input, batchsize, 1);
 
         int max_index = nn_predict(network, input);
         
