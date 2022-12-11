@@ -186,13 +186,15 @@ void on_about_activate(GtkMenuItem *menuitem, gpointer user_data)
         NULL);
 }
 
-//save the int** ui->sudoku to the file output_filename
+// save the int** ui->sudoku to the file output_filename
 void on_save_button_txt(GtkButton *button, gpointer user_data)
 {
     UNUSED(button);
     UserInterface *ui = user_data;
 
-    FILE *file = fopen(ui->output_filename, "w");
+    gchar *filename = g_strconcat(ui->output_filename, ".txt", NULL);
+    
+    FILE *file = fopen(filename, "w");
     if (file == NULL)
     {
         g_print("Error opening file!\n");
@@ -208,6 +210,7 @@ void on_save_button_txt(GtkButton *button, gpointer user_data)
         fprintf(file, "\n");
     }
 
+    fclose(file);
 }
 
 void convert_step(int i, Image *image_surface, UserInterface *ui)
@@ -412,7 +415,7 @@ void on_output_button_clicked(GtkButton *button, gpointer user_data)
         {
             for (int j = 0; j < 9; j++)
             {
-                sudoku3[i][j] = sudoku[i][j];
+                sudoku3[i][j] = sudoku2[i][j];
             }
         }
         ui->sudoku = sudoku3;
@@ -533,7 +536,7 @@ void on_save_button_clicked(GtkButton *button, gpointer user_data)
 
     gtk_file_chooser_set_do_overwrite_confirmation(chooser, TRUE);
 
-    gtk_file_chooser_set_current_name(chooser, "OCR_output.png");
+    gtk_file_chooser_set_current_name(chooser, "OCR_output");
 
     char *filename;
     switch (gtk_dialog_run(GTK_DIALOG(dialog)))
@@ -557,11 +560,12 @@ void on_save_button_clicked(GtkButton *button, gpointer user_data)
 void on_save_button_image_clicked(GtkButton *button, gpointer user_data)
 {
     UserInterface *ui = user_data;
-
+    //add the extension .png to the filename
+    gchar* filename = g_strconcat(ui->output_filename, ".png", NULL);
     // save the current ouput image in the file
     GtkImage *image = GTK_IMAGE(ui->output_image);
     GdkPixbuf *pixbuf = gtk_image_get_pixbuf(image);
-    gdk_pixbuf_save(pixbuf, ui->output_filename, "png", NULL, NULL);
+    gdk_pixbuf_save(pixbuf,filename, "png", NULL, NULL);
     // free
     g_object_unref(pixbuf);
 }
