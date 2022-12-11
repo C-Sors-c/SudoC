@@ -3,7 +3,7 @@
 
 #pragma region Image
 
-/// @brief Free an image and set the pointer to NULL. It has float free protection.
+/// @brief Free an image and set the pointer to NULL. It has double free protection.
 /// @param image The image to free.
 void CV_FREE(Image **image)
 {
@@ -67,34 +67,6 @@ Image *CV_ONES(int channels, int height, int width)
         image->data[i] = 1;
 
     return image;
-}
-
-/// @brief Check if an image is black.
-/// @param image The image to check.
-/// @return True if the image is black, false otherwise.
-bool CV_IS_ZERO(const Image *image)
-{
-    ASSERT_IMG(image);
-
-    for (int i = 0; i < image->c * image->h * image->w; i++)
-        if (image->data[i] != 0)
-            return false;
-
-    return true;
-}
-
-/// @brief Check if an image is white.
-/// @param image The image to check.
-/// @return True if the image is white, false otherwise.
-bool CV_IS_ONE(const Image *image)
-{
-    ASSERT_IMG(image);
-
-    for (int i = 0; i < image->c * image->h * image->w; i++)
-        if (image->data[i] != 1)
-            return false;
-
-    return true;
 }
 
 /// @brief Create an exact copy of an image.
@@ -834,10 +806,7 @@ Image *CV_SHARPEN(const Image *src, Image *dst, float sigma)
 /// @return The kernel as a 3x3 Matrix
 Matrix *CV_GET_SOBEL_KERNEL_X()
 {
-    float x[] = {
-        -1, 0, 1,
-        -2, 0, 2,
-        -1, 0, 1};
+    float x[] = {-1, 0, 1, -2, 0, 2, -1, 0, 1};
     Matrix *kernel = matrix_init(3, 3, x);
     ASSERT_MAT(kernel);
 
@@ -848,10 +817,7 @@ Matrix *CV_GET_SOBEL_KERNEL_X()
 /// @return The kernel as a 3x3 Matrix
 Matrix *CV_GET_SOBEL_KERNEL_Y()
 {
-    float y[] = {
-        -1, -2, -1,
-        0, 0, 0,
-        1, 2, 1};
+    float y[] = {-1, -2, -1, 0, 0, 0, 1, 2, 1};
     Matrix *kernel = matrix_init(3, 3, y);
     ASSERT_MAT(kernel);
 
@@ -1269,8 +1235,10 @@ Image *CV_ADAPTIVE_THRESHOLD(const Image *src, Image *dst, int block_size, float
 
     float otsu = CV_OTSU_THRESHOLD(src);
 
-    float weight = 1.0 - otsu_weight;
-    Image *mean = CV_GAUSSIAN_BLUR(src, NULL, block_size, 1);
+    float gaussian_weight = 1.0 - otsu_weight;
+
+    Matrix *kernel = CV_GET_GAUSSIAN_KERNEL(block_size, 1);
+    Image *mean = CV_APPLY_FILTER(tmp, NULL, kernel);
 
     for (int h = 0; h < src->h; h++)
     {
@@ -1280,10 +1248,10 @@ Image *CV_ADAPTIVE_THRESHOLD(const Image *src, Image *dst, int block_size, float
             float m = PIXEL(mean, 0, h, w);
 
             float mcs = m - c * sqrt(m);
-            float g2 = weight * weight;
+            float g2 = gaussian_weight * gaussian_weight;
 
             // magic formula i invented
-            float threshold = otsu_weight * (2 * otsu + (m - c * sqrt(m)) * weight * weight);
+            float threshold = otsu_weight * (2 * otsu + (m - c * sqrt(m)) * (gaussian_weight * gaussian_weight));
 
             if (p > threshold)
                 PIXEL(dst, 0, h, w) = 1;
@@ -1292,7 +1260,7 @@ Image *CV_ADAPTIVE_THRESHOLD(const Image *src, Image *dst, int block_size, float
         }
     }
 
-    // matrix_destroy(kernel);
+    matrix_destroy(kernel);
     CV_FREE(&mean);
     CV_FREE(&tmp);
     return dst;
@@ -1486,53 +1454,10 @@ Image *CV_SUB(const Image *src1, Image *src2, Image *dst)
                 float p1 = PIXEL(tmp1, c, i, j);
                 float p2 = PIXEL(tmp2, c, i, j);
 
-                float p = p1 - p2;
-                if (p < 0)
-                    p = 0;
-
-                PIXEL(dst, c, i, j) = p;
-            }
-        }
-    }
-
-    CV_FREE(&tmp1);
-    CV_FREE(&tmp2);
-    return dst;
-}
-
-/// @brief Apply an addition operation to two images
-/// @param src1 The first source image
-/// @param src2 The second source image
-/// @param dst The destination image
-/// @return The destination image (dst)
-Image *CV_ADD(const Image *src1, Image *src2, Image *dst)
-{
-    ASSERT_IMG(src1);
-    ASSERT_IMG(src2);
-
-    Image *tmp1 = CV_COPY(src1);
-    Image *tmp2 = CV_COPY(src2);
-
-    if (dst == NULL)
-        dst = CV_INIT(src1->c, src1->h, src1->w);
-    ASSERT_IMG(dst);
-    ASSERT_DIM(src2, src1->c, src1->h, src1->w);
-    ASSERT_DIM(dst, src1->c, src1->h, src1->w);
-
-    for (int c = 0; c < src1->c; c++)
-    {
-        for (int i = 0; i < src1->h; i++)
-        {
-            for (int j = 0; j < src1->w; j++)
-            {
-                float p1 = PIXEL(tmp1, c, i, j);
-                float p2 = PIXEL(tmp2, c, i, j);
-
-                float p = p1 + p2;
-                if (p > 1)
-                    p = 1;
-
-                PIXEL(dst, c, i, j) = p;
+                if (p1 == 1 && p2 == 0)
+                    PIXEL(dst, c, i, j) = 1;
+                else
+                    PIXEL(dst, c, i, j) = 0;
             }
         }
     }
@@ -1681,49 +1606,6 @@ Image *CV_CLOSE(const Image *src, Image *dst, int k)
     CV_ERODE(tmp, dst, k);
 
     CV_FREE(&tmp);
-    return dst;
-}
-
-/// @brief Apply a morphological skeletonization to an image
-/// @param src The source image
-/// @param dst The destination image
-/// @return The destination image (dst)
-Image *CV_MORPHOLOGICAL_SKELETON(const Image *src, Image *dst)
-{
-    ASSERT_IMG(src);
-    ASSERT_CHANNEL(src, 1);
-
-    Image *img = CV_COPY(src);
-
-    if (dst == NULL)
-        dst = CV_INIT(src->c, src->h, src->w);
-
-    ASSERT_IMG(dst);
-    ASSERT_DIM(dst, src->c, src->h, src->w);
-
-    memset(dst->data, 0, dst->w * dst->h * dst->c * sizeof(pixel_t));
-
-    Image *tmp = CV_INIT(src->c, src->h, src->w);
-    Image *eroded = CV_INIT(src->c, src->h, src->w);
-
-    while (1)
-    {
-        CV_ERODE(img, eroded, 3);
-        CV_DILATE(eroded, tmp, 3);
-
-        CV_SUB(img, tmp, tmp);
-        CV_OR(dst, tmp, dst);
-
-        CV_COPY_TO(eroded, img);
-
-        if (CV_IS_ZERO(img))
-            break;
-    }
-
-    CV_FREE(&tmp);
-    CV_FREE(&eroded);
-    CV_FREE(&img);
-
     return dst;
 }
 
@@ -2017,8 +1899,8 @@ int *CV_HOUGH_TRANSFORM(const Image *src, int threshold, int *nlines)
 
             for (int t = 0; t < 180; t++)
             {
-                float theta = (float)t * PI / 180;             // theta in radian
-                float rho = (x * cos(theta) + y * sin(theta)); // rho in pixel
+                double theta = (double)t * PI / 180;            // theta in radian
+                double rho = (x * cos(theta) + y * sin(theta)); // rho in pixel
 
                 int r = (int)ceil(rho);
                 // smart workaround to avoid negative values
@@ -2181,14 +2063,14 @@ Image *CV_DRAW_LINES(const Image *src, Image *dst, int *lines, int nlines, int w
             // m = tan(theta)
             // p = rho / sin(theta)
             // 2000 is an arbitrary value and should be enough to draw the line
-            float a = cos(theta * PI / 180.0);
-            float b = sin(theta * PI / 180.0);
-            float x0 = a * rho;
-            float y0 = b * rho;
-            float x1 = x0 + 2000 * (-b);
-            float y1 = y0 + 2000 * a;
-            float x2 = x0 - 2000 * (-b);
-            float y2 = y0 - 2000 * a;
+            double a = cos(theta * PI / 180.0);
+            double b = sin(theta * PI / 180.0);
+            double x0 = a * rho;
+            double y0 = b * rho;
+            double x1 = x0 + 2000 * (-b);
+            double y1 = y0 + 2000 * a;
+            double x2 = x0 - 2000 * (-b);
+            double y2 = y0 - 2000 * a;
 
             CV_DRAW_LINE(src, dst, x1, y1, x2, y2, weight, color);
         }
@@ -2359,62 +2241,34 @@ int *CV_GRID_BOXES(int *intersections, int nintersections, int *nboxes)
 }
 
 /// @brief Find the largest connected component in a binary image
-/// @param poly The polygon
-/// @param npoly Number of points in the polygon
-/// @return The area of the polygon
-float CV_POLY_AREA(int *poly, int npoly)
-{
-    float area = 0.0;
-
-    for (int i = 0; i < npoly; i++)
-    {
-        int j = (i + 1) % npoly;
-
-        area += poly[i * 2] * poly[j * 2 + 1];
-        area -= poly[j * 2] * poly[i * 2 + 1];
-    }
-
-    area /= 2.0;
-    
-    if (area < 0)
-        area = -area;
-    
-    return area;
-}
-
-/// @brief Find the largest connected component in a binary image
 /// @param src The source image
 /// @param n The number of rectangles
 /// @return An array of rectangles.
-int *CV_FIND_MAX_CONTOUR(const Image *src, int *n)
+int *CV_FIND_CONTOURS(const Image *src, int *n)
 {
     ASSERT_IMG(src);
     ASSERT_CHANNEL(src, 1);
 
-    Image *tmp = CV_COPY(src);
+    Image *p = CV_COPY(src);
 
-    int w = tmp->w;
-    int h = tmp->h;
+    int w = p->w;
+    int h = p->h;
 
-    int ncontours = 0;
     int *contours = (int *)malloc(sizeof(int) * w * h * 2);
     memset(contours, 0, sizeof(int) * w * h * 2);
 
     int *visited = (int *)malloc(sizeof(int) * w * h * 2);
     memset(visited, 0, sizeof(int) * w * h * 2);
 
-    int ncontours_out = 0;
-    int *contours_out = NULL;
-
-    int maxarea = 0;
-    int realarea = 0;
-    int nconvex_out = 0;
+    int ncontours = 0;
+    int ncontours_max = 0;
+    int *max_countours = NULL;
 
     for (int y = 0; y < h; y++)
     {
         for (int x = 0; x < w; x++)
         {
-            if (PIXEL(tmp, 0, y, x) == 0)
+            if (PIXEL(p, 0, y, x) == 0)
                 continue;
 
             if (visited[y * w + x])
@@ -2442,28 +2296,28 @@ int *CV_FIND_MAX_CONTOUR(const Image *src, int *n)
                 contours[ncontours * 2 + 1] = y;
                 ncontours++;
 
-                if (x > 0 && PIXEL(tmp, 0, y, x - 1) == 1 && !visited[y * w + x - 1])
+                if (x > 0 && PIXEL(p, 0, y, x - 1) == 1 && !visited[y * w + x - 1])
                 {
                     stack[nstack * 2] = x - 1;
                     stack[nstack * 2 + 1] = y;
                     nstack++;
                 }
 
-                if (x < w - 1 && PIXEL(tmp, 0, y, x + 1) == 1 && !visited[y * w + x + 1])
+                if (x < w - 1 && PIXEL(p, 0, y, x + 1) == 1 && !visited[y * w + x + 1])
                 {
                     stack[nstack * 2] = x + 1;
                     stack[nstack * 2 + 1] = y;
                     nstack++;
                 }
 
-                if (y > 0 && PIXEL(tmp, 0, y - 1, x) == 1 && !visited[(y - 1) * w + x])
+                if (y > 0 && PIXEL(p, 0, y - 1, x) == 1 && !visited[(y - 1) * w + x])
                 {
                     stack[nstack * 2] = x;
                     stack[nstack * 2 + 1] = y - 1;
                     nstack++;
                 }
 
-                if (y < h - 1 && PIXEL(tmp, 0, y + 1, x) == 1 && !visited[(y + 1) * w + x])
+                if (y < h - 1 && PIXEL(p, 0, y + 1, x) == 1 && !visited[(y + 1) * w + x])
                 {
                     stack[nstack * 2] = x;
                     stack[nstack * 2 + 1] = y + 1;
@@ -2472,33 +2326,26 @@ int *CV_FIND_MAX_CONTOUR(const Image *src, int *n)
             }
 
             FREE(stack);
-            
-            int nconvex = 0;
-            int *convex = CV_CONVEX_HULL(contours, ncontours, &nconvex);
-            int polygon_area = CV_POLY_AREA(convex, nconvex);
 
-            if (polygon_area > maxarea || ncontours > realarea)
+            if (ncontours > ncontours_max)
             {
-                maxarea = polygon_area;
-                realarea = ncontours;
-                nconvex_out = nconvex;
-
-                FREE(contours_out);
-                contours_out = (int *)malloc(sizeof(int) * nconvex * 2);
-                memcpy(contours_out, convex, sizeof(int) * nconvex * 2);
+                FREE(max_countours);
+                ncontours_max = ncontours;
+                max_countours = (int *)malloc(sizeof(int) * ncontours * 2);
+                memcpy(max_countours, contours, sizeof(int) * ncontours * 2);
             }
 
             ncontours = 0;
-            FREE(convex);
         }
     }
 
     FREE(visited);
     FREE(contours);
-    CV_FREE(&tmp);
+    CV_FREE(&p);
 
-    *n = nconvex_out;
-    return contours_out;
+    *n = ncontours_max;
+
+    return max_countours;
 }
 
 /// @brief Apply the Jarvis March algorithm to find the convex hull of a set of points
@@ -2506,7 +2353,7 @@ int *CV_FIND_MAX_CONTOUR(const Image *src, int *n)
 /// @param n The number of points
 /// @param nconvex The number of points in the convex hull
 /// @return An array of points in the convex hull
-int *CV_CONVEX_HULL(int *points, int n, int *nconvex)
+int *CV_JARVIS_MARCH(int *points, int n, int *nconvex)
 {
     *nconvex = n;
 
@@ -2586,7 +2433,7 @@ int *CV_CONVEX_HULL(int *points, int n, int *nconvex)
 /// @param points The points in the convex hull
 /// @param n The number of points in the convex hull
 /// @return An array of 4 points in the rectangle
-int *CV_GET_RECT_FROM_CONTOUR(int *points, int npoints)
+int *CV_MIN_AREA_RECT(int *points, int npoints)
 {
     int *rect = (int *)malloc(sizeof(int) * 8);
     memset(rect, 0, sizeof(int) * 8);
@@ -2680,70 +2527,33 @@ int *CV_GET_RECT_FROM_CONTOUR(int *points, int npoints)
 }
 
 /// @brief Find the 4 corners of the biggest rectangle in an image
-/// @param src1 The source image that will be used to find the contours
-/// @param src2 The source image that will be used to find the intersections
+/// @param src The source image
+/// @param n The number of points in the rectangle
 /// @return An array of 4 points in the rectangle
-int *CV_FIND_SUDOKU_RECT(const Image *src1, const Image *src2)
+int *CV_MAX_RECTANGLE(const Image *src)
 {
-    ASSERT_IMG(src1);
-    ASSERT_IMG(src2);
-    ASSERT_CHANNEL(src1, 1);
-    ASSERT_CHANNEL(src2, 1);
-    ASSERT_DIM(src1, src2->c, src2->h, src2->w);
-
-    // Find the biggest contour
+    int *contours = NULL;
     int ncontours = 0;
-    int *contours = CV_FIND_MAX_CONTOUR(src1, &ncontours);
+
+    int *convex = NULL;
+    int nconvex = 0;
+
+    int *rect = NULL;
+
+    contours = CV_FIND_CONTOURS(src, &ncontours);
     if (ncontours == 0)
         return NULL;
 
-    // Detect lines
-    int nlines = 0;
-    int s = min(src2->w, src2->h); // get smaller dimension
-    int lt = clamp(s / 6, 200, 350); // line threshold
-    int *lines = CV_HOUGH_LINES(src2, lt, 25, &nlines); // detect lines
-    if (nlines == 0)
+    convex = CV_JARVIS_MARCH(contours, ncontours, &nconvex);
+    if (nconvex == 0)
         return NULL;
 
-    // Find intersections
-    int nintersections = 0;
-    int *intersections = CV_INTERSECTIONS(lines, nlines, &nintersections);
-    if (nintersections == 0)
-        return NULL;
-
-    // Find the points that are close to an intersection
-    int *newcontours = (int *)calloc(ncontours * 2, sizeof(int));
-    int npoints = 0;
-    for (int i = 0; i < ncontours; i++)
-    {
-        int x = contours[i * 2];
-        int y = contours[i * 2 + 1];
-
-        for (int j = 0; j < nintersections; j++)
-        {
-            int x2 = intersections[j * 2];
-            int y2 = intersections[j * 2 + 1];
-
-            if (sqrt((x2 - x) * (x2 - x) + (y2 - y) * (y2 - y)) < 20)
-            {
-                newcontours[npoints * 2] = x;
-                newcontours[npoints * 2 + 1] = y;
-                npoints++;
-                break;
-            }
-        }
-    }
-
-    // Find the 4 corners of the biggest rectangle
-    int *rect = NULL;
-    rect = CV_GET_RECT_FROM_CONTOUR(newcontours, npoints);
+    rect = CV_MIN_AREA_RECT(convex, nconvex);
     if (rect == NULL)
         return NULL;
 
     FREE(contours);
-    FREE(newcontours);
-    FREE(lines);
-    FREE(intersections);
+    FREE(convex);
 
     return rect;
 }
