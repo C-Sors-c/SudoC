@@ -3,9 +3,9 @@
 CC := gcc
 CPPFLAGS :=
 CFLAGS := -Wall -Wextra -Werror -Wno-unknown-pragmas -Wno-unused-variable -Wno-unused-parameter \
-		  -std=c99 -O3 -fsanitize=address `pkg-config --cflags sdl2 SDL2_image`
+		  -std=c99 -O3 -fsanitize=address `pkg-config --cflags sdl2 SDL2_image` `pkg-config --cflags gtk+-3.0`
 LDFLAGS := -lm
-LDLIBS := -fsanitize=address `pkg-config --libs sdl2 SDL2_image`
+LDLIBS := -fsanitize=address `pkg-config --libs sdl2 SDL2_image` `pkg-config --libs gtk+-3.0`
 
 EXEC := main
 EXEC_TEST := test
@@ -17,6 +17,7 @@ BOX_DIR := out/box
 TEST_DATA_DIR := ./tests/out
 TEST_BOX_DIR := ./tests/out/box
 TEST_BOX_DIR2 := ./tests/out/box2
+STEPS_DIR := ./Assets/Steps
 
 SRC :=	${wildcard ./sudoc/src/*.c} ${wildcard ./tests/src/*.c} ./sudoc/main.c
 
@@ -32,7 +33,7 @@ SOLVER_OBJ := ${SOLVER_SRC:.c=.o}
 
 .PHONY: build all
 
-all: build build-solver build-test clean-main clean-test clean-solver
+all: build build-solver build-test clean-main clean-test clean-solver main
 
 # BUILD
 build: ${OBJ}
@@ -42,6 +43,7 @@ build: ${OBJ}
 	@mkdir -p ${TEST_DATA_DIR}
 	@mkdir -p ${TEST_BOX_DIR}
 	@mkdir -p ${TEST_BOX_DIR2}
+	@mkdir -p ${STEPS_DIR}
 	@${CC} -o ${BUILD_DIR}/${EXEC} $^ ${LDFLAGS} ${LDLIBS}
 
 build-test: ${TEST_OBJ}
@@ -54,6 +56,9 @@ build-test: ${TEST_OBJ}
 build-solver: ${SOLVER_OBJ}
 	@mkdir -p ${BUILD_DIR}
 	@${CC} -o ${BUILD_DIR}/${EXEC_SOLVER} $^ ${LDFLAGS} ${LDLIBS}
+
+main: build clean-main
+	@./${BUILD_DIR}/${EXEC}
 
 # RUN
 run: build clean-main
@@ -78,6 +83,7 @@ clean-test-data:
 clean-data:
 	${RM} -rf ${BOX_DIR}
 	${RM} -rf ${DATA_DIR}
+	${RM} -r ${STEPS_DIR}
 
 clean: clean-main clean-test clean-solver clean-data clean-test-data
 	${RM} -r ${BUILD_DIR}
