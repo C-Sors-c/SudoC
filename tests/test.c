@@ -43,6 +43,7 @@ int (*test_cv[])() = {
     test_cv_zoom,
     test_cv_translate,
     test_cv_full,
+    test_cv_reconstruct,
 };
 
 // lists of all matrix tests

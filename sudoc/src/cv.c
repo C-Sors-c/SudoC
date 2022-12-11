@@ -2955,3 +2955,43 @@ Image *CV_TRANSLATE(const Image *src, Tupple offset, Uint32 background)
 }
 
 #pragma endregion Transform
+
+#pragma region Construct
+
+/// @brief Draws each missing digits on the image containing only the sudoku grid.
+/// @param src The source image.
+/// @param grid The matrix containing the value of the solved grid.
+/// @param empty_cells The matrix containing 0's and 1's. 1 if the cell is empty.
+/// @return The final image with the digits drawn on it.
+Image *CV_RECONSTRUCT_IMAGE(Image *src, int grid[][9], int empty_cells[][9])
+{
+    ASSERT_IMG(src);
+
+    int w = src->w;
+    int h = src->h;
+
+    int w_cell = w / 9;
+    int h_cell = h / 9;
+
+    int tmp_w = 0;
+    int tmp_h = 0;
+
+    Image *dst = CV_COPY(src);
+
+    for (int rows = 0; rows < 9; rows++)
+    {
+        for (int cols = 0; cols < 9; cols++)
+        {
+            if (empty_cells[rows][cols]) // == 1
+            {
+                CV_DRAW_DIGIT(src, dst, tmp_w + w_cell / 2, tmp_h + 6, grid[rows][cols], 9, CV_RGB(0, 0, 255));
+            }
+            tmp_w += w_cell;
+        }
+        tmp_w = 0;
+        tmp_h += h_cell;
+    }
+    return dst;
+}
+
+#pragma endregion Construct
