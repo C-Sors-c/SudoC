@@ -3021,7 +3021,7 @@ Image *CV_RECONSTRUCT_IMAGE(Image *src, int grid[][9], int empty_cells[][9])
         {
             if (empty_cells[rows][cols]) // == 1
             {
-                CV_DRAW_DIGIT(src, dst, tmp_w + w_cell / 2, tmp_h + 6, grid[rows][cols], 9, CV_RGB(0, 0, 255));
+                CV_DRAW_DIGIT(src, dst, tmp_w + w_cell / 2, tmp_h + 6, grid[rows][cols], 11, CV_RGB(0, 0, 255));
             }
             tmp_w += w_cell;
         }

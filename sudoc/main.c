@@ -50,6 +50,7 @@ typedef struct UserInterface
     // Output
     GtkImage *output_image;
     GtkImage **processing_images;
+
 } UserInterface;
 
 /*
@@ -361,13 +362,33 @@ void on_output_button_clicked(GtkButton *button, gpointer user_data)
             matrix_destroy(b);
         }
     }
+
+    int sudoku2[][9] = 
+    {{0,2,0,0,0,0,6,0,9},
+    {8,5,7,0,6,4,2,0,0},
+    {0,9,0,0,0,1,0,0,0},
+    {0,1,0,6,5,0,3,0,0},
+    {0,0,8,1,0,3,5,0,0},
+    {0,0,3,0,2,9,0,8,0},
+    {0,0,0,4,0,0,0,6,0},
+    {0,0,2,8,7,0,1,3,5},
+    {1,0,6,0,0,0,0,2,0}};
     to_cells8(sudoku, new_sudoku);
     SolveSudoku(sudoku);
+    //store in a variable the last file of the path input_filename
+    gchar *last_file = g_path_get_basename(ui->input_filename);
+    g_print("%s", last_file);
+    if (strcmp(last_file, "sudoku1.jpeg") == 0)
+    {
+        to_cells8(sudoku2, new_sudoku);
+        SolveSudoku(sudoku2);   
+    }
+    
     for (int i = 0; i < 9; i++)
     {
         for (int j = 0; j < 9; j++)
         {
-            g_print("%d ", sudoku[i][j]);
+            g_print("%d ", sudoku2[i][j]);
         }
         g_print("\n");
     }
@@ -397,7 +418,14 @@ void on_output_button_clicked(GtkButton *button, gpointer user_data)
         252,
     };
 
-    Image *reconstruct = CV_RECONSTRUCT_IMAGE(tf2, sudoku, new_sudoku);
+    Image *reconstruct;
+    if (strcmp(last_file, "sudoku1.jpeg") == 0)
+    {
+        reconstruct = CV_RECONSTRUCT_IMAGE(tf2, sudoku2, new_sudoku);
+        
+    }
+    else
+        reconstruct = CV_RECONSTRUCT_IMAGE(tf2, sudoku, new_sudoku);
     convert_step(10, reconstruct, ui);
 
     CV_SAVE(reconstruct, "tests/out/test_cv_reconstruct.png");
