@@ -20,7 +20,6 @@ typedef struct
     pixel_t *data;
 } Image;
 
-
 #define PI 3.14159265358979323846
 #define RGB 3
 #define GRAYSCALE 1
@@ -234,3 +233,5 @@ Image *CV_SCALE(const Image *src, float scale, Uint32 background);
 Image *CV_RESIZE(const Image *src, Tupple dsize, Uint32 background);
 Image *CV_ZOOM(const Image *src, float zoom, Uint32 background);
 Image *CV_TRANSLATE(const Image *src, Tupple offset, Uint32 background);
+
+Image *CV_RECONSTRUCT_IMAGE(Image *src, int grid[][9], int empty_cells[][9]);

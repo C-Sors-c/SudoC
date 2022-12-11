@@ -710,7 +710,7 @@ int test_cv_full()
     CV_RGB_TO_GRAY(processed, processed);
     CV_GAUSSIAN_BLUR(processed, processed, 5, 1);
     CV_SHARPEN(processed, processed, 15);
-    CV_ADAPTIVE_THRESHOLD(processed, processed, 5, 1.0/3.0, 0);
+    CV_ADAPTIVE_THRESHOLD(processed, processed, 5, 1.0 / 3.0, 0);
     CV_SOBEL(processed, processed);
     CV_DILATE(processed, processed, 3);
     CV_ERODE(processed, processed, 3);
@@ -788,4 +788,43 @@ int test_cv_full()
     FREE(dst);
 
     return assert(true, true, "test_cv_full");
+}
+
+int test_cv_reconstruct()
+{
+    int grid[][9] = {
+        {1, 2, 3, 4, 5, 6, 7, 8, 9},
+        {1, 2, 3, 4, 5, 6, 7, 8, 9},
+        {1, 2, 3, 4, 5, 6, 7, 8, 9},
+        {1, 2, 3, 4, 5, 6, 7, 8, 9},
+        {1, 2, 3, 4, 5, 6, 7, 8, 9},
+        {1, 2, 3, 4, 5, 6, 7, 8, 9},
+        {1, 2, 3, 4, 5, 6, 7, 8, 9},
+        {1, 2, 3, 4, 5, 6, 7, 8, 9},
+        {1, 2, 3, 4, 5, 6, 7, 8, 9}};
+
+    int cells[][9] = {{0, 0, 0, 0, 0, 1, 0, 0, 0},
+                      {0, 0, 0, 0, 0, 1, 0, 0, 0},
+                      {0, 0, 0, 0, 0, 1, 0, 0, 0},
+                      {0, 0, 0, 0, 0, 1, 0, 0, 0},
+                      {0, 0, 0, 0, 0, 1, 0, 0, 0},
+                      {0, 0, 0, 0, 0, 1, 0, 0, 0},
+                      {0, 0, 0, 0, 0, 1, 0, 0, 0},
+                      {0, 0, 0, 0, 0, 1, 0, 0, 0},
+                      {0, 0, 0, 0, 0, 1, 0, 0, 0}};
+
+    Image *image = CV_LOAD("tests/samples/sudoku_crop.png", RGB);
+    // resize the image to 252x252
+    Tupple size = {
+        252,
+        252,
+    };
+    image = CV_RESIZE(image, size, CV_RGB(0, 0, 0));
+    image = CV_RECONSTRUCT_IMAGE(image, grid, cells);
+
+    CV_SAVE(image, "tests/out/test_cv_reconstruct.png");
+
+    CV_FREE(&image);
+
+    return assert(true, true, "test_cv_reconstruct");
 }
