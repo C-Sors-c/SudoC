@@ -138,6 +138,24 @@ Matrix *matrix_add(Matrix *m1, Matrix *m2, Matrix *dst)
     return dst;
 }
 
+/// @brief returns the maximum index from the matrix'
+/// @param m a pointer to the matrix
+/// @return the max index
+int matrix_argmax(Matrix *m)
+{
+    float max = m->data[0];
+    int max_index = 0;
+    for (int i = 0; i < m->size; i++)
+    {
+        if (m->data[i] > max)
+        {
+            max = m->data[i];
+            max_index = i;
+        }
+    }
+    return max_index;
+}
+
 /// @brief Adds a bias matrix to a matrix and returns the result.
 /// @param m1 pointer to the matrix
 /// @param m2 pointer to the bias matrix

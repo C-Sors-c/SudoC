@@ -36,7 +36,8 @@ struct NN
 typedef struct NN NN;
 
 NN *nn_init(FCLayer **fc_layer, int num_fc_layers, ActivationLayer *output_layer);
-Matrix *nn_forward(NN *network, Matrix *input);
+Matrix *nn_forward(NN *network, Matrix *input);\
+int nn_predict(NN *network, Matrix *input);
 void nn_backward(NN *network, Matrix *input, Matrix *predictions, Matrix *labels, float learning_rate);
 double nn_train_batch(NN *network, Matrix *input, Matrix *expected, float learning_rate);
 void nn_destroy(NN *network);

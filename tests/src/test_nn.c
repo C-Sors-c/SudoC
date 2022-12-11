@@ -175,7 +175,7 @@ int test_cnn()
     int batchsize = 4;
 
     // define the layers
-    ConvLayer **conv_layers = malloc(sizeof(ConvLayer) * 2);
+    ConvLayer **conv_layers = malloc(sizeof(ConvLayer));
     conv_layers[0] = conv_layer_init(28, 28, 1, 8, 3, 2, 1, batchsize, leaky_relu, d_leaky_relu, "conv0");
     // conv_layers[1] = conv_layer_init(14, 14, 8, 16, 3, 2, 1, batchsize, sigmoid, d_sigmoid, "conv1");
 

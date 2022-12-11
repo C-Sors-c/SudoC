@@ -10,6 +10,7 @@ LDLIBS := -fsanitize=address `pkg-config --libs sdl2 SDL2_image` `pkg-config --l
 EXEC := main
 EXEC_TEST := test
 EXEC_SOLVER := solver
+EXEC_TRAIN := train
 
 BUILD_DIR := build
 DATA_DIR := out
@@ -23,6 +24,8 @@ SRC :=	${wildcard ./sudoc/src/*.c} ${wildcard ./tests/src/*.c} ./sudoc/main.c
 
 SOLVER_SRC := ${wildcard ./sudoc/src/*.c} ./sudoc/solver.c
 
+TRAIN_SRC := ${wildcard ./sudoc/src/*.c} ./sudoc/train.c
+
 TEST_SRC :=	${wildcard ./sudoc/src/*.c} \
 			${wildcard ./tests/src/*.c} \
 			./tests/test.c
@@ -30,6 +33,7 @@ TEST_SRC :=	${wildcard ./sudoc/src/*.c} \
 OBJ := ${SRC:.c=.o}
 TEST_OBJ := ${TEST_SRC:.c=.o}
 SOLVER_OBJ := ${SOLVER_SRC:.c=.o}
+TRAIN_OBJ := ${TRAIN_SRC:.c=.o}
 
 .PHONY: build all
 
@@ -57,6 +61,10 @@ build-solver: ${SOLVER_OBJ}
 	@mkdir -p ${BUILD_DIR}
 	@${CC} -o ${BUILD_DIR}/${EXEC_SOLVER} $^ ${LDFLAGS} ${LDLIBS}
 
+build-train: ${TRAIN_OBJ}
+	@mkdir -p ${BUILD_DIR}
+	@${CC} -o ${BUILD_DIR}/${EXEC_TRAIN} $^ ${LDFLAGS} ${LDLIBS}
+
 main: build clean-main
 	@./${BUILD_DIR}/${EXEC}
 
@@ -66,6 +74,9 @@ run: build clean-main
 
 test: build-test
 	@./${BUILD_DIR}/${EXEC_TEST}
+
+train: build-train
+	@./${BUILD_DIR}/${EXEC_TRAIN}
 
 # CLEAN
 clean-main:
