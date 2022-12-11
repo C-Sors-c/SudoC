@@ -225,13 +225,14 @@ void convert_step(int i, Image *image_surface, UserInterface *ui)
 NN *build_nn2(int batchsize)
 {
     // define the layers
-    FCLayer **fc_layers = malloc(sizeof(FCLayer) * 2);
+    FCLayer **fc_layers = malloc(sizeof(FCLayer) * 4);
     fc_layers[0] = fc_layer_init(28 * 28, 256, batchsize, relu, d_relu, "fc0");
-    fc_layers[1] = fc_layer_init(256, 128, batchsize, relu, d_relu, "fc1");
-    fc_layers[2] = fc_layer_init(128, 10, batchsize, relu, d_relu, "fc2");
+    fc_layers[1] = fc_layer_init(256, 256, batchsize, relu, d_relu, "fc1");
+    fc_layers[2] = fc_layer_init(256, 128, batchsize, relu, d_relu, "fc2");
+    fc_layers[3] = fc_layer_init(128, 10, batchsize, relu, d_relu, "fc3");
 
     ActivationLayer *output_layer = activation_layer_init(10, batchsize, softmax, d_softmax);
-    int num_fc_layers = 3;
+    int num_fc_layers = 4;
 
     NN *network = nn_init(fc_layers, num_fc_layers, output_layer);
     return network;
