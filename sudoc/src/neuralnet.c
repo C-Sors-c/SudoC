@@ -16,13 +16,18 @@ NN *nn_init(FCLayer **fc_layer, int num_fc_layers, ActivationLayer *output_layer
 Matrix *nn_forward(NN *neural_network, Matrix *input)
 {
     for (int i = 0; i < neural_network->num_fc_layers; i++)
-    {
         input = fc_layer_forward(neural_network->fc_layers[i], input);
-        matrix_print(input);
-    }
 
     Matrix *y = activation_layer_forward(neural_network->output_layer, input);
     return matrix_copy(y, NULL);
+}
+
+int nn_predict(NN *neural_network, Matrix *input)
+{
+    Matrix *predictions = nn_forward(neural_network, input);
+    int pred = matrix_argmax(predictions);
+    matrix_destroy(predictions);
+    return pred;
 }
 
 void nn_backward(NN *neural_network, Matrix *input, Matrix *predictions, Matrix *labels, float learning_rate)
