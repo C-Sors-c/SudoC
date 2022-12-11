@@ -194,6 +194,7 @@ void on_about_activate(GtkMenuItem *menuitem, gpointer user_data)
 void convert_step(int i, Image *image_surface, UserInterface *ui)
 {
     char *filename = g_strdup_printf("./Assets/Steps/step%d.png", i);
+
     CV_SAVE(image_surface, filename);
 
     g_free(filename);
@@ -234,6 +235,7 @@ void on_output_button_clicked(GtkButton *button, gpointer user_data)
     convert_step(5, image_surface, ui);
     
     char *filename = g_strdup_printf("./Assets/Steps/step%d.png", gtk_spin_button_get_value_as_int(ui->processing_steps) - 1);
+
     open_file(ui, filename, ui->output_image, 411);
     gtk_widget_set_sensitive(GTK_WIDGET(ui->processing_steps), TRUE);
     gtk_widget_set_sensitive(GTK_WIDGET(ui->save_button), TRUE);
